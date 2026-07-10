@@ -105,7 +105,7 @@
 - **Status:** Accepted
 
 ### PDL-015 — Responsibility = Role → time-bounded Role-Assignment → derived person
-- **Decision:** Items store a **Responsible Role** (mandatory, never a user). "Who is responsible now" is *derived* through a time-bounded Role-Assignment (user↔role with valid_from/valid_to). Optional **Current Owner** (executor) and **Collaborators**.
+- **Decision:** Responsibility is modeled through **Roles**, resolved to people via a **time-bounded Role-Assignment** (user↔role, valid_from/valid_to). A responsible role is **not** forced at capture (may be blank). *(Extended by PDL-020: hybrid, multi-role AND multi-user assignment with primary markers.)*
 - **Why:** Mirrors PagerDuty schedules and SAP "position vs person" (verified). Replacing a person = one row change; work items are never mass-reassigned; the mapping lives in exactly one place so it can't drift.
 - **Alternatives:** Assign to individuals (breaks on staff change); RACI in a side sheet (duplicates, goes stale).
 - **Trade-offs:** Adds a setup step (define roles + who fills them) and indirection ("who is 'Ops Lead' today?"). Mitigated by making role→person mapping near-zero-effort and surfacing unfilled roles loudly.
@@ -137,4 +137,71 @@
 - **Why:** Voice adds permissions/accuracy/mobile complexity for the same "fewer clicks" text already delivers.
 - **Alternatives:** Voice in MVP.
 - **Trade-offs:** No voice at launch; captured as a clean future extension point.
+- **Status:** Accepted
+
+---
+
+## Batch 3 decisions (2026-07-10) — package approval + assignment model
+
+### PDL-020 — Assignment model: hybrid, multi-role and multi-user
+- **Decision:** Support **three assignment methods — Role, User, Hybrid.** An Item may have **multiple Responsible Roles** (one may be marked **Primary**) and **multiple Assigned Users** (one may be marked **Primary**); Collaborators remain optional. A user can belong to many roles; a role can hold many users. **Responsibility = Role; Execution = Assigned User.** Historical ownership never changes.
+- **Why:** Real teams mix role-based responsibility with direct execution ownership; forcing one model is too rigid.
+- **Alternatives:** Single responsible role + single owner (too rigid); user-only assignment (breaks on staff change).
+- **Trade-offs:** More relationship tables and UI affordances (primary markers, multiple chips); mitigated by progressive disclosure and sensible defaults (usually one role, one user).
+- **Status:** Accepted
+
+### PDL-021 — Capture priority: Speed > Completeness
+- **Decision:** Never force role/owner/fields at capture. AI **infers** the responsible role; **high confidence → pre-fill**, **low confidence → leave blank**. Final confirmation happens at Daily Review or on edit.
+- **Why:** Capture friction is the core problem; an incomplete-but-captured item beats a perfect-but-abandoned thought.
+- **Alternatives:** Require a role/owner at capture.
+- **Trade-offs:** Some items are under-specified until triage; that's acceptable and by design.
+- **Status:** Accepted
+
+### PDL-022 — Progressive disclosure for solo users
+- **Decision:** Hide Organization, Roles, and team-management concepts for solo users. They appear only when a second member is invited or team collaboration is explicitly enabled.
+- **Why:** A solo professional should never face enterprise concepts.
+- **Alternatives:** Always show org/role UI.
+- **Trade-offs:** Two UX modes (solo vs team) to maintain; data model is identical underneath (an org always exists, just hidden).
+- **Status:** Accepted
+
+### PDL-023 — Meeting stays a separate, calendar-ready Item type
+- **Decision:** Meeting remains its own type (distinct before/after lifecycle). Type-specific fields live in a separate `meeting_details` structure so future calendar integration needs no Item-model redesign.
+- **Why:** Different lifecycle than Task; isolate meeting/calendar concerns.
+- **Alternatives:** Meeting as Task metadata.
+- **Trade-offs:** A third type + a side table; kept deliberately light in MVP.
+- **Status:** Accepted
+
+### PDL-024 — Recurring items: design DB now, UI if simple
+- **Decision:** Model recurrence in the database now (RRULE-based). Include the UI in MVP **if reasonably simple**; otherwise ship the schema and defer the UI.
+- **Why:** Recurring work (MIS, GST, payroll, weekly reviews, follow-ups) is fundamental for our users.
+- **Alternatives:** Ignore recurrence until later (would force a schema change).
+- **Trade-offs:** Some schema built ahead of UI; low cost, avoids redesign.
+- **Status:** Accepted
+
+### PDL-025 — Attachments: model now, UI just-after MVP
+- **Decision:** The Item model supports attachments from day one (Supabase Storage); the upload UI is delivered immediately after MVP.
+- **Why:** Common need; must not require a later database redesign.
+- **Alternatives:** Add attachments schema later.
+- **Trade-offs:** A dormant table/relationship for a short while.
+- **Status:** Accepted
+
+### PDL-026 — Success metrics: two categories, targets after prototype
+- **Decision:** Track **Product Experience Metrics** (time-to-first-capture, capture effort, Daily Review completion, Inbox-Zero frequency, % captures needing AI clarification) and **Business Metrics** (DAU, weekly retention, team adoption, reduction in manual task management, reduction in task-creation time). **Numeric targets are set after the first working prototype**, not now.
+- **Why:** Real baselines beat guessed targets.
+- **Alternatives:** Freeze numeric targets today.
+- **Trade-offs:** No hard targets yet; we instrument first, target second.
+- **Status:** Accepted
+
+### PDL-027 — Reminder: UX independent of storage
+- **Decision:** Reminder is stored as Task metadata (`remind_at` + a reminder marker), but the **experience feels like a real Reminder** ("Remind me tomorrow to review GST" → a Reminder). Never expose storage internals to users.
+- **Why:** Clean data model + natural UX; the two are decoupled.
+- **Alternatives:** A separate Reminder type (rejected — type proliferation) OR exposing "it's really a task" (rejected — leaks implementation).
+- **Trade-offs:** UI must map metadata to a distinct reminder presentation; small effort.
+- **Status:** Accepted
+
+### PDL-028 — AI restraint: know when NOT to use AI
+- **Decision:** The AI must minimize interaction. Obvious inputs ("Buy milk") become a Task immediately with no questions. Ask a question **only** when it genuinely improves the captured work. **Reducing interaction > maximizing intelligence.**
+- **Why:** Every needless question is friction; restraint is a feature.
+- **Alternatives:** Always confirm/clarify (annoying); always auto-fill silently (risky).
+- **Trade-offs:** Requires good confidence calibration to decide when to stay silent.
 - **Status:** Accepted

@@ -84,6 +84,12 @@ spreadsheets, and work slips through the cracks.
 5. **Immutable history.** Audit and activity records never change retroactively.
 6. **Provider-agnostic AI.** No lock-in to any single AI vendor.
 7. **Security by default.** Tenant isolation enforced in the database (RLS).
+8. **Capture Speed > Data Completeness.** Never block capture for a field; fill in later.
+9. **AI restraint.** The AI knows when *not* to act — obvious input becomes an item
+   immediately; it asks a question only when it genuinely improves the work.
+   Reducing interaction beats maximizing intelligence.
+10. **Progressive disclosure.** Solo users never see enterprise concepts (orgs, roles)
+    until they invite someone or enable team collaboration.
 
 ---
 
@@ -96,9 +102,12 @@ and role-based responsibility.
 
 1. **Accounts & tenancy** — sign up / sign in (Supabase Auth); create and belong
    to one or more **Organizations**; invite members.
-2. **Roles & responsibility** — define roles per org; assign users to roles;
-   every Item carries a **Responsible Role** (mandatory), optional **Current
-   Owner**, optional **Collaborators**.
+2. **Roles & assignment (hybrid)** — define roles per org; assign users to roles
+   over time. An Item may have **multiple Responsible Roles** (one Primary) and/or
+   **multiple Assigned Users** (one Primary), plus optional **Collaborators**.
+   Responsibility = Role; Execution = Assigned User. Assignment is never forced at
+   capture. (Recurring-item schema and attachment support are built into the model
+   from the start; their UIs may follow shortly after MVP.)
 3. **AI Inbox (the centerpiece)** — two jobs: **(a) Capture** — a box where the
    user types naturally; AI classifies the input, asks the **minimum** clarifying
    questions, proposes a structured Item, and the **user confirms** before it is
@@ -243,23 +252,27 @@ Experience:
 
 ## 11. Success Criteria
 
-Product (the real test — "significantly easier than existing tools"):
-- **Capture effort:** median capture completed in **≤ 3 interactions** (type +
-  at most a couple of confirmations), and **≤ 10 seconds**.
-- **Classification quality:** AI assigns the correct Item type on first try in a
-  high proportion of cases (target set during AI eval, e.g. ≥ 85%).
-- **Zero forced filing:** a user can capture without ever choosing project/folder/
-  list/priority/label.
-- **Responsibility continuity:** replacing a user in a role requires **no manual
-  bulk reassignment** of open work.
+Numeric targets are **not frozen now** — we instrument these, then set targets
+after the first working prototype (PDL-026). Two categories:
 
-Engagement:
-- **Activation:** a new user captures their first Item within minutes of signup.
-- **Retention signal:** returning users rely on the Inbox as the default entry point.
+**Product Experience Metrics**
+- Time to first captured item (from signup).
+- Average capture effort (interactions/seconds per capture).
+- Daily Review completion rate.
+- Inbox-Zero frequency (how often the Inbox is cleared).
+- % of captures requiring an AI clarification question (lower is better — AI restraint).
 
-Trust & quality:
-- **No silent irreversible AI actions** (0 tolerance).
-- **No cross-tenant data exposure** (0 tolerance).
+**Business Metrics**
+- Daily Active Users.
+- Weekly retention.
+- Team adoption (invites → active teammates).
+- Reduction in manual task management.
+- Reduction in task-creation time vs prior tools.
+
+**Non-negotiable quality bars (0 tolerance):**
+- No silent, irreversible AI actions.
+- No cross-tenant data exposure.
+- Replacing a user in a role requires **no manual bulk reassignment** of open work.
 
 ---
 
