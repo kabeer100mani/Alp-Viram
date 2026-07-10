@@ -1,0 +1,284 @@
+# Document 1 — Product Requirement Document (PRD)
+
+> Status: **DRAFT — awaiting approval.** Part of the Product Freeze Phase.
+> Owner: Product Architect. Language kept deliberately simple.
+> Related: `PROJECT_PLAN.md`, `PRODUCT_DECISION_LOG.md`.
+
+---
+
+## 1. Vision
+
+Alp-Viram is an AI-first work platform that makes managing work feel effortless.
+
+Most project tools make people spend time *serving the software* — filing tasks
+into folders, lists, and fields before any real work happens. Alp-Viram flips
+this: **you capture in plain language, the software does the organizing.**
+
+> One line: *Capture first. Organize later. Execute naturally.*
+
+It should feel like a capable personal assistant that remembers your context and
+reduces your effort — not another database you have to maintain.
+
+---
+
+## 2. Target Users
+
+Primary (MVP focus):
+
+- **Small & medium businesses (SMBs)** — owners/operators juggling many threads.
+- **Finance teams** — recurring, deadline-driven work (MIS, reconciliations, filings).
+- **Software teams** — tasks, follow-ups, discussions.
+- **ERP implementation & consulting teams** — client-driven, multi-stakeholder work.
+
+Common traits: multiple people, multiple ongoing threads, work that must survive
+staff changes, and low tolerance for heavy process.
+
+Secondary (later): larger enterprises needing deeper permissions and reporting.
+
+---
+
+## 3. Problem Statement
+
+Teams lose time and clarity because existing tools demand structure *up front*:
+
+1. **High capture friction.** To add one task you often pick a space, folder,
+   list, project, priority, assignee, and labels. So quick thoughts never get
+   captured, or land in scattered notes.
+2. **Rigid hierarchies.** Deep nesting (workspace → space → folder → list → task)
+   forces filing decisions and makes finding things a navigation exercise.
+3. **People-based ownership breaks.** Work is assigned to individuals. When
+   someone leaves or switches roles, ownership must be manually reassigned and
+   context is lost.
+4. **AI bolted on.** Where AI exists, it often acts unpredictably or automates
+   without asking, so users don't trust it.
+
+Result: the tool becomes overhead. People fall back to WhatsApp, email, and
+spreadsheets, and work slips through the cracks.
+
+---
+
+## 4. Product Philosophy
+
+- **Reduce effort above all.** Every feature must answer: *does this reduce user
+  effort?* If not, it is challenged before it is built.
+- **Capture first, organize later, execute naturally.** Never force
+  Project/Folder/List/Priority/Label decisions at capture time.
+- **AI assists, the user decides.** AI reduces typing and clicks, organizes,
+  remembers context, and suggests — but never performs irreversible actions
+  without confirmation.
+- **Responsibility is structural, not personal.** Work belongs to a *role*;
+  execution belongs to a *current owner*. People can change without breaking
+  ownership or rewriting history.
+- **Challenge convention.** We do not assume existing PM software has the right
+  workflow. Hierarchy, navigation, lifecycle, notifications, and collaboration
+  are all open to redesign.
+
+---
+
+## 5. Core Principles
+
+1. **Minimum clicks.** Every screen is measured by clicks-to-outcome.
+2. **One front door.** The Inbox is the primary capture surface for everything.
+3. **Flat over deep.** Organize with tags and saved views, not nested folders.
+4. **Confirm, don't autopilot.** AI proposes; the user commits.
+5. **Immutable history.** Audit and activity records never change retroactively.
+6. **Provider-agnostic AI.** No lock-in to any single AI vendor.
+7. **Security by default.** Tenant isolation enforced in the database (RLS).
+
+---
+
+## 6. MVP Scope (what we build first)
+
+The MVP proves the core thesis end to end for a single team, with real AI capture
+and role-based responsibility.
+
+**In scope:**
+
+1. **Accounts & tenancy** — sign up / sign in (Supabase Auth); create and belong
+   to one or more **Organizations**; invite members.
+2. **Roles & responsibility** — define roles per org; assign users to roles;
+   every Item carries a **Responsible Role** (mandatory), optional **Current
+   Owner**, optional **Collaborators**.
+3. **AI Inbox (the centerpiece)** — two jobs: **(a) Capture** — a box where the
+   user types naturally; AI classifies the input, asks the **minimum** clarifying
+   questions, proposes a structured Item, and the **user confirms** before it is
+   saved. **(b) Daily Triage** — a once-a-day guided **Daily Review** that is the
+   only way items leave the Inbox, so it never becomes a dumping ground (see
+   Document 3 for the ritual).
+4. **Items** — a unified entity with a small set of **types**: **Task** (actionable),
+   **Note** (information), **Meeting** (scheduled, distinct lifecycle). "Reminder"
+   and "Follow-up" are Task **metadata**; "Knowledge" is Note metadata; "Question"
+   is routed, not stored (full analysis + final decision in Document 5). Plus
+   title, details, due/remind date, status, tags, responsibility fields, and an
+   optional project.
+5. **Projects (optional)** — a single, optional grouping level. Items can stay in
+   the Inbox unorganized.
+6. **Tags & Saved Views** — flat tags; system + custom saved views (e.g. My Day,
+   Inbox, Overdue, Waiting for Client).
+7. **Execution basics** — change status, reassign role/owner, complete items.
+8. **Activity log** — immutable record of key changes (incl. responsibility
+   transfers).
+9. **Experience** — desktop-first responsive UI, light/dark, fast loads.
+
+**Explicitly NOT in the MVP** (see Future Scope): voice capture, calendar sync,
+notification delivery channels (email/push), reports/analytics, deep real-time
+collaboration, mobile apps, temporary delegation, role inheritance, billing.
+
+---
+
+## 7. Future Scope (deliberately deferred)
+
+- **Voice capture** (architecture must allow plugging it in without redesign).
+- **Notifications & reminders delivery** — email, push, in-app, digests.
+- **Calendar / meeting integration** (Google/Microsoft).
+- **Reports & analytics** — workload, throughput, overdue trends, by role.
+- **Advanced AI** — daily digest, "ask your workspace", proactive suggestions,
+  auto-triage (all confirmation-based).
+- **Deeper collaboration** — comments, mentions, real-time presence.
+- **Files & attachments** at scale (Supabase Storage).
+- **Enterprise permissions** — teams hierarchy, role inheritance, temporary
+  delegation, fine-grained visibility.
+- **Mobile / PWA** (and possible Play Store via TWA).
+- **Billing & plans.**
+
+---
+
+## 8. User Stories (illustrative, MVP)
+
+Capture:
+- *As a finance manager, I type "Prepare July MIS before 8th" and the app creates
+  a Task with the right due date and asks only what it truly needs.*
+- *As an SMB owner, I type "Follow up with TCS" and it becomes a Follow-up I can
+  find later — without me choosing a project or list.*
+
+Organize:
+- *As a consultant, I tag items `#infosys` and open a saved view to see everything
+  for that client across projects.*
+- *As a team lead, I later drag Inbox items into a Project when I'm ready — not
+  before.*
+
+Responsibility:
+- *As an operations lead, I assign a task to the "Finance Manager" role, so if the
+  person changes, the responsibility and open work move automatically.*
+- *As an admin, when Kabir replaces Aman in a role, the operational ownership of
+  his open items transfers, but the historical record still shows Aman did the
+  earlier work.*
+
+Execute:
+- *As a current owner, I see "My Day" and complete items with a single action.*
+- *As a manager, I see what's overdue by role without building a report.*
+
+AI trust:
+- *As any user, the AI shows me what it plans to create and I confirm or edit —
+  it never silently changes my data.*
+
+---
+
+## 9. Functional Requirements (MVP)
+
+Auth & Org:
+- FR-1: Users can sign up, sign in, sign out (Supabase Auth).
+- FR-2: Users can create an Organization and invite members.
+- FR-3: A user can belong to multiple Organizations and switch between them.
+  (MVP uses a *simplified* multi-org model — one active org at a time with a
+  switcher — not simultaneous cross-org views. See Document 5 / PDL.)
+
+Roles & Responsibility:
+- FR-4: Admins can create Roles within an Organization and assign users to them.
+- FR-5: Every Item has exactly one Responsible Role (mandatory).
+- FR-6: An Item may have one Current Owner and multiple Collaborators (optional).
+- FR-7: Replacing the user filling a Role transfers operational ownership of
+  appropriate open items; historical activity is unchanged. (Rules finalized in
+  Document 9.)
+
+Inbox & AI Capture:
+- FR-8: A user can type a natural-language input in the Inbox.
+- FR-9: The AI classifies the input into an Item type and proposes metadata
+  (tags, project, role, due date) with confidence.
+- FR-10: The AI asks only the minimum missing questions.
+- FR-11: The AI presents a structured draft; the Item is created only after the
+  user confirms. AI never auto-creates irreversibly without confirmation.
+- FR-12: Unclassified/loose Items remain in the Inbox until organized.
+- FR-12a: A **Daily Review** presents Inbox + rolled-over items, grouped, for
+  one-tap confirm / snooze / done / backlog, with the goal of Inbox → 0.
+- FR-12b: Items un-triaged beyond an age limit are surfaced ("aging"), never
+  silently left to rot. There is no raw "overdue" state — unfinished items roll
+  over as a re-decision.
+
+Items, Projects, Organization:
+- FR-13: Items support title, type, details, due/remind date, status, tags,
+  responsibility fields, and an optional Project.
+- FR-14: Users can create optional Projects and move Items into them.
+- FR-15: Users can add/remove flat Tags on Items.
+- FR-16: Users can open system and custom Saved Views (filtered lists).
+
+Execution & Audit:
+- FR-17: Users can change status and complete Items.
+- FR-18: All significant changes are written to an immutable Activity Log.
+
+Experience:
+- FR-19: The app supports light/dark themes with persistence.
+- FR-20: The app is responsive (desktop-first) and loads fast.
+
+---
+
+## 10. Non-Functional Requirements
+
+- **Security:** multi-tenant isolation enforced by Postgres RLS; AI keys and
+  privileged operations server-side only (Edge Functions); least-privilege access.
+- **Privacy:** user data sent to AI providers is minimized and clearly scoped;
+  provider is swappable; no training on customer data without consent.
+- **Performance:** first meaningful screen fast; interactions feel instant
+  (optimistic UI + caching). Target: capture-to-saved in a few seconds.
+- **Reliability:** no data loss on capture; graceful handling of AI/provider
+  failures (capture still succeeds even if classification fails).
+- **Accessibility:** keyboard-first, ARIA labels, sufficient contrast in both themes.
+- **Maintainability:** clean architecture; business logic separate from UI and AI;
+  strong typing; tests.
+- **Observability:** structured logging via a single sink; auditability.
+- **Scalability:** data model and indexes designed to grow (validated in Docs 6–7).
+- **Portability:** provider-agnostic AI; storage/auth behind clear boundaries.
+
+---
+
+## 11. Success Criteria
+
+Product (the real test — "significantly easier than existing tools"):
+- **Capture effort:** median capture completed in **≤ 3 interactions** (type +
+  at most a couple of confirmations), and **≤ 10 seconds**.
+- **Classification quality:** AI assigns the correct Item type on first try in a
+  high proportion of cases (target set during AI eval, e.g. ≥ 85%).
+- **Zero forced filing:** a user can capture without ever choosing project/folder/
+  list/priority/label.
+- **Responsibility continuity:** replacing a user in a role requires **no manual
+  bulk reassignment** of open work.
+
+Engagement:
+- **Activation:** a new user captures their first Item within minutes of signup.
+- **Retention signal:** returning users rely on the Inbox as the default entry point.
+
+Trust & quality:
+- **No silent irreversible AI actions** (0 tolerance).
+- **No cross-tenant data exposure** (0 tolerance).
+
+---
+
+## 12. Resolved Decisions & Remaining Assumptions
+
+Resolved during this package (see PDL for full rationale):
+- **Item types →** Task / Note / Meeting as stored types; Reminder, Follow-up,
+  Knowledge as metadata; Question routed, not stored (Document 5).
+- **Reminders →** in-app only for MVP; push/email/WhatsApp are future.
+- **Multi-org →** kept, but MVP uses a simplified "one active org + switcher" model.
+- **Notifications delivery →** future (in-app surfacing only for MVP).
+
+Still to validate (flagged in Architect's Recommendations):
+- Whether **attachments** are needed in MVP (currently future).
+- Whether **Meeting** stays a distinct type in MVP or starts as Task+metadata
+  until calendar sync exists (Document 5 discusses; leaning: keep as a light type).
+- Concrete numeric targets for the Success Criteria.
+
+---
+
+*Part of the Product Design Package (Documents 1–5). Delivered together for a
+single review — see the package index and the Architect's Recommendations.*

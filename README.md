@@ -6,9 +6,10 @@ feel like a personal AI assistant, not task-management software.
 
 Core idea: **Capture first. Organize later. Execute naturally.**
 
-See [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) for the architecture and
-milestone roadmap, and [`docs/PRODUCT_DECISION_LOG.md`](docs/PRODUCT_DECISION_LOG.md)
-for the log of product decisions.
+See the [Product Design Package](docs/product/README.md) for the frozen product
+spec (PRD, decision log, user journey, feature catalogue, information
+architecture), and [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) for the
+architecture and milestone roadmap.
 
 ## Tech stack
 
