@@ -2,10 +2,11 @@ import { useState, type ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
+import { AuthProvider } from '@/modules/auth/AuthProvider'
 
 /**
- * Global providers wrapped around the whole app: server-state (React Query),
- * theming, and routing. Kept in one place so composition order is explicit.
+ * Global providers: server-state (React Query), theming, auth, and routing.
+ * Order matters — Auth wraps the Router so routes can read the session.
  */
 export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -20,7 +21,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <BrowserRouter>{children}</BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>{children}</BrowserRouter>
+        </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   )

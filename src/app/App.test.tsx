@@ -3,10 +3,8 @@ import { render, screen } from '@testing-library/react'
 import { App } from '@/app/App'
 
 describe('App', () => {
-  it('renders the foundation screen through the full provider tree', () => {
+  it('shows the sign-in screen when unauthenticated', async () => {
     render(<App />)
-    expect(
-      screen.getByRole('heading', { name: /welcome to alp-viram/i }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /sign in/i })).toBeInTheDocument()
   })
 })
