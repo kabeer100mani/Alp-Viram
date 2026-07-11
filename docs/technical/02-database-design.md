@@ -58,7 +58,11 @@ strangers').
 - **Future:** billing plan, settings JSONB, branding.
 - **Challenge:** `is_personal`/`team_enabled` drive **progressive disclosure**
   (PDL-022) at the *data* level, so the UI has a real signal — not a guess — for
-  when to reveal org/role concepts (flips when a 2nd member is invited).
+  when to reveal org/role concepts. The flip is enforced by a DB trigger
+  (`sync_org_team_state` on `organization_members`): the 2nd active member flips
+  `is_personal→false`, `team_enabled→true`. Doing it in a trigger (not app code)
+  means the signal can never silently drift. Explicit "enable team collaboration"
+  is a separate admin update to `team_enabled`.
 
 ## 3. `organization_members`
 - **Purpose:** Who belongs to an org and their **platform permission**.
@@ -69,6 +73,12 @@ strangers').
 - **Indexes:** `(organization_id)`, `(user_id)`.
 - **RLS:** members can read the member list of their org; only owner/admin can
   write.
+- **Invite path:** the **primary** way memberships are created is an **Edge
+  Function running with the service role** (R4/TDL-011) — it looks up or provisions
+  the invited auth user, sends the invite email, and inserts the membership (which
+  then fires `sync_org_team_state`). The `is_org_admin` INSERT policy is
+  **defense-in-depth**, not the primary path: even a direct client write can only
+  add members to an org you already administer.
 - **Future:** teams/sub-groups (Doc 8).
 - **Challenge:** we separate **platform permission** (`org_member_role`) from
   **business responsibility** (`roles`) — conflating them is a classic mistake

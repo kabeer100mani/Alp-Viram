@@ -157,3 +157,25 @@ $$;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function handle_new_user();
+
+-- ── Team-state sync ──────────────────────────────────────────────────────
+-- Flip a personal org into team mode when it gains a 2nd active member.
+-- This drives progressive disclosure (TDL-013 / PDL-022) at the DATA layer, so
+-- the signal can never drift regardless of who inserts the membership. Explicit
+-- "enable team collaboration" is a separate admin update to team_enabled.
+create or replace function sync_org_team_state()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if (select count(*) from organization_members
+      where organization_id = new.organization_id and is_active) > 1 then
+    update organizations
+       set is_personal = false, team_enabled = true
+     where id = new.organization_id and is_personal = true;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trg_org_team_state
+  after insert on organization_members
+  for each row execute function sync_org_team_state();
