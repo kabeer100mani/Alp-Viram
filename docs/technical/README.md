@@ -1,8 +1,10 @@
 # Technical Design Package
 
 The data-model specification for Alp-Viram, built from the approved Product Design
-Package. **No migrations, APIs, or application code are written until this data
-model is reviewed and approved.**
+Package.
+
+> ✅ **APPROVED & LOCKED 2026-07-11 — Technical Design Phase COMPLETE.**
+> Implementation has begun (Milestone 1).
 
 | # | Document | Purpose |
 | --- | --- | --- |

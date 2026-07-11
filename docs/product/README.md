@@ -1,8 +1,9 @@
 # Product Design Package
 
-The frozen product specification for Alp-Viram. These documents co-evolve and are
-reviewed together. **No technical architecture (ERD, DB, APIs, auth, UI, M1)
-begins until this package is approved.**
+The product specification for Alp-Viram. These documents co-evolve and are
+reviewed together.
+
+> ✅ **APPROVED & LOCKED 2026-07-11 — Product Design Phase COMPLETE.**
 
 | # | Document | Purpose |
 | --- | --- | --- |

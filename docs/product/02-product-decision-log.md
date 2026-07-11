@@ -1,8 +1,12 @@
 # Document 2 — Product Decision Log (PDL)
 
-> The canonical, living log of major decisions. Supersedes the earlier
+> The canonical log of major decisions. Supersedes the earlier
 > `docs/PRODUCT_DECISION_LOG.md`. Each entry: **Decision · Why · Alternatives
 > Considered · Trade-offs · Status.** Status: Accepted · Proposed · Superseded · Revisit.
+>
+> 🔒 **LOCKED — architecture frozen 2026-07-11. Product Design Phase COMPLETE.**
+> Changing a locked decision now requires an explicit change request (and a new
+> PDL entry recording it).
 
 ---
 

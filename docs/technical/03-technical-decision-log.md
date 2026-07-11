@@ -3,6 +3,10 @@
 > The engineering counterpart to the PDL. Records **technical** decisions:
 > **Decision · Why · Alternatives · Trade-offs · Status.** Status: Accepted ·
 > Proposed · Superseded · Revisit.
+>
+> 🔒 **LOCKED — architecture frozen 2026-07-11. Technical Design Phase COMPLETE.**
+> The four previously-open design questions are resolved (see the freeze note at
+> the end of this file). Changing a locked decision requires a change request.
 
 ---
 
@@ -138,3 +142,18 @@
 - **Alternatives:** Manual dashboard edits.
 - **Trade-offs:** Slightly more process; essential for a real product.
 - **Status:** Accepted (applies once implementation begins — not yet)
+
+---
+
+## Freeze note (2026-07-11) — the four open design questions, resolved
+
+- **TDL-020 — Derived responsible person:** compute via a **SQL function/view** over
+  `role_assignments` + assignment tables (not materialized). Optimize with a
+  materialized view only if profiling demands it. *Status: Accepted.*
+- **TDL-021 — `item_state` vs task `status`:** MVP **folds progress into
+  `item_state`** (`in_progress`); a richer per-project workflow status is Future.
+  *Status: Accepted.*
+- **TDL-022 — Meeting participants:** **reuse `item_collaborators`** (+ assigned
+  users); no separate `meeting_participants` table in MVP. *Status: Accepted.*
+- **TDL-023 — Audit granularity:** **one event per logical user action**, with the
+  `payload` JSONB capturing field diffs. *Status: Accepted.*
