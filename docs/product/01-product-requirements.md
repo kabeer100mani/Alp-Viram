@@ -194,11 +194,17 @@ Auth & Org:
 
 Roles & Responsibility:
 - FR-4: Admins can create Roles within an Organization and assign users to them.
-- FR-5: Every Item has exactly one Responsible Role (mandatory).
-- FR-6: An Item may have one Current Owner and multiple Collaborators (optional).
-- FR-7: Replacing the user filling a Role transfers operational ownership of
-  appropriate open items; historical activity is unchanged. (Rules finalized in
-  Document 9.)
+- FR-5: An Item may have **zero or more Responsible Roles**; one may be marked
+  **Primary**. A role is **never forced at capture** — the AI infers it
+  (high confidence → pre-fill, low confidence → leave blank); it is confirmed at
+  Daily Review or on edit. (PDL-020/021.)
+- FR-6: An Item may have **zero or more Assigned Users** (executors); one may be
+  marked **Primary**. **Collaborators** are optional. Responsibility = Role;
+  Execution = Assigned User.
+- FR-7: Responsibility resolves through **time-bounded role assignments**;
+  replacing the user filling a role transfers operational ownership of appropriate
+  open items with **no manual bulk reassignment**. Historical activity is
+  immutable. (Rules detailed in Document 9.)
 
 Inbox & AI Capture:
 - FR-8: A user can type a natural-language input in the Inbox.

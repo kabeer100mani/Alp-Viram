@@ -16,14 +16,20 @@
   visibility is Future (Permission Model, Doc 8).
 - **Enums:** Postgres `enum` types (extensible) — see ERD §5.
 
-The membership helper (used by every policy):
+Helper functions (all `security definer` to avoid RLS recursion on
+`organization_members`). `is_org_member` is the baseline; `is_org_admin` and
+`shares_org_with` are **additive helpers that implement policies already stated in
+this document** (owner/admin-only writes on roles/memberships/org; profile
+cross-visibility "read profiles that share an org") — they are not a design change:
 ```
-is_org_member(org) := exists(
-  select 1 from organization_members m
-  where m.organization_id = org and m.user_id = auth.uid()
-    and m.is_active
-)
+is_org_member(org)      := membership row for auth.uid() in org, active
+is_org_admin(org)       := is_org_member AND role in ('owner','admin')
+shares_org_with(target) := auth.uid() and target share at least one active org
 ```
+Usage: `is_org_member` gates read/write on tenant data; `is_org_admin` gates
+writes on `roles`, `organization_members`, and org settings; `shares_org_with`
+gates the `profiles` SELECT policy (so you can see teammates' names but not
+strangers').
 
 ---
 
