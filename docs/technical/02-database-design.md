@@ -289,6 +289,25 @@ strangers').
 - Privileged/service operations (AI capture, recurrence generation, invites) run in
   **Edge Functions** with the service role, still writing tenant-scoped rows.
 
+### Security hardening (migration 0003 — from the RLS red-team audit)
+- **Composite FKs** `(child_id, organization_id) → parent(id, organization_id)` on
+  `item_tags`, `item_responsible_roles`, `item_assigned_users`, `item_collaborators`,
+  `meeting_details` — closes **cross-tenant FK smuggling**. Because FK checks bypass
+  RLS, a `WITH CHECK` on `organization_id` alone let a user pin their own org while
+  referencing another org's item; the composite FK forces the child's org to equal
+  the parent's, so the reference can't cross tenants. (Proven by the isolation test.)
+- **`activity_events`:** client INSERT policy **removed** — only the security-definer
+  audit triggers and the service role write events (prevents audit forgery / actor
+  spoofing). Clients read only.
+- **Owner protection:** `is_org_owner()` + `protect_owner_membership` trigger — only
+  an owner may grant `owner`; the last active owner can't be removed/demoted.
+- **`saved_views`:** members can no longer create org-wide `is_system` views.
+- **Accepted/tracked:** activity_events append-only is enforced for clients via RLS
+  but not against the trusted service role; `items` still allow hard-delete within an
+  org (app uses soft-delete `deleted_at`) — revisit in the Permission Model milestone.
+  Deferred tables (recurrence_rules, attachments, delegations, ai_captures) get RLS
+  when they ship.
+
 ## Open design questions (carried to the TDL / your review)
 1. **Derived-owner read model:** compute "who is responsible now" on the fly (view/
    function) vs. materialize it. Leaning: a SQL function/view for correctness first,

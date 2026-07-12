@@ -109,6 +109,34 @@ const { error: bInsErr } = await B.from('items').insert({
 })
 check("B cannot insert into A's org items (RLS blocks)", Boolean(bInsErr))
 
+// ── Hardening checks (migration 0003) ────────────────────────────────
+const bUser = (await B.auth.getUser()).data.user?.id
+const { data: bCreated } = await B.from('items')
+  .insert({ organization_id: bOrgId, title: 'B private item', type: 'task', created_by: bUser })
+  .select()
+  .single()
+const bItemId = bCreated?.id
+check('B can create an item in its own org', Boolean(bItemId))
+
+// A tries to smuggle a child row onto B's item under A's org → composite FK blocks
+const { error: smuggleErr } = await A.from('item_assigned_users').insert({
+  organization_id: aOrgId,
+  item_id: bItemId,
+  user_id: aUser,
+})
+check("A cannot smuggle a child row onto B's item (composite FK blocks)", Boolean(smuggleErr))
+
+// A tries to forge an audit event directly → client INSERT policy removed
+const someAItem = aItems?.[0]?.id
+const { error: forgeErr } = await A.from('activity_events').insert({
+  organization_id: aOrgId,
+  item_id: someAItem,
+  actor_id: bUser,
+  event_type: 'completed',
+  payload: {},
+})
+check('A cannot forge activity_events directly (audit forgery blocked)', Boolean(forgeErr))
+
 console.log(
   failures === 0
     ? '\n✅ ALL ISOLATION CHECKS PASSED'
