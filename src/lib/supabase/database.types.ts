@@ -42,6 +42,47 @@ export interface Database {
           recorded_at?: string
         }
       }
+      ai_captures: {
+        Row: {
+          id: string
+          organization_id: string
+          user_id: string | null
+          raw_input: string
+          parsed: Json
+          provider: string | null
+          model: string | null
+          confidence: number | null
+          required_clarification: boolean
+          resulting_item_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          user_id?: string | null
+          raw_input: string
+          parsed?: Json
+          provider?: string | null
+          model?: string | null
+          confidence?: number | null
+          required_clarification?: boolean
+          resulting_item_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          user_id?: string | null
+          raw_input?: string
+          parsed?: Json
+          provider?: string | null
+          model?: string | null
+          confidence?: number | null
+          required_clarification?: boolean
+          resulting_item_id?: string | null
+          created_at?: string
+        }
+      }
       item_assigned_users: {
         Row: {
           id: string
