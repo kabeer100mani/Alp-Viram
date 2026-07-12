@@ -88,6 +88,27 @@ const { data: updData, error: updErr } = await A.from('organizations')
   .select()
 check("A cannot update B's org", (updData?.length ?? 0) === 0 || Boolean(updErr))
 
+// ── Items isolation (M2 core domain) ─────────────────────────────────
+const aUser = (await A.auth.getUser()).data.user?.id
+const { data: created, error: cErr } = await A.from('items')
+  .insert({ organization_id: aOrgId, title: 'A private item', type: 'task', created_by: aUser })
+  .select()
+  .single()
+check('A can create an item in its own org', Boolean(created) && !cErr)
+
+const { data: aItems } = await A.from('items').select('id')
+check('A sees its own item(s)', (aItems?.length ?? 0) >= 1)
+
+const { data: bSeesAItems } = await B.from('items').select('id').eq('organization_id', aOrgId)
+check("B cannot read A's items", (bSeesAItems?.length ?? 0) === 0)
+
+const { error: bInsErr } = await B.from('items').insert({
+  organization_id: aOrgId,
+  title: 'hack',
+  type: 'task',
+})
+check("B cannot insert into A's org items (RLS blocks)", Boolean(bInsErr))
+
 console.log(
   failures === 0
     ? '\n✅ ALL ISOLATION CHECKS PASSED'

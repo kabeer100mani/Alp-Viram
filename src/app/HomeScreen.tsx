@@ -3,6 +3,8 @@ import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/modules/auth/auth-context'
 import { useActiveOrg } from '@/modules/organizations/use-active-org'
+import { CaptureBox } from '@/modules/items/components/CaptureBox'
+import { ItemList } from '@/modules/items/components/ItemList'
 
 /** Authenticated landing screen for Milestone 1 — proves identity + tenancy. */
 export function HomeScreen() {
@@ -12,6 +14,7 @@ export function HomeScreen() {
     (user?.user_metadata?.display_name as string | undefined) ??
     user?.email?.split('@')[0] ??
     'there'
+  const userId = user?.id
 
   return (
     <motion.div
@@ -53,8 +56,16 @@ export function HomeScreen() {
         </dl>
       </div>
 
+      {org && userId && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold">Capture</h2>
+          <CaptureBox organizationId={org.id} userId={userId} />
+          <ItemList organizationId={org.id} />
+        </section>
+      )}
+
       <p className="text-sm text-muted-foreground">
-        Next milestone: the AI Inbox and your first captured item.
+        Next milestone: the AI Inbox — natural-language capture with classification.
       </p>
     </motion.div>
   )
