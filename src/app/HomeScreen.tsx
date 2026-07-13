@@ -3,7 +3,7 @@ import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/modules/auth/auth-context'
 import { useActiveOrg } from '@/modules/organizations/use-active-org'
-import { CaptureBox } from '@/modules/items/components/CaptureBox'
+import { AiCaptureBox } from '@/modules/inbox/components/AiCaptureBox'
 import { ItemList } from '@/modules/items/components/ItemList'
 
 /** Authenticated landing screen for Milestone 1 — proves identity + tenancy. */
@@ -58,8 +58,8 @@ export function HomeScreen() {
 
       {org && userId && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold">Capture</h2>
-          <CaptureBox organizationId={org.id} userId={userId} />
+          <h2 className="text-sm font-semibold">AI Inbox</h2>
+          <AiCaptureBox organizationId={org.id} userId={userId} />
           <ItemList organizationId={org.id} />
         </section>
       )}

@@ -75,7 +75,7 @@ Deno.serve(async (req: Request) => {
       return json({ error: 'Missing "input" text.' }, 400)
     }
 
-    const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
+    const apiKey = Deno.env.get('ANTHROPIC_API_KEY')?.trim()
     if (!apiKey) return json({ error: 'AI provider is not configured.' }, 500)
 
     const client = new Anthropic({ apiKey })
