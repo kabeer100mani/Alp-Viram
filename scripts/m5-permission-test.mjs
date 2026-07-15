@@ -147,8 +147,59 @@ if (events?.length) {
   const { data: evStill } = await A.from('activity_events').select('id').eq('id', events[0].id)
   check('client CANNOT delete activity_events', (evStill?.length ?? 0) === 1)
 }
-console.log('   (note: the service-role path is guarded by the trigger and is not exercised here —')
-console.log('    no service key is available locally.)')
+console.log('\n── TD-002: activity_events append-only (SERVICE ROLE path) ──')
+// The service role holds BYPASSRLS, so RLS does not constrain it at all — this is
+// the exact hole TD-002 described. Only the trigger can stop it.
+const SERVICE_KEY = env.SUPABASE_SERVICE_ROLE_KEY
+if (!SERVICE_KEY) {
+  console.log('   ⚠️  SKIPPED — SUPABASE_SERVICE_ROLE_KEY not in .env (trigger path unverified)')
+} else {
+  const S = createClient(URL, SERVICE_KEY, { auth: { persistSession: false } })
+
+  const { data: sEvents } = await S.from('activity_events')
+    .select('id')
+    .eq('organization_id', org)
+    .limit(1)
+  // Positive control: proves the key really does bypass RLS, so a blocked write
+  // below is the TRIGGER doing the work — not RLS.
+  //
+  // This control is load-bearing: with a non-service key every check below would
+  // "pass" for the wrong reason (RLS silently blocks → 0 rows / no error), which
+  // is a false negative for a security test. So we abort rather than report it.
+  const controlOk = (sEvents?.length ?? 0) >= 1
+  check('service role bypasses RLS and can read activity_events (control)', controlOk)
+
+  if (!controlOk) {
+    console.log('   ⚠️  ABORTING the service-role checks: this key does not bypass RLS, so it')
+    console.log('       is not a service_role key. Any result below would be meaningless.')
+    console.log('       Get the key marked `service_role` (Dashboard → Settings → API).')
+  } else {
+    const evId = sEvents[0].id
+    const { error: sUpd } = await S.from('activity_events')
+      .update({ event_type: 'completed' })
+      .eq('id', evId)
+      .select()
+    check('service role CANNOT update activity_events (trigger beats BYPASSRLS)', Boolean(sUpd))
+
+    const { error: sDel } = await S.from('activity_events').delete().eq('id', evId).select()
+    check('service role CANNOT delete activity_events (trigger beats BYPASSRLS)', Boolean(sDel))
+
+    const { data: survived } = await S.from('activity_events').select('id').eq('id', evId)
+    check('the audit row actually survived both attempts', (survived?.length ?? 0) === 1)
+
+    // MUST BE LAST — destroys the test org. Verifies the trigger's cascade
+    // allowance: deleting an organization must still cascade its audit rows away,
+    // otherwise org deletion would be permanently blocked by our own guard.
+    // Proven by reading the row back as the service role (which bypasses RLS),
+    // so "gone" means gone — not merely hidden.
+    const { error: orgDelErr } = await S.from('organizations').delete().eq('id', org)
+    check('organization delete still cascades (guard does not block it)', !orgDelErr)
+    const { data: orgGone } = await S.from('organizations').select('id').eq('id', org)
+    check('the organization is actually gone', (orgGone?.length ?? 0) === 0)
+    const { data: leftover } = await S.from('activity_events').select('id').eq('organization_id', org)
+    check('activity_events cascaded away with the organization', (leftover?.length ?? 0) === 0)
+  }
+}
 
 console.log(
   failures === 0
