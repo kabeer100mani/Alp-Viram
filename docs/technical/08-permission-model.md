@@ -101,6 +101,20 @@ Clients were already blocked (select-only; the client INSERT policy was removed 
 **Fix: a `BEFORE UPDATE OR DELETE` trigger.** Triggers run for *every* writer,
 including `BYPASSRLS` roles and the table owner.
 
+**Verified against the real service role** (2026-07-15), using an `sb_secret_` key
+and a positive control that proves the key genuinely bypasses RLS — so the denials
+below are the trigger working, not RLS quietly filtering:
+
+```
+✅ service role bypasses RLS and can read activity_events (control)
+✅ service role CANNOT update activity_events (trigger beats BYPASSRLS)
+✅ service role CANNOT delete activity_events (trigger beats BYPASSRLS)
+✅ the audit row actually survived both attempts
+```
+
+*(Supabase's new-style `sb_secret_` keys replace the old `service_role` JWT and
+needed no code change — they are sent as the same `apikey`/bearer.)*
+
 **`FORCE ROW LEVEL SECURITY` was deliberately not used**, despite being the
 originally suggested fix. Two reasons:
 - It does **not** constrain `BYPASSRLS` roles — so it would not have closed this hole.
@@ -110,17 +124,27 @@ originally suggested fix. Two reasons:
 Org deletion must still cascade. When an organization is removed, Postgres deletes
 its `activity_events`; the parent row is already gone at that point, which is how
 the trigger distinguishes a legitimate cascade from erasing history under a live org.
+This allowance is verified directly (an organization with no members deletes cleanly).
+End-to-end org deletion is nevertheless still blocked further down the stack — see
+**TD-007** below.
 
 ## 6. Verification
 
-`node scripts/m5-permission-test.mjs` — 21 checks, all passing. It uses **positive
-controls** (the same code path returns "allowed" for legitimate principals), so a
-denial result cannot be a silent error masquerading as a pass.
+`node scripts/m5-permission-test.mjs` — **22 passing, 3 known failures (TD-007)**.
+The run is deliberately **not** reported as green.
+
+It leans on **positive controls**: the same code path returns "allowed" for a
+legitimate principal, so a denial cannot be a silent error masquerading as a pass.
+This is load-bearing — it caught a wrong key being supplied, under which every
+service-role check would have "passed" for entirely the wrong reason (RLS silently
+blocking → 0 rows, no error). A security test that passes because the credential is
+too weak is worse than no test.
 
 Covered: baseline denial · self-assignment escalation · role-attachment escalation ·
 `created_by` laundering · assign→write→unassign→deny · **derived role access** ·
 **time-bounded revocation** · hard-delete denial (items/roles/role_assignments) ·
-soft-delete success · audit still logging · client cannot mutate `activity_events`.
+soft-delete success · audit still logging · client cannot mutate `activity_events` ·
+**service role cannot mutate `activity_events`**.
 
 Regression: `m1-isolation-test.mjs` (14 checks) still passes.
 
@@ -128,14 +152,24 @@ Regression: `m1-isolation-test.mjs` (14 checks) still passes.
 
 | Gap | Status |
 | --- | --- |
-| **The service-role path of the TD-002 trigger is not exercised by a test** — no service key is available locally. The trigger is the control; it is unverified from the client surface. | Open |
+| **Organization deletion is incomplete** — `0006` fixed the last-owner block; the audit triggers and the `item_id SET NULL` cascade still block teardown. No security impact (a destructive op is refused); blocks offboarding/erasure. | **Open — TD-007**, 3 known-failure checks |
 | Fine-grained item **read** visibility | Deferred by design |
 | `delegations` (PDL-017) | Not built (TD-004) |
 | Point-in-time responsibility read model | Not built |
 | Role hierarchy, teams | Future |
 
-## 8. Related
+## 8. A note on how this was found
+
+`0005`'s guard has to allow an FK cascade while blocking everything else. Testing
+that allowance end-to-end surfaced **two unrelated pre-existing bugs** in the org
+teardown path (`0003`'s owner protection, and `0002`'s audit triggers) — neither
+caused by this milestone, neither previously known. The first is fixed (`0006`);
+the rest is TD-007. Worth remembering: the cascade allowance was the one branch
+that looked "obviously fine" and was the only one hiding real defects.
+
+## 9. Related
 
 - The model this enforces: [Document 9 — Responsibility Model](09-responsibility-model.md)
 - Decisions: PDL-013, PDL-017, PDL-018, PDL-021, PDL-022 · TDL-002, TDL-004, TDL-009, TDL-011, TDL-012, TDL-017
-- Debt closed: TD-001, TD-002 ([register](TECHNICAL_DEBT.md))
+- Debt closed: TD-001, TD-002 · Debt opened: TD-007 ([register](TECHNICAL_DEBT.md))
+- Migrations: `0005_permission_hardening.sql`, `0006_fix_org_delete_cascade.sql`

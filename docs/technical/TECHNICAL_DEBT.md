@@ -25,8 +25,10 @@ Each entry: **what · why deferred · impact · fix when · source.**
   **deliberately not applied** — it does not constrain `BYPASSRLS` roles (so it would
   not close this hole) and, with no INSERT policy, would risk blocking the SECURITY
   DEFINER audit triggers. Rationale in [Doc 8 §5](08-permission-model.md).
-- **⚠️ Residual gap:** the service-role path is **not exercised by a test** (no service
-  key available locally). The client surface is verified; the trigger itself is not.
+- **Verified (2026-07-15):** `scripts/m5-permission-test.mjs` now exercises the real
+  service-role path with an `sb_secret_` key. With a positive control proving the key
+  genuinely bypasses RLS, the service role **cannot** UPDATE or DELETE `activity_events`
+  and the audit row survives both attempts. The earlier residual gap is closed.
 - **Source:** RLS red-team audit, finding #3.
 
 ## TD-003 — Supabase client is untyped
@@ -65,6 +67,39 @@ Each entry: **what · why deferred · impact · fix when · source.**
 - **Fix when:** when confidence is needed for behaviour — calibrate/derive it
   server-side, or stop displaying it.
 - **Source:** M3 real-provider batch run (Gemini flash-lite).
+
+## TD-007 — organization deletion is incomplete (layers 2 & 3)
+- **What:** deleting an organization still fails. `0006` fixed **layer 1** (the
+  owner-protection trigger blocking its own `organization_members` cascade — "cannot
+  remove the last owner"). Two pre-existing layers remain:
+  - **Layer 2:** the AFTER DELETE audit triggers on `item_responsible_roles` /
+    `item_assigned_users` (`trg_log_irr`, `trg_log_iau`, from `0002`) insert
+    `..._removed` events referencing the organization that has **already** been
+    deleted → violates `activity_events_organization_id_fkey`. *(Current blocker.)*
+  - **Layer 3:** behind it, `activity_events.item_id ON DELETE SET NULL` is an
+    **UPDATE**, which the `0005` append-only guard refuses.
+- **Why deferred:** there is **no user-facing organization delete**, so this is
+  latent. Deliberate decision (Palash, 2026-07-15): stop at `0006` rather than keep
+  rewriting production triggers in one sitting.
+- **Impact:** organizations cannot be deleted at all. Blocks tenant offboarding and
+  GDPR-style erasure when those are needed. **No security impact** — nothing is
+  exposed; a destructive operation is refused.
+- **Fix when:** before tenant offboarding / data-erasure is required.
+- **Proposed fix (drafted and reviewed, not applied):** apply the same cascade test
+  already proven in `0005`/`0006` — inside the transaction the parent row is already
+  gone, which distinguishes teardown from normal operation:
+  - in `log_responsible_role_change()` / `log_assigned_user_change()`: on `DELETE`,
+    if the organization no longer exists, skip logging (the audit rows are cascading
+    away in the same statement, so the event has no reader);
+  - in `forbid_activity_event_mutation()`: allow the mutation when the organization
+    no longer exists, permitting the teardown `SET NULL`. Live-org behaviour must stay
+    unchanged — `activity_events` remains append-only, and the service role must still
+    be unable to hard-delete an item.
+- **Verified state:** `scripts/m5-permission-test.mjs` marks the 3 org-teardown checks
+  as **known failures** (reported loudly; not counted as regressions). The `0005`
+  guard's own cascade allowance is **not** in doubt — verified directly against an
+  organization with no members.
+- **Source:** found by `m5-permission-test.mjs` while verifying the `0005` audit guard.
 
 ## TD-004 — deferred tables need RLS + composite FKs when they ship
 - **What:** `recurrence_rules`, `attachments`, `delegations` are designed but not yet
