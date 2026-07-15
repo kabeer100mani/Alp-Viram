@@ -1,0 +1,6 @@
+project_id = "jdngjwspqxhpkmqhcekc"
+
+# Edge Functions require a valid Supabase user JWT (verify_jwt = true). This is
+# the intended posture for the AI Inbox classifier — it is NOT an open endpoint.
+[functions.classify-capture]
+verify_jwt = true
