@@ -18,7 +18,7 @@ real team.
 | **Simplified multi-org switcher** (one active org at a time) | Target users work across orgs; simplified to avoid MVP complexity (PDL-009). |
 | **Roles + time-bounded Role-Assignments** | The heart of the responsibility differentiator; role→person indirection (PDL-015). |
 | **Unified Item** — types **Task / Note / Meeting** | The single unit of work; few clear types = reliable AI (PDL-007). |
-| **Responsibility fields** — Responsible Role (mandatory), Current Owner, Collaborators | The differentiator, on every item. |
+| **Responsibility fields** — Responsible Roles (**optional; 0 is valid**), Assigned Users, Collaborators | The differentiator, on every item. Capture never forces a role (PDL-021); responsibility = role, execution = assigned user (PDL-020). |
 | **AI Inbox — Capture** (classify + minimal questions + user confirm) | The centerpiece; frictionless capture (PDL-005, PDL-012). |
 | **AI Inbox — Daily Review (triage)** | Stops the Inbox becoming a dumping ground (PDL-016) — non-negotiable. |
 | **Optional Projects** | Lazy grouping; created only when wanted (PDL-008). |
