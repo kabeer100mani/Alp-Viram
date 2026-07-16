@@ -102,6 +102,28 @@ try {
   check('invitee (non-admin) sees NO invite form', !(await ip.getByRole('button', { name: /create invite link/i }).count()))
   await ap.screenshot({ path: `${OUT}/4-admin-people.png` })
 
+  // ── Gate B: roles + assignment + handover ─────────────────────────────────
+  const roleName = `Finance ${rand()}`
+  await ap.getByLabel(/new role name/i).fill(roleName)
+  await ap.getByRole('button', { name: /add role/i }).click()
+  const roleRow = ap.locator('li', { hasText: roleName })
+  await roleRow.waitFor({ timeout: 10000 })
+  check('admin can create a role', await roleRow.isVisible())
+  check('a new role shows "UNFILLED — needs owner"', /unfilled/i.test(await roleRow.innerText()))
+
+  // Assign the invitee to the role.
+  await roleRow.getByLabel(new RegExp(`assign someone to ${roleName}`, 'i')).selectOption({ index: 1 })
+  await roleRow.getByRole('button', { name: /^assign$/i }).click()
+  await ap.waitForTimeout(1500)
+  check('after assigning, the role is no longer unfilled', !/unfilled/i.test(await roleRow.innerText()))
+  await ap.screenshot({ path: `${OUT}/5-roles.png` })
+
+  // The non-admin sees roles read-only: no Add-role, no Assign controls.
+  await ip.getByRole('button', { name: /people & roles/i }).click()
+  await ip.getByText(/durable responsibilities/i).waitFor({ timeout: 10000 })
+  check('member sees roles read-only (no "Add role")', !(await ip.getByRole('button', { name: /add role/i }).count()))
+  check('member cannot assign (no Assign control)', !(await ip.getByRole('button', { name: /^assign$/i }).count()))
+
   if (adminErrors.length || inviteeErrors.length) {
     console.log('\n⚠️  page errors:')
     for (const e of [...new Set([...adminErrors, ...inviteeErrors])].slice(0, 6)) console.log('   - ' + e.slice(0, 160))

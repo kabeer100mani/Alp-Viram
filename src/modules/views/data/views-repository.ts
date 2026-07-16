@@ -41,6 +41,60 @@ export async function listViews(organizationId: string): Promise<ResolvedView[]>
   })
 }
 
+export interface ItemGroup {
+  key: string
+  label: string
+  items: Item[]
+}
+
+/**
+ * The By Role view: active items grouped by their **primary responsible role**
+ * (Doc 5). Items with no responsible role fall under "Unassigned" — which is
+ * most of them until responsibility can be set on the card (Gate C); the grouping
+ * is the mechanism, and it populates as roles get attached.
+ *
+ * Responsibility is stored as a role, not a person, so we group by role name and
+ * leave "who holds it now" to the derivation shown elsewhere.
+ */
+export async function runByRole(organizationId: string): Promise<ItemGroup[]> {
+  const client = getSupabaseClient()
+  const [{ data: items, error: itemsErr }, { data: irr, error: irrErr }] = await Promise.all([
+    client
+      .from('items')
+      .select('*')
+      .eq('organization_id', organizationId)
+      .is('deleted_at', null)
+      .neq('state', 'done')
+      .order('created_at', { ascending: false }),
+    client
+      .from('item_responsible_roles')
+      .select('item_id, is_primary, roles(name)')
+      .eq('organization_id', organizationId),
+  ])
+  if (itemsErr) throw itemsErr
+  if (irrErr) throw irrErr
+
+  // item_id -> primary role name (fall back to any responsible role).
+  const roleFor = new Map<string, string>()
+  for (const row of irr ?? []) {
+    const r = row as { item_id: string; is_primary: boolean; roles: { name: string } | { name: string }[] | null }
+    const rel = Array.isArray(r.roles) ? r.roles[0] : r.roles
+    if (!rel) continue
+    if (r.is_primary || !roleFor.has(r.item_id)) roleFor.set(r.item_id, rel.name)
+  }
+
+  const groups = new Map<string, Item[]>()
+  for (const item of (items ?? []) as Item[]) {
+    const label = roleFor.get(item.id) ?? 'Unassigned'
+    groups.set(label, [...(groups.get(label) ?? []), item])
+  }
+
+  // Named roles first (alphabetical), Unassigned last.
+  return [...groups.entries()]
+    .sort(([a], [b]) => (a === 'Unassigned' ? 1 : b === 'Unassigned' ? -1 : a.localeCompare(b)))
+    .map(([label, items]) => ({ key: label, label, items }))
+}
+
 /** Start of the user's local day, as an absolute instant (TD-005 discipline). */
 function startOfLocalDay(offsetDays = 0): string {
   const d = new Date()

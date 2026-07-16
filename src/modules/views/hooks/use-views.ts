@@ -1,5 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
-import { listViews, runView, type ResolvedView } from '@/modules/views/data/views-repository'
+import {
+  listViews,
+  runByRole,
+  runView,
+  type ItemGroup,
+  type ResolvedView,
+} from '@/modules/views/data/views-repository'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import type { ViewFilter } from '@/modules/views/view-filter'
 import type { Item } from '@/modules/items/types'
@@ -17,6 +23,15 @@ export function useViewItems(organizationId: string | undefined, filter: ViewFil
     queryKey: ['items', organizationId, filter],
     enabled: Boolean(organizationId) && Boolean(filter),
     queryFn: () => runView(organizationId as string, filter as ViewFilter),
+  })
+}
+
+/** The By Role view: items grouped by their primary responsible role. */
+export function useByRoleGroups(organizationId: string | undefined, enabled: boolean) {
+  return useQuery<ItemGroup[]>({
+    queryKey: ['items', organizationId, 'by-role'],
+    enabled: Boolean(organizationId) && enabled,
+    queryFn: () => runByRole(organizationId as string),
   })
 }
 

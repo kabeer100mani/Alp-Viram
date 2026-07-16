@@ -8,6 +8,7 @@ import {
   usePendingInvitations,
   useRevokeInvitation,
 } from '@/modules/people/hooks/use-people'
+import { RolesSection } from '@/modules/people/components/RolesSection'
 
 /**
  * People & Roles surface (Gate A: People). Admin-only management; hidden entirely
@@ -19,7 +20,15 @@ import {
  * Invites are link-based — no email is sent (PDL-011 defers delivery). The admin
  * copies the link and shares it however they like.
  */
-export function PeopleScreen({ organizationId, isAdmin }: { organizationId: string; isAdmin: boolean }) {
+export function PeopleScreen({
+  organizationId,
+  isAdmin,
+  currentUserId,
+}: {
+  organizationId: string
+  isAdmin: boolean
+  currentUserId: string
+}) {
   const { data: members, isLoading } = useMembers(organizationId)
   const { data: pending } = usePendingInvitations(organizationId, isAdmin)
   const createInvite = useCreateInvitation(organizationId)
@@ -143,6 +152,14 @@ export function PeopleScreen({ organizationId, isAdmin }: { organizationId: stri
           )}
         </div>
       )}
+
+      {/* ── Roles (Gate B) ──────────────────────────────────────────────── */}
+      <RolesSection
+        organizationId={organizationId}
+        members={members ?? []}
+        isAdmin={isAdmin}
+        currentUserId={currentUserId}
+      />
     </section>
   )
 }

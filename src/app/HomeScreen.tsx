@@ -8,7 +8,7 @@ import { useActiveOrg } from '@/modules/organizations/use-active-org'
 import { AiCaptureBox } from '@/modules/inbox/components/AiCaptureBox'
 import { ItemList } from '@/modules/items/components/ItemList'
 import { ViewRail } from '@/modules/views/components/ViewRail'
-import { useViewItems, useViews } from '@/modules/views/hooks/use-views'
+import { useByRoleGroups, useViewItems, useViews } from '@/modules/views/hooks/use-views'
 import { DailyReview } from '@/modules/review/components/DailyReview'
 import { useSearch } from '@/modules/search/use-search'
 import { PeopleScreen } from '@/modules/people/components/PeopleScreen'
@@ -36,7 +36,12 @@ export function HomeScreen() {
     () => views?.find((v) => v.id === activeId) ?? views?.find((v) => v.name === 'Inbox') ?? views?.[0],
     [views, activeId],
   )
-  const { data: items, isLoading: itemsLoading } = useViewItems(org?.id, active?.filter)
+  const groupedByRole = active?.filter.groupBy === 'role'
+  const { data: items, isLoading: itemsLoading } = useViewItems(
+    org?.id,
+    groupedByRole ? undefined : active?.filter,
+  )
+  const { data: roleGroups, isLoading: groupsLoading } = useByRoleGroups(org?.id, Boolean(groupedByRole))
 
   const inboxView = views?.find((v) => v.name === 'Inbox')
   const { data: inboxItems } = useViewItems(org?.id, inboxView?.filter)
@@ -111,7 +116,7 @@ export function HomeScreen() {
                 />
                 <section className="min-w-0 flex-1 space-y-3">
                   {pane === 'people' ? (
-                    <PeopleScreen organizationId={org.id} isAdmin={isAdmin} />
+                    <PeopleScreen organizationId={org.id} isAdmin={isAdmin} currentUserId={user.id} />
                   ) : pane === 'search' ? (
                     <>
                       <h2 className="text-sm font-semibold">Search</h2>
@@ -140,15 +145,34 @@ export function HomeScreen() {
                           This view’s filter could not be read, so it is showing everything active.
                         </p>
                       )}
-                      <ItemList
-                        items={items}
-                        isLoading={itemsLoading}
-                        emptyMessage={
-                          active?.name === 'Inbox'
-                            ? 'Inbox zero — capture something above.'
-                            : 'Nothing in this view.'
-                        }
-                      />
+                      {groupedByRole ? (
+                        groupsLoading ? (
+                          <p className="text-sm text-muted-foreground">Loading…</p>
+                        ) : roleGroups && roleGroups.length > 0 ? (
+                          <div className="space-y-4">
+                            {roleGroups.map((g) => (
+                              <div key={g.key} className="space-y-2">
+                                <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                                  {g.label} · {g.items.length}
+                                </h3>
+                                <ItemList items={g.items} />
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Nothing to show.</p>
+                        )
+                      ) : (
+                        <ItemList
+                          items={items}
+                          isLoading={itemsLoading}
+                          emptyMessage={
+                            active?.name === 'Inbox'
+                              ? 'Inbox zero — capture something above.'
+                              : 'Nothing in this view.'
+                          }
+                        />
+                      )}
                     </>
                   )}
                 </section>
