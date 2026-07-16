@@ -1,21 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  archiveFolder,
-  archiveList,
   createFolder,
   createList,
-  getListTree,
+  createProject,
+  getProjectTree,
   listAllLists,
   listItemsInList,
-  renameFolder,
-  renameList,
 } from '@/modules/lists/data/lists-repository'
 
-export function useListTree(organizationId: string | undefined) {
+export function useProjectTree(organizationId: string | undefined) {
   return useQuery({
-    queryKey: ['list-tree', organizationId],
+    queryKey: ['project-tree', organizationId],
     enabled: Boolean(organizationId),
-    queryFn: () => getListTree(organizationId as string),
+    queryFn: () => getProjectTree(organizationId as string),
   })
 }
 
@@ -40,37 +37,28 @@ function useTreeMutation<TArgs>(organizationId: string | undefined, fn: (args: T
   return useMutation({
     mutationFn: fn,
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['list-tree', organizationId] })
+      void queryClient.invalidateQueries({ queryKey: ['project-tree', organizationId] })
       void queryClient.invalidateQueries({ queryKey: ['all-lists', organizationId] })
-      void queryClient.invalidateQueries({ queryKey: ['items'] })
     },
   })
 }
 
-export function useCreateFolder(organizationId: string | undefined, createdBy: string) {
+export function useCreateProject(organizationId: string | undefined, createdBy: string) {
   return useTreeMutation(organizationId, ({ name }: { name: string }) =>
-    createFolder(organizationId as string, name, createdBy),
+    createProject(organizationId as string, name, createdBy),
+  )
+}
+
+export function useCreateFolder(organizationId: string | undefined, createdBy: string) {
+  return useTreeMutation(organizationId, ({ projectId, name }: { projectId: string; name: string }) =>
+    createFolder(organizationId as string, projectId, name, createdBy),
   )
 }
 
 export function useCreateList(organizationId: string | undefined, createdBy: string) {
-  return useTreeMutation(organizationId, ({ name, folderId }: { name: string; folderId: string | null }) =>
-    createList(organizationId as string, name, createdBy, folderId),
+  return useTreeMutation(
+    organizationId,
+    ({ projectId, name, folderId }: { projectId: string; name: string; folderId: string | null }) =>
+      createList(organizationId as string, projectId, name, createdBy, folderId),
   )
-}
-
-export function useRenameFolder(organizationId: string | undefined) {
-  return useTreeMutation(organizationId, ({ id, name }: { id: string; name: string }) => renameFolder(id, name))
-}
-
-export function useRenameList(organizationId: string | undefined) {
-  return useTreeMutation(organizationId, ({ id, name }: { id: string; name: string }) => renameList(id, name))
-}
-
-export function useArchiveFolder(organizationId: string | undefined) {
-  return useTreeMutation(organizationId, ({ id }: { id: string }) => archiveFolder(id))
-}
-
-export function useArchiveList(organizationId: string | undefined) {
-  return useTreeMutation(organizationId, ({ id }: { id: string }) => archiveList(id))
 }

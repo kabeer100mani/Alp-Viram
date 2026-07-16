@@ -27,15 +27,20 @@ export function ChecklistPanel({
   currentUserId,
   canWrite,
   onError,
+  embedded = false,
 }: {
   item: Item
   organizationId: string
   currentUserId: string
   canWrite: boolean
   onError: (m: string) => void
+  /** When the parent is already an expanded surface (a table row), show the
+   *  Checklist AND Definition of Done directly — no second collapse burying the DoD. */
+  embedded?: boolean
 }) {
   const [open, setOpen] = useState(false)
-  const { data: checklist } = useChecklist(item.id, open)
+  const shown = embedded || open
+  const { data: checklist } = useChecklist(item.id, shown)
   const add = useAddChecklistItem(organizationId, item.id, currentUserId)
   const setDone = useSetChecklistDone(item.id)
   const remove = useRemoveChecklistItem(item.id)
@@ -62,20 +67,22 @@ export function ChecklistPanel({
 
   return (
     <div className="pl-[3.25rem] text-xs">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-label={`Checklist and definition of done for ${item.title}`}
-        className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
-      >
-        {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        <span>{summary}</span>
-        {hasDod && total > 0 && <span className="text-muted-foreground">· DoD set</span>}
-      </button>
+      {!embedded && (
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label={`Checklist and definition of done for ${item.title}`}
+          className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
+        >
+          {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          <span>{summary}</span>
+          {hasDod && total > 0 && <span className="text-muted-foreground">· DoD set</span>}
+        </button>
+      )}
 
-      {open && (
-        <div className="mt-2 space-y-3 rounded-md border border-border bg-background p-3">
+      {shown && (
+        <div className={embedded ? 'space-y-3' : 'mt-2 space-y-3 rounded-md border border-border bg-background p-3'}>
           {/* Checklist */}
           <div className="space-y-1">
             <p className="font-medium">Checklist</p>

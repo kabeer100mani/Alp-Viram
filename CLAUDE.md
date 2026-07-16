@@ -67,6 +67,12 @@ Pipeline and provider-agnosticism proven; **explicitly NOT Anthropic-verified**.
 - **TD-008 fixed** (was a real cross-tenant FK gap on `items.project_id`; migration `0011` composite FK). **Audit-trigger regression** from the rename fixed in `0013` (`log_item_change` still named `project_id`, breaking every item write — caught by the live red-team, invisible to unit tests).
 - Migrations `0010`–`0013`. Tests: `scripts/m6-structure-test.mjs` (15/15 live tenant-safety), `scripts/m6-structure-walkthrough.mjs` (12/12 browser). See [impact report](docs/impact-hierarchy-reversal.md).
 
+## Container hierarchy — Project → Folder → List (PDL-035, 2026-07-16)
+- **Full ClickUp-style nesting:** `Organization (= Workspace) → Project → Folder → List → Item`. **Corrects PDL-032**, which had collapsed Project into List on my (wrong) recommendation. Migration `0015` adds `projects` (org-level), re-parents Folder (`folders.project_id`) and List (`lists.project_id`); a List may be folderless (directly under a Project). Subtasks skipped.
+- **Everything optional** — capture stays **zero-click** (a task needs no List → Inbox; a List needs no Folder). Filing happens in Daily Review or manually, never forced.
+- **List ≠ Checklist:** a List holds Tasks; a Checklist is sub-steps inside one Task. The row-expand keeps them in separate labelled sections, and the DoD is shown directly (no longer buried).
+- Rail is a 3-level tree (`ListTreeNav`): Projects/Folders expand; only **Lists** are selectable (tasks live in Lists). Verified: `scripts/m8-hierarchy-test.mjs` (10/10 live: tenant + cross-project integrity, folderless, optional), `scripts/m8-hierarchy-walkthrough.mjs` (6/6 browser).
+
 ## Dense table layout (PDL-034, 2026-07-16)
 - **The item card is replaced by a dense, table-style layout** (`ItemTable` + `ItemRow`), used by **every** view. Columns: Item · Assignee (team-only, PDL-022) · Priority · Start · Due · Status. **Priority/Start/Due/Status edit inline in the row**; checklist/DoD/responsibility live in a **row-expand**. Items render in **collapsible groups with counts** (By Role → by role; every other view → by List). Old `ItemCard`/`ItemList` **deleted**.
 - `start_at` promoted from *Future* to a real nullable column (migration `0014`); it was the one requested column with no existing field. Batched **`item_assignee_summary`** RPC feeds the Assignee column in one call (not per-row). Plan: [docs/plan-dense-table-view.md](docs/plan-dense-table-view.md).

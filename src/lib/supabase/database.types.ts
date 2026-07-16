@@ -129,6 +129,7 @@ export interface Database {
           created_by: string | null
           created_at: string
           updated_at: string
+          project_id: string
         }
         Insert: {
           id?: string
@@ -140,6 +141,7 @@ export interface Database {
           created_by?: string | null
           created_at?: string
           updated_at?: string
+          project_id: string
         }
         Update: {
           id?: string
@@ -151,6 +153,7 @@ export interface Database {
           created_by?: string | null
           created_at?: string
           updated_at?: string
+          project_id?: string
         }
       }
       invitations: {
@@ -386,6 +389,7 @@ export interface Database {
           updated_at: string
           folder_id: string | null
           position: number
+          project_id: string
         }
         Insert: {
           id?: string
@@ -399,6 +403,7 @@ export interface Database {
           updated_at?: string
           folder_id?: string | null
           position?: number
+          project_id: string
         }
         Update: {
           id?: string
@@ -412,6 +417,7 @@ export interface Database {
           updated_at?: string
           folder_id?: string | null
           position?: number
+          project_id?: string
         }
       }
       meeting_details: {
@@ -541,6 +547,41 @@ export interface Database {
           id?: string
           display_name?: string | null
           avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      projects: {
+        Row: {
+          id: string
+          organization_id: string
+          name: string
+          color: string | null
+          position: number
+          is_archived: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          name: string
+          color?: string | null
+          position?: number
+          is_archived?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          name?: string
+          color?: string | null
+          position?: number
+          is_archived?: boolean
+          created_by?: string | null
           created_at?: string
           updated_at?: string
         }

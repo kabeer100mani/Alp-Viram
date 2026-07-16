@@ -15,6 +15,16 @@ import type { List } from '@/modules/lists/data/lists-repository'
 /** Statuses offered in the row's Status editor, in lifecycle order. */
 const STATUS_OPTIONS: ItemState[] = ['captured', 'committed', 'in_progress', 'done', 'snoozed', 'backlog']
 
+/** A labelled block inside the row-expand, so sections never run together. */
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <p className="pl-[3.25rem] text-xs font-medium">{title}</p>
+      {children}
+    </div>
+  )
+}
+
 const dateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : '')
 // Local noon → an unambiguous absolute instant (TD-005 discipline).
 const toInstant = (v: string) => (v ? new Date(`${v}T12:00:00`).toISOString() : null)
@@ -189,41 +199,58 @@ export function ItemRow({
         </div>
       </div>
 
-      {/* Row-expand: the heavier editors, one click away. */}
+      {/* Row-expand: the heavier editors, one click away — each a clearly
+          separated, labelled section so nothing runs together. */}
       {expanded && (
-        <div role="row" className="col-span-full border-b border-border bg-background/60 py-2">
-          {responsibility && !isNote && (
-            <ResponsibilityBar itemId={item.id} ctx={{ ...responsibility, canWrite }} onError={onError} />
-          )}
-          {!isNote && (
-            <ChecklistPanel
-              item={item}
-              organizationId={organizationId}
-              currentUserId={currentUserId}
-              canWrite={canWrite}
-              onError={onError}
-            />
-          )}
-          {isNote && <p className="pl-[3.25rem] text-xs text-muted-foreground">Notes have no status, dates or checklist.</p>}
-          {/* List picker stays available in the expand (it's on every item). */}
-          {canWrite && lists && lists.length > 0 && (
-            <div className="flex items-center gap-2 pl-[3.25rem] pt-2 text-xs">
-              <span className="text-muted-foreground">List</span>
-              <select
-                aria-label={`List for ${item.title}`}
-                className={`${editor} max-w-[12rem]`}
-                value={item.list_id ?? ''}
-                disabled={busy}
-                onChange={(e) => update.mutate({ id: item.id, patch: { listId: e.target.value || null } }, { onError: fail })}
-              >
-                <option value="">No list</option>
-                {lists.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div role="row" className="col-span-full space-y-4 border-b border-border bg-background/60 py-3">
+          {isNote ? (
+            <p className="pl-[3.25rem] text-xs text-muted-foreground">
+              A note has no status, dates, checklist or definition of done.
+            </p>
+          ) : (
+            <>
+              {/* Where this task lives — its parent List (NOT the checklist). */}
+              <Section title="List (where this task lives)">
+                <div className="pl-[3.25rem]">
+                  {canWrite && lists && lists.length > 0 ? (
+                    <select
+                      aria-label={`List for ${item.title}`}
+                      className={`${editor} max-w-[14rem]`}
+                      value={item.list_id ?? ''}
+                      disabled={busy}
+                      onChange={(e) => update.mutate({ id: item.id, patch: { listId: e.target.value || null } }, { onError: fail })}
+                    >
+                      <option value="">No list (Inbox)</option>
+                      {lists.map((l) => (
+                        <option key={l.id} value={l.id}>
+                          {l.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      {lists?.find((l) => l.id === item.list_id)?.name ?? 'No list (Inbox)'}
+                    </span>
+                  )}
+                </div>
+              </Section>
+
+              {responsibility && (
+                <Section title="Responsibility">
+                  <ResponsibilityBar itemId={item.id} ctx={{ ...responsibility, canWrite }} onError={onError} />
+                </Section>
+              )}
+
+              {/* Checklist + Definition of Done shown directly (no second collapse). */}
+              <ChecklistPanel
+                item={item}
+                organizationId={organizationId}
+                currentUserId={currentUserId}
+                canWrite={canWrite}
+                onError={onError}
+                embedded
+              />
+            </>
           )}
         </div>
       )}

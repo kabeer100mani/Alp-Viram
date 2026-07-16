@@ -2,16 +2,17 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import type { Item } from '@/modules/items/types'
 import type { Tables } from '@/lib/supabase/database.types'
 
+export type Project = Tables<'projects'>
 export type Folder = Tables<'folders'>
 export type List = Tables<'lists'>
 
 /**
- * Folders → Lists (PDL-032). Optional structure: a List may sit inside a Folder or
- * at the Org root, and an Item needs no List at all (it lives in the Inbox).
+ * The container hierarchy (PDL-035): Organization → Project → Folder → List → Item.
+ * A List may sit inside a Folder or straight under a Project (folderless lists).
+ * All of it is optional: an Item needs no List (it lives in the Inbox).
  *
- * Lists and folders are member-writable (RLS `p_lists` / `p_folders` = org member),
- * unlike roles which are admin-only — a List is lightweight organising, not
- * responsibility. They are archived (is_archived), not deleted, to keep history.
+ * Projects/folders/lists are member-writable (organising, not responsibility) and
+ * archived (is_archived), never deleted, to keep history.
  */
 
 const client = () => getSupabaseClient()
@@ -20,45 +21,42 @@ export interface FolderWithLists {
   folder: Folder
   lists: List[]
 }
-
-/** The tree: folders with their lists, plus lists that sit at the org root. */
-export interface ListTree {
+export interface ProjectNode {
+  project: Project
   folders: FolderWithLists[]
+  /** Lists directly under the project (no folder). */
   rootLists: List[]
 }
 
-export async function getListTree(organizationId: string): Promise<ListTree> {
-  const [foldersRes, listsRes] = await Promise.all([
-    client()
-      .from('folders')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .eq('is_archived', false)
-      .order('position')
-      .order('name'),
-    client()
-      .from('lists')
-      .select('*')
-      .eq('organization_id', organizationId)
-      .eq('is_archived', false)
-      .order('position')
-      .order('name'),
+export async function getProjectTree(organizationId: string): Promise<ProjectNode[]> {
+  const [projectsRes, foldersRes, listsRes] = await Promise.all([
+    client().from('projects').select('*').eq('organization_id', organizationId).eq('is_archived', false).order('position').order('name'),
+    client().from('folders').select('*').eq('organization_id', organizationId).eq('is_archived', false).order('position').order('name'),
+    client().from('lists').select('*').eq('organization_id', organizationId).eq('is_archived', false).order('position').order('name'),
   ])
+  if (projectsRes.error) throw projectsRes.error
   if (foldersRes.error) throw foldersRes.error
   if (listsRes.error) throw listsRes.error
 
+  const projects = (projectsRes.data ?? []) as Project[]
   const folders = (foldersRes.data ?? []) as Folder[]
   const lists = (listsRes.data ?? []) as List[]
-  return {
-    folders: folders.map((folder) => ({
-      folder,
-      lists: lists.filter((l) => l.folder_id === folder.id),
-    })),
-    rootLists: lists.filter((l) => l.folder_id === null),
-  }
+
+  return projects.map((project) => {
+    const projectFolders = folders.filter((f) => f.project_id === project.id)
+    const projectLists = lists.filter((l) => l.project_id === project.id)
+    return {
+      project,
+      folders: projectFolders.map((folder) => ({
+        folder,
+        lists: projectLists.filter((l) => l.folder_id === folder.id),
+      })),
+      rootLists: projectLists.filter((l) => l.folder_id === null),
+    }
+  })
 }
 
-/** Flat list of all active lists (for pickers). */
+/** Flat list of all active lists (for the item's List picker). */
 export async function listAllLists(organizationId: string): Promise<List[]> {
   const { data, error } = await client()
     .from('lists')
@@ -70,10 +68,27 @@ export async function listAllLists(organizationId: string): Promise<List[]> {
   return (data ?? []) as List[]
 }
 
-export async function createFolder(organizationId: string, name: string, createdBy: string): Promise<Folder> {
+// ── create (member-writable) ────────────────────────────────────────────────
+
+export async function createProject(organizationId: string, name: string, createdBy: string): Promise<Project> {
+  const { data, error } = await client()
+    .from('projects')
+    .insert({ organization_id: organizationId, name: name.trim(), created_by: createdBy })
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as Project
+}
+
+export async function createFolder(
+  organizationId: string,
+  projectId: string,
+  name: string,
+  createdBy: string,
+): Promise<Folder> {
   const { data, error } = await client()
     .from('folders')
-    .insert({ organization_id: organizationId, name: name.trim(), created_by: createdBy })
+    .insert({ organization_id: organizationId, project_id: projectId, name: name.trim(), created_by: createdBy })
     .select('*')
     .single()
   if (error) throw error
@@ -82,38 +97,24 @@ export async function createFolder(organizationId: string, name: string, created
 
 export async function createList(
   organizationId: string,
+  projectId: string,
   name: string,
   createdBy: string,
   folderId: string | null,
 ): Promise<List> {
   const { data, error } = await client()
     .from('lists')
-    .insert({ organization_id: organizationId, name: name.trim(), created_by: createdBy, folder_id: folderId })
+    .insert({
+      organization_id: organizationId,
+      project_id: projectId,
+      folder_id: folderId,
+      name: name.trim(),
+      created_by: createdBy,
+    })
     .select('*')
     .single()
   if (error) throw error
   return data as List
-}
-
-export async function renameFolder(id: string, name: string): Promise<void> {
-  const { error } = await client().from('folders').update({ name: name.trim() }).eq('id', id)
-  if (error) throw error
-}
-
-export async function renameList(id: string, name: string): Promise<void> {
-  const { error } = await client().from('lists').update({ name: name.trim() }).eq('id', id)
-  if (error) throw error
-}
-
-/** Archive, not delete — items keep their history; item.list_id nulls on delete anyway. */
-export async function archiveFolder(id: string): Promise<void> {
-  const { error } = await client().from('folders').update({ is_archived: true }).eq('id', id)
-  if (error) throw error
-}
-
-export async function archiveList(id: string): Promise<void> {
-  const { error } = await client().from('lists').update({ is_archived: true }).eq('id', id)
-  if (error) throw error
 }
 
 /** Items in a given list (active, non-deleted). */
