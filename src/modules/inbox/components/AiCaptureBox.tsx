@@ -156,9 +156,11 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
                   {priorityLabel(proposal.priority)}
                 </span>
               )}
-              <span className="rounded bg-muted px-2 py-0.5 text-muted-foreground">
-                confidence {(proposal.confidence * 100).toFixed(0)}%
-              </span>
+              {/* No confidence chip (TD-006). The value was 1.0 on 28/30 real
+                  captures — INCLUDING the misclassification — so "confidence 100%"
+                  told the user something untrue about a wrong answer. It is still
+                  stored on `ai_captures` for future calibration; it is just no
+                  longer presented as if it meant something. */}
             </div>
             <div className="flex gap-2 pt-1">
               <Button onClick={() => void onConfirm()} disabled={create.isPending}>

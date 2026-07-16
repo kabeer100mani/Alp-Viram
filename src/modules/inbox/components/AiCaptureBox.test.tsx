@@ -67,7 +67,10 @@ describe('AiCaptureBox — displays what the (mock) provider returns', () => {
     expect(screen.getByText(/due 17 jul/i)).toBeInTheDocument()
     expect(screen.queryByText(/2026-07-17/)).not.toBeInTheDocument()
     expect(screen.getByText('High')).toBeInTheDocument()
-    expect(screen.getByText(/confidence 42%/i)).toBeInTheDocument()
+    // TD-006: confidence is no longer DISPLAYED — it was 1.0 on 28/30 captures
+    // including the misclassification, so a percentage told the user something
+    // untrue. It is still stored (see the persist test below), just not shown.
+    expect(screen.queryByText(/confidence/i)).not.toBeInTheDocument()
   })
 
   it('persists the confirmed proposal via the item + ai_capture write path', async () => {

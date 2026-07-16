@@ -52,4 +52,30 @@ describe('view filter contract', () => {
   it('has no "overdue" concept — there is no raw overdue state (FR-12b)', () => {
     expect(parseViewFilter({ due: 'overdue' })).toBeNull()
   })
+
+  // tags (PDL-010): a view can filter on flat tag ids. Ids not names, so a rename
+  // never breaks a saved view — which is exactly why the schema pins z.uuid().
+  it('accepts and round-trips a filter carrying valid tag ids', () => {
+    const tag = '123e4567-e89b-12d3-a456-426614174000'
+    const parsed = parseViewFilter({ tags: [tag] })
+    expect(parsed).toEqual({ tags: [tag] })
+    expect(parsed?.tags?.[0]).toBe(tag)
+  })
+
+  it('rejects an empty tags array (nonempty — would mean "nothing", not a filter)', () => {
+    expect(parseViewFilter({ tags: [] })).toBeNull()
+  })
+
+  it('rejects a tag id that is not a uuid (a name must never leak in)', () => {
+    expect(parseViewFilter({ tags: ['not-a-uuid'] })).toBeNull()
+  })
+
+  it('treats omitted tags as valid (the field is optional)', () => {
+    expect(parseViewFilter({ states: ['committed'] })).toEqual({ states: ['committed'] })
+  })
+
+  it('is still .strict() alongside tags — an unknown key still fails', () => {
+    const tag = '123e4567-e89b-12d3-a456-426614174000'
+    expect(parseViewFilter({ tags: [tag], mystery: true })).toBeNull()
+  })
 })

@@ -111,11 +111,30 @@ function startOfLocalDay(offsetDays = 0): string {
  * does not hide them (see the register), so every read path must filter them.
  */
 export async function runView(organizationId: string, filter: ViewFilter): Promise<Item[]> {
+  // Tag filter resolves through `item_tags` first (tags live in a join table, not on
+  // `items`). Two round trips, but only when a view actually filters on tags — and
+  // far clearer than an embedded inner-join whose row shape differs from `Item`.
+  let taggedItemIds: string[] | null = null
+  if (filter.tags?.length) {
+    const { data, error } = await getSupabaseClient()
+      .from('item_tags')
+      .select('item_id')
+      .eq('organization_id', organizationId)
+      .in('tag_id', filter.tags)
+    if (error) throw error
+    taggedItemIds = [...new Set((data ?? []).map((r) => (r as { item_id: string }).item_id))]
+    // No item carries the tag — an empty IN would be a query error, and the answer
+    // is already known.
+    if (taggedItemIds.length === 0) return []
+  }
+
   let q = getSupabaseClient()
     .from('items')
     .select('*')
     .eq('organization_id', organizationId)
     .is('deleted_at', null)
+
+  if (taggedItemIds) q = q.in('id', taggedItemIds)
 
   if (filter.states?.length) {
     q = q.in('state', filter.states)

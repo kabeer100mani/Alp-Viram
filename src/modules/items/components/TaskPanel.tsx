@@ -21,6 +21,7 @@ import {
 import { Avatar } from '@/components/ui/avatar'
 import { ResponsibilityBar, type ResponsibilityContext } from '@/modules/items/components/ResponsibilityBar'
 import { ChecklistPanel } from '@/modules/items/components/ChecklistPanel'
+import { TagPicker } from '@/modules/tags/components/TagPicker'
 import type { Item, ItemState } from '@/modules/items/types'
 import type { List } from '@/modules/lists/data/lists-repository'
 
@@ -371,16 +372,29 @@ export function TaskPanel({
             </div>
 
             {/* Fields — labelled rows, value on the right */}
-            {!isNote && (
-              <section className="mb-4">
-                <h3 className="mb-1 text-xs font-medium text-muted-foreground">Fields</h3>
+            <section className="mb-4">
+              <h3 className="mb-1 text-xs font-medium text-muted-foreground">Fields</h3>
 
-                {responsibility && (
-                  <FieldRow label="Responsibility">
-                    <ResponsibilityBar itemId={item.id} ctx={{ ...responsibility, canWrite }} onError={setError} />
-                  </FieldRow>
-                )}
+              {/* Tags apply to EVERY type — they are the flat organising primitive
+                  (PDL-010 / Doc 4), unlike checklist+DoD, which need a done-state. */}
+              <FieldRow label="Tags">
+                <div className="flex justify-end">
+                  <TagPicker
+                    itemId={item.id}
+                    organizationId={organizationId}
+                    canWrite={canWrite}
+                    onError={setError}
+                  />
+                </div>
+              </FieldRow>
 
+              {!isNote && responsibility && (
+                <FieldRow label="Responsibility">
+                  <ResponsibilityBar itemId={item.id} ctx={{ ...responsibility, canWrite }} onError={setError} />
+                </FieldRow>
+              )}
+
+              {!isNote && (
                 <div className="py-1.5">
                   <ChecklistPanel
                     item={item}
@@ -391,8 +405,8 @@ export function TaskPanel({
                     embedded
                   />
                 </div>
-              </section>
-            )}
+              )}
+            </section>
 
             {isNote && <p className="text-xs text-muted-foreground">A note has no status, dates, checklist or definition of done.</p>}
           </div>

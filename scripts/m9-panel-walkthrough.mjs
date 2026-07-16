@@ -121,7 +121,9 @@ try {
   check('Fields section shows "Definition of Done" (not buried)', panelText.includes('Definition of Done'))
 
   await panel.getByLabel(/add a checklist step/i).fill('Reconcile the ledger')
-  await panel.getByRole('button', { name: 'Add' }).click()
+  // exact: true — the panel now also has an "Add tag" button (M6), and a substring
+  // match on "Add" is ambiguous.
+  await panel.getByRole('button', { name: 'Add', exact: true }).click()
   await page.waitForTimeout(1200)
   check('a checklist step adds from the panel', (await panel.innerText()).includes('Reconcile the ledger'))
 

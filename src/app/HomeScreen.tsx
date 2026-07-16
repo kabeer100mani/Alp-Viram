@@ -5,8 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/modules/auth/auth-context'
 import { useActiveOrg } from '@/modules/organizations/use-active-org'
+import { OrgBar } from '@/modules/organizations/components/OrgBar'
 import { AiCaptureBox } from '@/modules/inbox/components/AiCaptureBox'
 import { ItemTable } from '@/modules/items/components/ItemTable'
+import { TagChip } from '@/modules/tags/components/TagChip'
+import type { Tag } from '@/modules/tags/data/tags-repository'
 import { groupByList, singleGroup } from '@/modules/items/grouping'
 import { ViewRail } from '@/modules/views/components/ViewRail'
 import { useByRoleGroups, useViewItems, useViews } from '@/modules/views/hooks/use-views'
@@ -33,10 +36,12 @@ export function HomeScreen() {
   const { data: org } = useActiveOrg(user?.id)
   const [activeId, setActiveId] = useState<string | undefined>()
   const [reviewOpen, setReviewOpen] = useState(false)
-  // The main pane shows exactly one of: a view, search, People & Roles, or a list.
-  const [pane, setPane] = useState<'view' | 'search' | 'people' | 'list'>('view')
+  // The main pane shows exactly one of: a view, search, People & Roles, a list, or
+  // a single-tag filter (reached by clicking a tag chip).
+  const [pane, setPane] = useState<'view' | 'search' | 'people' | 'list' | 'tag'>('view')
   const [query, setQuery] = useState('')
   const [activeList, setActiveList] = useState<{ id: string; name: string } | undefined>()
+  const [activeTag, setActiveTag] = useState<{ id: string; name: string } | undefined>()
 
   const { data: views, isLoading: viewsLoading } = useViews(org?.id)
   const active: ResolvedView | undefined = useMemo(
@@ -49,6 +54,16 @@ export function HomeScreen() {
     groupedByRole ? undefined : active?.filter,
   )
   const { data: roleGroups, isLoading: groupsLoading } = useByRoleGroups(org?.id, Boolean(groupedByRole))
+  // Tag pane: a plain view filtered to one tag. Uses the same view engine, so tag
+  // filtering is just another filter — no bespoke query path (PDL-010).
+  const { data: tagItems, isLoading: tagLoading } = useViewItems(
+    org?.id,
+    pane === 'tag' && activeTag ? { tags: [activeTag.id] } : undefined,
+  )
+  const openTag = (tag: Tag) => {
+    setActiveTag({ id: tag.id, name: tag.name })
+    setPane('tag')
+  }
 
   const inboxView = views?.find((v) => v.name === 'Inbox')
   const { data: inboxItems } = useViewItems(org?.id, inboxView?.filter)
@@ -83,9 +98,10 @@ export function HomeScreen() {
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Welcome, {displayName}</h1>
-          {/* A solo user has no "workspace" to speak of — saying so would leak
-              the tenancy model they are deliberately not shown (PDL-022). */}
-          {!isSolo && org && <p className="text-sm text-muted-foreground">{org.name}</p>}
+          {/* The workspace name, with rename + switcher. OrgBar itself stays silent
+              for a solo user with one org — a solo user has no "workspace" to speak
+              of, and saying so would leak the tenancy model (PDL-022). */}
+          {org && user?.id && <OrgBar org={org} userId={user.id} isSolo={isSolo} isAdmin={isAdmin} />}
         </div>
         <div className="flex items-center gap-2">
           {/* A solo user's one team action: invite the first teammate. Without
@@ -169,6 +185,33 @@ export function HomeScreen() {
                         organizationId={org.id}
                         currentUserId={user.id}
                         lists={allLists}
+                        onTagClick={openTag}
+                      />
+                    </>
+                  ) : pane === 'tag' ? (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-sm font-semibold">Tagged</h2>
+                        {activeTag && (
+                          <TagChip tag={{ id: activeTag.id, name: activeTag.name, color: null } as Tag} />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setPane('view')}
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <ItemTable
+                        groups={groupByList(tagItems, allLists)}
+                        isLoading={tagLoading}
+                        emptyMessage="No items carry this tag."
+                        responsibility={responsibility}
+                        organizationId={org.id}
+                        currentUserId={user.id}
+                        lists={allLists}
+                        onTagClick={openTag}
                       />
                     </>
                   ) : pane === 'search' ? (
@@ -192,6 +235,7 @@ export function HomeScreen() {
                           organizationId={org.id}
                           currentUserId={user.id}
                           lists={allLists}
+                          onTagClick={openTag}
                         />
                       )}
                     </>
@@ -220,6 +264,7 @@ export function HomeScreen() {
                         organizationId={org.id}
                         currentUserId={user.id}
                         lists={allLists}
+                        onTagClick={openTag}
                       />
                     </>
                   )}

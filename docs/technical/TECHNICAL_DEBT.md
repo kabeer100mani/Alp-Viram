@@ -56,17 +56,19 @@ Each entry: **what · why deferred · impact · fix when · source.**
   the intended local wall time; 6 unit tests pin the gate.
 - **Source:** M4 real-provider batch run (Gemini flash-lite).
 
-## TD-006 — `confidence` is degenerate (no signal)
+## TD-006 — `confidence` is degenerate (no signal) — ✅ RESOLVED 2026-07-16
 - **What:** on Gemini `flash-lite`, `confidence` was `1.0` on 28/30 captures —
-  **including the one misclassification**. The Inbox UI surfaces it as
-  "confidence 100%".
-- **Why deferred:** cosmetic today; the field is displayed but not yet used for
-  routing or thresholds.
-- **Impact:** the value is misleading to users and **cannot be used for triage**
-  or auto-accept thresholds — any future feature keying off it would be unsound.
-- **Fix when:** when confidence is needed for behaviour — calibrate/derive it
-  server-side, or stop displaying it.
-- **Source:** M4 real-provider batch run (Gemini flash-lite).
+  **including the one misclassification**. The Inbox UI surfaced it as
+  "confidence 100%", telling the user something untrue about a wrong answer.
+- **Resolution (M6 Gate A, D1-adjacent, ruled by Palash):** took the register's
+  second option — **stop displaying it**. The chip is removed from `AiCaptureBox`;
+  `confidence` is **still written** to `ai_captures` (unchanged) so a future
+  server-side calibration can use the history. Pinned by an `AiCaptureBox` test
+  asserting no "confidence" text renders while the persist path still stores it.
+- **If confidence is ever needed for behaviour** (auto-accept thresholds, triage
+  routing): calibrate/derive it server-side first — the raw model value is not
+  signal and must not gate anything.
+- **Source:** M4 real-provider batch run (Gemini flash-lite); resolved in M6.
 
 ## TD-007 — organization deletion is incomplete (layers 2 & 3)
 - **What:** deleting an organization still fails. `0006` fixed **layer 1** (the
@@ -122,6 +124,28 @@ Each entry: **what · why deferred · impact · fix when · source.**
 - **Verified:** `scripts/m6-structure-test.mjs` — an item cannot reference another
   org's list; a list cannot move into another org's folder.
 - **Source:** found while sizing the PDL-006 reversal (impact report, 2026-07-16).
+
+## TD-010 — tags hard-delete (soft-delete deferred)
+- **What:** `tags` has no `deleted_at` / `is_active`; deleting a tag is a **hard
+  delete** that cascades `item_tags` and strips the tag from every item in the org,
+  with no undo. This is the same class TD-001 closed for `items` / `roles` /
+  `role_assignments`, which retire via `deleted_at` / `is_active` / `valid_to`
+  instead of being destroyed.
+- **Mitigation shipped in M6 Gate A (D1, ruled by Palash 2026-07-16):** delete is
+  **restricted to org admins** in the UI. This narrows *who* can do it; it does not
+  make it recoverable, and the RLS policy `p_tags` (`ALL` for `is_org_member`) still
+  permits any member to delete via the API — **the UI restriction is not a security
+  boundary**, and must not be described as one.
+- **Why deferred:** proper soft-delete is a column + a policy change + a filter on
+  every read path; Palash chose to ship tags now and log this rather than widen Gate
+  A. Deliberate, not overlooked.
+- **Impact:** an accidental (or malicious member's) tag delete is unrecoverable and
+  silently re-shapes every view filtering on that tag. No data leak — an org member
+  could already read every tag in their org.
+- **Fix when:** tags are used in anger, or before an external customer. Fix = add
+  `deleted_at` to `tags`, retire instead of delete, filter it from reads, and tighten
+  `p_tags` so DELETE requires `is_org_admin` (closing the API gap the UI only hides).
+- **Source:** raised while speccing M6 (D1, 2026-07-16); ruled by Palash.
 
 ## TD-009 — field edits are not audited (Activity feed is sparse)
 - **What:** the `activity_event_type` enum covers `created`, `state_changed`,

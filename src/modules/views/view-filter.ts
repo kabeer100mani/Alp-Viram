@@ -30,6 +30,12 @@ export const viewFilterSchema = z
     agingDays: z.number().int().positive().max(365).optional(),
     /** Task metadata: blocked on someone else (`items.waiting_on`). */
     waiting: z.boolean().optional(),
+    /**
+     * Match items carrying ANY of these tag ids (PDL-010: tags are flat, and they
+     * plus saved views are the alternative to a hierarchy — so a view must be able
+     * to filter on them). Ids, not names: a rename must not break a saved view.
+     */
+    tags: z.array(z.uuid()).nonempty().optional(),
     /** Group the result. Only 'role' is specified today (the By Role view). */
     groupBy: z.literal('role').optional(),
     sort: z.enum(['created_desc', 'due_asc', 'updated_desc']).optional(),

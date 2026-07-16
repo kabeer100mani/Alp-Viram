@@ -15,6 +15,8 @@ import {
   statusColor,
 } from '@/modules/items/presentation'
 import { Avatar } from '@/components/ui/avatar'
+import { TagChip } from '@/modules/tags/components/TagChip'
+import type { Tag } from '@/modules/tags/data/tags-repository'
 import type { Item, ItemState } from '@/modules/items/types'
 
 const STATUS_OPTIONS: ItemState[] = ['captured', 'committed', 'in_progress', 'done', 'snoozed', 'backlog']
@@ -44,14 +46,19 @@ export function ItemRow({
   canWrite,
   columns,
   assignee,
+  tags = [],
   onOpen,
+  onTagClick,
   onError,
 }: {
   item: Item
   canWrite: boolean
   columns: RowColumns
   assignee: RowAssignee | null
+  /** Resolved by the table in one batched call — never fetched per row. */
+  tags?: Tag[]
   onOpen: () => void
+  onTagClick?: (tag: Tag) => void
   onError: (m: string) => void
 }) {
   const update = useUpdateItem()
@@ -90,6 +97,11 @@ export function ItemRow({
         >
           {item.title}
         </button>
+        {/* Tags read-only here — the row is for scanning; editing lives in the panel
+            (PDL-036). Clicking one filters, which is the point of a flat model. */}
+        {tags.map((tag) => (
+          <TagChip key={tag.id} tag={tag} onClick={onTagClick ? () => onTagClick(tag) : undefined} />
+        ))}
       </div>
 
       {/* Assignee (team-only) — avatar only; the name lives in the panel */}

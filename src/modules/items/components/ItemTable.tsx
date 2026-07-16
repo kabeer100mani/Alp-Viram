@@ -5,6 +5,8 @@ import { TaskPanel } from '@/modules/items/components/TaskPanel'
 import { formatEstimate } from '@/modules/items/presentation'
 import { useWritableItemIds } from '@/modules/views/hooks/use-views'
 import { useAssigneeSummary } from '@/modules/items/hooks/use-assignee-summary'
+import { useItemTags, useTags } from '@/modules/tags/hooks/use-tags'
+import type { Tag } from '@/modules/tags/data/tags-repository'
 import type { ResponsibilityContext } from '@/modules/items/components/ResponsibilityBar'
 import type { Item } from '@/modules/items/types'
 import type { List } from '@/modules/lists/data/lists-repository'
@@ -32,6 +34,7 @@ export function ItemTable({
   organizationId,
   currentUserId,
   lists,
+  onTagClick,
 }: {
   groups: ItemTableGroup[]
   isLoading?: boolean
@@ -40,6 +43,8 @@ export function ItemTable({
   organizationId: string
   currentUserId: string
   lists?: List[]
+  /** Clicking a tag chip filters by it. Omitted where filtering makes no sense. */
+  onTagClick?: (tag: Tag) => void
 }) {
   const [error, setError] = useState<string | null>(null)
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
@@ -50,6 +55,15 @@ export function ItemTable({
   const { data: writable } = useWritableItemIds(ids)
   const showAssignee = Boolean(responsibility)
   const { data: assignees } = useAssigneeSummary(ids, showAssignee)
+  // Tags for the whole page in one call, then resolved id → Tag locally.
+  const { data: itemTagMap } = useItemTags(ids)
+  const { data: allTags } = useTags(organizationId)
+
+  const tagsFor = (itemId: string): Tag[] => {
+    const tagIds = itemTagMap?.get(itemId)
+    if (!tagIds?.length || !allTags) return []
+    return allTags.filter((t) => tagIds.includes(t.id))
+  }
 
   const assigneeFor = (itemId: string): { userId: string; name: string | null } | null => {
     const s = assignees?.get(itemId)
@@ -129,7 +143,9 @@ export function ItemTable({
                       canWrite={writable?.has(item.id) ?? false}
                       columns={{ showAssignee }}
                       assignee={assigneeFor(item.id)}
+                      tags={tagsFor(item.id)}
                       onOpen={() => setOpenId(item.id)}
+                      onTagClick={onTagClick}
                       onError={setError}
                     />
                   ))}
