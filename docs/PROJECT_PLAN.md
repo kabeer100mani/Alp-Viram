@@ -182,7 +182,7 @@ each will be fully specced when we reach it.
 | **M2** | Core domain | Projects & tasks data model + secure CRUD through the data layer. |
 | **M3** | Workspace UI | Intent-based rail + saved views, Daily Review (triage), Search, minimal-click **item** actions, dark/light polish. *(Corrected 2026-07-16 — PDL-029/PDL-030. Previously read "List + board views, minimal-click task actions": that predates the 2026-07-11 freeze and contradicted Doc 5, which rejects boards by name. The unit is the Item, not the task — Notes have no done-state.)* |
 | **M4** | AI layer | Pluggable provider abstraction + first assistant action via Edge Functions. |
-| **M5** | Assistant depth | "Ask your workspace" queries, smart suggestions. |
+| **M5** | **People & Roles + Responsibility** | Roles, time-bounded role-assignments, and Responsible Roles / Assigned Users / Collaborators on items. *(Corrected 2026-07-16 — PDL-031. Previously read "Assistant depth — 'Ask your workspace' queries, smart suggestions": both are listed word-for-word in the frozen package's Future scope (PRD §7, Doc 4), deferred until the capture/triage foundation "is trusted". Meanwhile the Must-Have responsibility differentiator — already enforced by migration 0005 — had no UI at all.)* |
 | **M6** | Collaboration | Comments, assignments, realtime updates. |
 | **M7** | Files & notifications | Supabase Storage, attachments, notifications. |
 | **M8** | Hardening | Security review, logging, performance, deployment. |
