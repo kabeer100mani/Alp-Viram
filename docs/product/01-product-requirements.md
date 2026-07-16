@@ -46,6 +46,13 @@ Teams lose time and clarity because existing tools demand structure *up front*:
    captured, or land in scattered notes.
 2. **Rigid hierarchies.** Deep nesting (workspace → space → folder → list → task)
    forces filing decisions and makes finding things a navigation exercise.
+   <!-- Amended 2026-07-16 (PDL-032). Alp-Viram now HAS Folder → List. The
+        objection above is refined, not abandoned: the friction is the word
+        "forces". Structure is offered and never required — an item can always be
+        captured with zero clicks and no list, landing in the Inbox. What we
+        reject is *mandatory* filing at capture, not the existence of structure. -->
+   *(Refined by PDL-032: Alp-Viram provides optional Folder → List; the problem is
+   **forced** filing, not structure itself. Capture stays zero-click and unfiled.)*
 3. **People-based ownership breaks.** Work is assigned to individuals. When
    someone leaves or switches roles, ownership must be manually reassigned and
    context is lost.
@@ -79,7 +86,10 @@ spreadsheets, and work slips through the cracks.
 
 1. **Minimum clicks.** Every screen is measured by clicks-to-outcome.
 2. **One front door.** The Inbox is the primary capture surface for everything.
-3. **Flat over deep.** Organize with tags and saved views, not nested folders.
+3. **Optional structure over forced structure.** Folder → List exists but is never
+   required; tags and saved views remain the primary way to slice work.
+   *(Amended 2026-07-16 — PDL-032. Previously "**Flat over deep.** Organize with
+   tags and saved views, not nested folders.")*
 4. **Confirm, don't autopilot.** AI proposes; the user commits.
 5. **Immutable history.** Audit and activity records never change retroactively.
 6. **Provider-agnostic AI.** No lock-in to any single AI vendor.

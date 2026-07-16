@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   backlogItems,
   confirmItems,
-  listProjects,
+  listLists,
   listRoles,
   listRollover,
   listTriageQueue,
@@ -27,12 +27,12 @@ export function useTriageQueue(organizationId: string | undefined) {
   })
 }
 
-/** Projects are optional (PDL-008) — commonly empty, and that is fine. */
-export function useProjects(organizationId: string | undefined) {
+/** Lists are optional (PDL-008/PDL-032) — commonly empty, and that is fine. */
+export function useLists(organizationId: string | undefined) {
   return useQuery({
-    queryKey: ['projects', organizationId],
+    queryKey: ['lists', organizationId],
     enabled: Boolean(organizationId),
-    queryFn: () => listProjects(organizationId as string),
+    queryFn: () => listLists(organizationId as string),
   })
 }
 

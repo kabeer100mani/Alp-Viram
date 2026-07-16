@@ -3,24 +3,24 @@ import { Button } from '@/components/ui/button'
 import { useEditChip } from '@/modules/review/hooks/use-review'
 import { useItemResponsibility, useSetPrimaryResponsibleRole } from '@/modules/items/hooks/use-responsibility'
 import { itemTypeLabel } from '@/modules/items/presentation'
-import type { Project, Role } from '@/modules/review/data/review-repository'
+import type { List, Role } from '@/modules/review/data/review-repository'
 import type { Item, ItemType } from '@/modules/items/types'
 
 /**
- * A triage card: the item plus its AI chips — `Type ▸ Project ▸ Role ▸ Due`.
+ * A triage card: the item plus its AI chips — `Type ▸ List ▸ Role ▸ Due`.
  *
  * Confirm accepts all chips at once; tapping a chip changes one field
  * (user journey, Stage 6). The AI pre-sorts and the user confirms — it proposes,
  * never autopilots (PDL-012 / PDL-028).
  *
- * Chips appear only when they can mean something: Projects are optional and
- * lazily created (PDL-008), and Roles are hidden entirely from solo users
- * (PDL-022). So with no projects and no team, this is Type ▸ Due — which is the
+ * Chips appear only when they can mean something: Lists are optional and lazily
+ * created (PDL-008/PDL-032), and Roles are hidden entirely from solo users
+ * (PDL-022). So with no lists and no team, this is Type ▸ Due — which is the
  * common case, not a degraded one.
  */
 export function TriageCard({
   item,
-  projects,
+  lists,
   roles,
   organizationId,
   currentUserId,
@@ -33,7 +33,7 @@ export function TriageCard({
   busy,
 }: {
   item: Item
-  projects: Project[]
+  lists: List[]
   roles: Role[]
   organizationId: string
   currentUserId: string
@@ -72,7 +72,7 @@ export function TriageCard({
         </span>
       </div>
 
-      {/* Chips: Type ▸ Project ▸ Role ▸ Due */}
+      {/* Chips: Type ▸ List ▸ Role ▸ Due */}
       <div className="flex flex-wrap items-center gap-2 pl-7">
         <select
           aria-label={`Type for ${item.title}`}
@@ -88,18 +88,18 @@ export function TriageCard({
           <option value="meeting">Meeting</option>
         </select>
 
-        {projects.length > 0 && (
+        {lists.length > 0 && (
           <select
-            aria-label={`Project for ${item.title}`}
+            aria-label={`List for ${item.title}`}
             className={chip}
-            value={item.project_id ?? ''}
+            value={item.list_id ?? ''}
             disabled={busy}
             onChange={(e) =>
-              editChip.mutate({ id: item.id, patch: { projectId: e.target.value || null } })
+              editChip.mutate({ id: item.id, patch: { listId: e.target.value || null } })
             }
           >
-            <option value="">No project</option>
-            {projects.map((p) => (
+            <option value="">No list</option>
+            {lists.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
               </option>

@@ -5,7 +5,7 @@ import { TriageCard } from '@/modules/review/components/TriageCard'
 import {
   useBacklogItems,
   useConfirmItems,
-  useProjects,
+  useLists,
   useRescheduleItems,
   useRoles,
   useRollover,
@@ -43,7 +43,7 @@ export function DailyReview({
 }) {
   const { data: rollover, isLoading: rolloverLoading } = useRollover(organizationId)
   const { data: queue, isLoading: queueLoading } = useTriageQueue(organizationId)
-  const { data: projects } = useProjects(organizationId)
+  const { data: lists } = useLists(organizationId)
   // Roles are not even fetched for a solo user (PDL-022).
   const { data: roles } = useRoles(organizationId, !isSolo)
 
@@ -59,7 +59,7 @@ export function DailyReview({
   const busy =
     confirm.isPending || backlog.isPending || reschedule.isPending || complete.isPending || snooze.isPending
 
-  // Group by type — the cheap, specified clustering. (Grouping by project or
+  // Group by type — the cheap, specified clustering. (Grouping by list or
   // duplicate is Good-to-Have and not built.)
   const groups = useMemo(() => {
     const by = new Map<string, Item[]>()
@@ -217,7 +217,7 @@ export function DailyReview({
                   <TriageCard
                     key={item.id}
                     item={item}
-                    projects={projects ?? []}
+                    lists={lists ?? []}
                     roles={roles ?? []}
                     organizationId={organizationId}
                     currentUserId={currentUserId}

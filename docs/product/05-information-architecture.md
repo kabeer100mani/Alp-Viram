@@ -45,16 +45,24 @@ Items in the *Captured/untriaged* state. It is not a tier in the containment tre
 
 ### 2b. The corrected structural model
 
+*Amended 2026-07-16 (PDL-032): Folder → List reinstated as **optional** structure;
+`project_id` renamed to `list_id`. The required-containment rule below is unchanged
+— an Item still needs nothing but an Organization.*
+
 ```
-Organization  (tenant; you belong to one or more, switch between them)
+Organization  ("Workspace"; you belong to several — Personal, Profile 1… — and switch)
    │
    ├── Roles            (durable responsibilities; people are assigned over time)
    │
+   ├── Folder?          (OPTIONAL grouping of Lists)
+   │      └── List?     (OPTIONAL — a List may also sit at the Org root)
+   │
    └── Item             (the unit of work — the ONLY required object besides Org)
           ├── type: Task | Note | Meeting
-          ├── responsibility: Responsible Role (req) · Current Owner · Collaborators
+          ├── responsibility: Responsible Roles · Assigned Users · Collaborators
           ├── lifecycle state: Captured(Inbox) → Committed → Done  (+ Snoozed/Backlog)
-          ├── project_id?   (OPTIONAL — a single, flat grouping)
+          ├── list_id?      (OPTIONAL — no list ⇒ it lives in the Inbox)
+          ├── checklist[]   (optional sub-steps)  ·  definition_of_done?  (note, not enforced)
           └── tags[]        (flat, many-to-many)
 
 Cross-cutting projections (not containers):
@@ -64,9 +72,15 @@ Cross-cutting projections (not containers):
    • Search     = full-text across Items
 ```
 
-So the **only required containment** is `Organization → Item`. **Project is an
-optional attribute** of an Item, not a mandatory parent. Everything else is a
-**view**.
+So the **only required containment** is `Organization → Item` — still true after
+PDL-032. **List (and its Folder) is an optional attribute** of an Item, never a
+mandatory parent: capture stays zero-click and unfiled, and an item with no list
+lives in the Inbox. Everything else is a **view**.
+
+> **What PDL-032 changed, and what it didn't.** Structure now *exists* (Folder →
+> List, ex-Project). What is still rejected: nesting deeper than Folder → List, and
+> **forcing** a list at capture. The friction PDL-006 feared was mandatory filing —
+> not the existence of a place to file.
 
 ---
 

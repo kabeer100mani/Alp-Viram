@@ -39,6 +39,17 @@ async function invite(email, role) {
 const link1 = await invite(invitee1, 'member')
 const link2 = await invite(invitee2, 'admin')
 
+// Seed a few items so there's something to triage and to give responsibility to.
+// (Seeded directly rather than via AI capture, so the demo doesn't depend on the
+// Gemini free-tier daily quota.)
+const uid = (await admin.auth.getUser()).data.user.id
+const { error: seedErr } = await admin.from('items').insert([
+  { organization_id: orgId, title: 'Prepare July MIS', type: 'task', state: 'committed', created_by: uid, source: 'manual' },
+  { organization_id: orgId, title: 'Quarterly review with the board', type: 'meeting', state: 'committed', created_by: uid, source: 'manual' },
+  { organization_id: orgId, title: 'Follow up with TCS', type: 'task', state: 'captured', created_by: uid, source: 'manual' },
+])
+if (seedErr) console.warn('warning: could not seed items — ' + seedErr.message)
+
 console.log(`
 ════════════════════════════════════════════════════════════════════
   Alp-Viram — invite demo   (app: ${ORIGIN})

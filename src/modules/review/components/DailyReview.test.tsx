@@ -3,11 +3,11 @@ import { render, screen } from '@testing-library/react'
 import { DailyReview } from '@/modules/review/components/DailyReview'
 import type { Item } from '@/modules/items/types'
 
-const { rollover, queue, roles, projects, mutate } = vi.hoisted(() => ({
+const { rollover, queue, roles, lists, mutate } = vi.hoisted(() => ({
   rollover: { data: [] as unknown[], isLoading: false },
   queue: { data: [] as unknown[], isLoading: false },
   roles: { data: [] as unknown[] },
-  projects: { data: [] as unknown[] },
+  lists: { data: [] as unknown[] },
   mutate: vi.fn(),
 }))
 const rolesEnabled = vi.hoisted(() => ({ value: undefined as boolean | undefined }))
@@ -17,7 +17,7 @@ vi.mock('@/modules/review/hooks/use-review', () => {
   return {
     useRollover: () => rollover,
     useTriageQueue: () => queue,
-    useProjects: () => projects,
+    useLists: () => lists,
     useRoles: (_org: string, enabled: boolean) => {
       rolesEnabled.value = enabled
       return roles
@@ -48,7 +48,7 @@ describe('Daily Review', () => {
     rollover.data = []
     queue.data = []
     roles.data = []
-    projects.data = []
+    lists.data = []
     rolesEnabled.value = undefined
     mutate.mockReset()
   })
@@ -105,13 +105,13 @@ describe('Daily Review', () => {
     expect(screen.getByRole('button', { name: /confirm client prefers email/i })).toBeInTheDocument()
   })
 
-  it('shows the Project chip only when projects exist (PDL-008: optional, lazy)', () => {
+  it('shows the List chip only when lists exist (PDL-008/PDL-032: optional, lazy)', () => {
     queue.data = [item()]
     renderReview()
-    expect(screen.queryByLabelText(/project for/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/list for/i)).not.toBeInTheDocument()
 
-    projects.data = [{ id: 'p1', name: 'Acme' }]
+    lists.data = [{ id: 'p1', name: 'Acme' }]
     renderReview()
-    expect(screen.getAllByLabelText(/project for/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByLabelText(/list for/i).length).toBeGreaterThan(0)
   })
 })

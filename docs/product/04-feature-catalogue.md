@@ -21,7 +21,8 @@ real team.
 | **Responsibility fields** — Responsible Roles (**optional; 0 is valid**), Assigned Users, Collaborators | The differentiator, on every item. Capture never forces a role (PDL-021); responsibility = role, execution = assigned user (PDL-020). |
 | **AI Inbox — Capture** (classify + minimal questions + user confirm) | The centerpiece; frictionless capture (PDL-005, PDL-012). |
 | **AI Inbox — Daily Review (triage)** | Stops the Inbox becoming a dumping ground (PDL-016) — non-negotiable. |
-| **Optional Projects** | Lazy grouping; created only when wanted (PDL-008). |
+| **Optional Folder → List** *(added 2026-07-16, PDL-032)* | Structure when wanted, never required; an item with no list lives in the Inbox (PDL-008). Supersedes "Optional Projects" — Project was renamed to List. |
+| **Checklists + Definition of Done** *(added 2026-07-16, PDL-033)* | Sub-steps and a plain-text DoD on an item. DoD is descriptive, not enforced. Not on Notes (no done-state). |
 | **Tags** (flat) | Multi-dimensional organization without hierarchy (PDL-010). |
 | **Saved Views** — system (Inbox, Today, Upcoming, Aging, Waiting, by Role) + custom | Replaces reports for everyday questions; the anti-graveyard surface. |
 | **Execution** — status changes, complete, snooze/defer | The "do the work" loop. |
@@ -68,7 +69,7 @@ real team.
 
 | Rejected idea | Why we reject it |
 | --- | --- |
-| **Deep hierarchy** (Space/Folder/List/nested projects) | Causes capture friction and "emergent complexity" that degrades at scale (verified: Monday/Notion/ClickUp). |
+| ~~**Deep hierarchy** (Space/Folder/List/nested projects)~~ **— REVERSED 2026-07-16 (PDL-032)** | Was: *"Causes capture friction and 'emergent complexity' that degrades at scale."* Now: **Folder → List is built, but optional** — an item never needs a list. Still rejected: **nesting deeper than Folder → List**, and **forcing a list at capture**. The emergent-complexity risk is live again and consciously accepted. |
 | **Individual-only assignment** | Breaks on every staff change; orphaned work. Replaced by role-based responsibility. |
 | **Auto-executing AI** (auto-schedule, auto-triage without confirm) | Breeds distrust (Motion) and failed commercially (Height shut down Sept 2025). We confirm, never autopilot. |
 | **Mandatory Project/List at capture** | The exact friction we exist to remove. |

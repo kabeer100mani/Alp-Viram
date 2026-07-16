@@ -7,7 +7,7 @@ import type { Tables } from '@/lib/supabase/database.types'
  * dumping ground (PDL-016). It is the ONLY way items leave the Inbox.
  */
 
-export type Project = Tables<'projects'>
+export type List = Tables<'lists'>
 export type Role = Tables<'roles'>
 
 /** Start of the user's local day, as an absolute instant. */
@@ -51,16 +51,16 @@ export async function listTriageQueue(organizationId: string): Promise<Item[]> {
   return (data ?? []) as Item[]
 }
 
-/** Projects are optional and lazily created (PDL-008) — often none exist. */
-export async function listProjects(organizationId: string): Promise<Project[]> {
+/** Lists are optional and lazily created (PDL-008/PDL-032) — often none exist. */
+export async function listLists(organizationId: string): Promise<List[]> {
   const { data, error } = await getSupabaseClient()
-    .from('projects')
+    .from('lists')
     .select('*')
     .eq('organization_id', organizationId)
     .eq('is_archived', false)
     .order('name')
   if (error) throw error
-  return (data ?? []) as Project[]
+  return (data ?? []) as List[]
 }
 
 /** Roles are hidden entirely from solo users (PDL-022) — callers must check. */

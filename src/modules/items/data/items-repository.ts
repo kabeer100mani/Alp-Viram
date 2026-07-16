@@ -67,7 +67,7 @@ export interface UpdateItemInput {
   dueAt?: string | null
   remindAt?: string | null
   priority?: Item['priority']
-  projectId?: string | null
+  listId?: string | null
 }
 
 async function patchItem(id: string, patch: Record<string, unknown>): Promise<Item> {
@@ -93,7 +93,7 @@ export async function updateItem(id: string, input: UpdateItemInput): Promise<It
   if (input.dueAt !== undefined) patch.due_at = input.dueAt
   if (input.remindAt !== undefined) patch.remind_at = input.remindAt
   if (input.priority !== undefined) patch.priority = input.priority
-  if (input.projectId !== undefined) patch.project_id = input.projectId
+  if (input.listId !== undefined) patch.list_id = input.listId
   return patchItem(id, patch)
 }
 

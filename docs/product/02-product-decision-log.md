@@ -50,7 +50,7 @@
 - **Why:** Deep hierarchy causes friction and "emergent complexity" (verified: Monday/Notion/ClickUp degrade at scale).
 - **Alternatives:** ClickUp's Workspace→Space→Folder→List→Task.
 - **Trade-offs:** Flat models can strain at scale; requires strong tags/views/search/performance (PDL-010, and a named risk).
-- **Status:** Accepted
+- **Status:** ⛔ **SUPERSEDED by [PDL-032](#pdl-032--reversal-reinstate-folder--list-optional-2026-07-16) (2026-07-16).** Folder → List is reinstated as **optional** structure. The capture-first half of this decision survives in PDL-005 (nothing is forced at capture).
 
 ### PDL-007 — Unified Item; three stored types + metadata
 - **Decision:** One `Item` entity. Stored **types: Task, Note, Meeting.** "Reminder"/"Follow-up" = Task metadata; "Knowledge" = Note metadata; "Question" = routed, not stored.
@@ -78,7 +78,7 @@
 - **Why:** Multi-dimensional, low-friction; avoids naming-drift/duplicate-board problems (verified in Monday's community).
 - **Alternatives:** Nested folders/lists.
 - **Trade-offs:** Power depends entirely on filter/search quality; weak search = a flat graveyard.
-- **Status:** Accepted
+- **Status:** Accepted — **amended 2026-07-16 by [PDL-032](#pdl-032--reversal-reinstate-folder--list-optional-2026-07-16).** Hierarchy is no longer excluded: Folder → List exists, but is **optional**. Tags + Saved Views remain the **primary cross-cutting** mechanism — a List is one place; tags and views are many angles. Read this as "tags and views **as well as** optional hierarchy", not "instead of".
 
 ### PDL-011 — Reminders: in-app only for MVP
 - **Decision:** Reminders work inside the app (Today/Due views). Push/email/WhatsApp are future.
@@ -222,6 +222,26 @@
 - **Why:** M5's two named deliverables are listed **word for word** in the frozen package's deferred scope — PRD §7 *"Future Scope (deliberately deferred): **Advanced AI** — daily digest, **"ask your workspace"**, proactive suggestions"* and Doc 4 *Future*: *"**Advanced AI** — daily digest, deep **"ask your workspace,"** proactive suggestions — **build on the capture/triage foundation once it's trusted**"*. That deferral is conditional, and the condition is not met: capture/triage is days old, unused by any real user, and validated only on Gemini `flash-lite` (Anthropic has never had a successful run). Meanwhile two **Must-Have** items have no UI whatsoever: *"Roles + time-bounded Role-Assignments — the heart of the responsibility differentiator"* and *"Responsibility fields — the differentiator, on every item"*. The permission model (`0005`) and the TDL-012 derivation already **enforce** responsibility, but it can only be reached by writing SQL — the product's central claim is fully built underneath and completely unreachable.
 - **Alternatives:** (a) Build M5 as written — rejected: contradicts frozen Future scope, would need a change request, and leaves the differentiator unusable. (b) Projects first — rejected as the *first* step: also Must-Have but smaller and less central; scheduled after.
 - **Trade-offs:** The roadmap's numbering drifts further from the plan (as with PDL-029). Accepted: the roadmap predates the 2026-07-11 freeze, and the frozen package governs.
+
+### PDL-032 — REVERSAL: reinstate Folder → List, optional (2026-07-16)
+- **Decision:** **Supersedes PDL-006.** Reinstate structure as `Organization → Folder → List → Item`, where **"Workspace" = the existing Organization** (a user keeps several — Personal, Profile 1, Profile 2 — and switches between them; no new top-level concept). Implemented the cheapest way: **today's `Project` is renamed to `List`** (same table, data preserved) and **`Folder` is added above it**. A List may sit inside a Folder or at the Org root.
+  - **`list_id` stays OPTIONAL.** Quick capture with zero clicks must keep working: an item with no list lands in the Inbox exactly as today.
+  - **The AI does not infer the list** — grouping stays a human/triage decision (see Trade-offs).
+- **Why:** This is a **deliberate reversal, recorded as such** — not a silent schema change. PDL-006 rejected ClickUp's `Workspace→Space→Folder→List→Task` by name, and the PRD's problem statement (`01:44-47`) cites that exact nesting as the friction Alp-Viram exists to remove. Palash, as Product Architect and the product's first real user, judges that his actual work needs Folder → List structure. Lived use outranks a document written before the product existed. What PDL-006 got *right* is preserved: the friction it feared came from **mandatory, deep** filing at capture time, and capture stays unfiled and zero-click (PDL-005 is untouched).
+- **Alternatives:** (a) Keep the flat model — rejected by Palash. (b) Add Folder/List *alongside* Project — rejected: three overlapping groupings. (c) Drop Project and build Folder/List fresh — rejected: discards a shipped, RLS'd table for no gain. (d) Make List mandatory — **rejected: it would break capture-first and void the AI Inbox's premise.**
+- **Trade-offs:**
+  - The flat-model thesis ("Flat over deep") is now a **qualified** principle, not an absolute: structure exists but is never required. PRD `01:82`, PDL-010, Doc 4's Rejected row and Doc 5's structural model are amended accordingly.
+  - Optional structure means two ways to organise (hierarchy **and** tags/views). That redundancy is accepted; PDL-010's tags/views remain the primary cross-cutting mechanism, since a List is one place while tags are many angles.
+  - **Emergent complexity — the risk PDL-006 named — is now live again.** It is mitigated only by List being optional and by the Inbox/Daily Review remaining the default path. Worth revisiting once real folders exist at scale.
+  - Keeping the AI out of list inference preserves PDL-028 (AI restraint) and costs nothing today; revisit if triage proves tedious.
+- **Status:** Accepted (ruled by Palash, 2026-07-16)
+
+### PDL-033 — Checklists and Definition of Done (2026-07-16)
+- **Decision:** Items get a **checklist** (ordered, tickable sub-steps) and a **Definition of Done**. DoD is a **plain note field** — descriptive, **not enforced**: completing an item does not require it to be satisfied. Neither applies to Notes (no done-state, IA).
+- **Why:** Both were **never captured** in the frozen package — a search of every PDL and doc (2026-07-16) found no decision rejecting them, no deferral, and no mention at all; the words appear only in the competitive analysis describing other tools. So this is an **omission being filled, not a decision being reversed** — unlike PDL-032.
+- **Alternatives:** (a) Enforced DoD (cannot complete until satisfied) — deferred: a materially different product decision that touches the completion path and needs a DB constraint to be real rather than cosmetic. (b) DoD as a flagged checklist — deferred; the note field is column-compatible with tightening later.
+- **Trade-offs:** An unenforced DoD is documentation, not a gate — it can go stale. Accepted for now; tightening later is additive.
+- **Status:** Accepted (ruled by Palash, 2026-07-16)
 - **Status:** Accepted (ruled by Palash, 2026-07-16)
 
 ### PDL-030 — Daily Review and Search ship in M3 (2026-07-16)

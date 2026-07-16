@@ -83,6 +83,76 @@ export interface Database {
           created_at?: string
         }
       }
+      checklist_items: {
+        Row: {
+          id: string
+          organization_id: string
+          item_id: string
+          text: string
+          is_done: boolean
+          position: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          item_id: string
+          text: string
+          is_done?: boolean
+          position?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          item_id?: string
+          text?: string
+          is_done?: boolean
+          position?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      folders: {
+        Row: {
+          id: string
+          organization_id: string
+          name: string
+          color: string | null
+          position: number
+          is_archived: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          name: string
+          color?: string | null
+          position?: number
+          is_archived?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          name?: string
+          color?: string | null
+          position?: number
+          is_archived?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       invitations: {
         Row: {
           id: string
@@ -234,7 +304,7 @@ export interface Database {
           title: string
           body: string | null
           priority: 'none' | 'low' | 'medium' | 'high' | 'urgent'
-          project_id: string | null
+          list_id: string | null
           due_at: string | null
           remind_at: string | null
           snoozed_until: string | null
@@ -249,6 +319,7 @@ export interface Database {
           updated_at: string
           deleted_at: string | null
           search: unknown | null
+          definition_of_done: string | null
         }
         Insert: {
           id?: string
@@ -258,7 +329,7 @@ export interface Database {
           title: string
           body?: string | null
           priority?: 'none' | 'low' | 'medium' | 'high' | 'urgent'
-          project_id?: string | null
+          list_id?: string | null
           due_at?: string | null
           remind_at?: string | null
           snoozed_until?: string | null
@@ -272,6 +343,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           deleted_at?: string | null
+          definition_of_done?: string | null
         }
         Update: {
           id?: string
@@ -281,7 +353,7 @@ export interface Database {
           title?: string
           body?: string | null
           priority?: 'none' | 'low' | 'medium' | 'high' | 'urgent'
-          project_id?: string | null
+          list_id?: string | null
           due_at?: string | null
           remind_at?: string | null
           snoozed_until?: string | null
@@ -295,6 +367,48 @@ export interface Database {
           created_at?: string
           updated_at?: string
           deleted_at?: string | null
+          definition_of_done?: string | null
+        }
+      }
+      lists: {
+        Row: {
+          id: string
+          organization_id: string
+          name: string
+          description: string | null
+          color: string | null
+          is_archived: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+          folder_id: string | null
+          position: number
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          name: string
+          description?: string | null
+          color?: string | null
+          is_archived?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          folder_id?: string | null
+          position?: number
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          name?: string
+          description?: string | null
+          color?: string | null
+          is_archived?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+          folder_id?: string | null
+          position?: number
         }
       }
       meeting_details: {
@@ -424,41 +538,6 @@ export interface Database {
           id?: string
           display_name?: string | null
           avatar_url?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      projects: {
-        Row: {
-          id: string
-          organization_id: string
-          name: string
-          description: string | null
-          color: string | null
-          is_archived: boolean
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          organization_id: string
-          name: string
-          description?: string | null
-          color?: string | null
-          is_archived?: boolean
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          organization_id?: string
-          name?: string
-          description?: string | null
-          color?: string | null
-          is_archived?: boolean
-          created_by?: string | null
           created_at?: string
           updated_at?: string
         }
