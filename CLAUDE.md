@@ -61,6 +61,12 @@ Pipeline and provider-agnosticism proven; **explicitly NOT Anthropic-verified**.
   - **Anthropic re-test still PENDING FUNDING.** The Anthropic code path has never had a successful real run (account has no credits). Re-test when funded — M4 is not evidence about Claude's accuracy.
   - Providers supported in the Edge Function: `anthropic` | `gemini` | `mock`, via the `AI_PROVIDER` secret. `verify_jwt = true` is pinned in `supabase/config.toml`.
 
+## Structure reversal (PDL-032/033, 2026-07-16)
+- **PDL-006 was reversed** at Palash's direction (recorded, not silent): `Organization → Folder → List → Item` is back, **optional** — "Workspace" = the existing Organization (Personal / Profile 1…). Cheapest path: `projects` renamed to `lists`, `folders` added above. `list_id`/`folder_id` are nullable — **capture stays zero-click**; the AI does **not** infer the list. Amended docs: PDL-006 (superseded), PDL-010, PRD §problem-statement + "Flat over deep", Doc 4 Rejected row, Doc 5 model.
+- **Checklists + Definition of Done** added (PDL-033). DoD is a **note field, not enforced**. Neither applies to Notes.
+- **TD-008 fixed** (was a real cross-tenant FK gap on `items.project_id`; migration `0011` composite FK). **Audit-trigger regression** from the rename fixed in `0013` (`log_item_change` still named `project_id`, breaking every item write — caught by the live red-team, invisible to unit tests).
+- Migrations `0010`–`0013`. Tests: `scripts/m6-structure-test.mjs` (15/15 live tenant-safety), `scripts/m6-structure-walkthrough.mjs` (12/12 browser). See [impact report](docs/impact-hierarchy-reversal.md).
+
 ## Deploy Safety Notes
 - **Never deploy Edge Functions with `--no-verify-jwt`** without an explicit, logged exception. On 2026-07-15 that flag was used by mistake and briefly left `classify-capture` open to unauthenticated requests; fixed by pinning `verify_jwt = true` in `supabase/config.toml`.
 - **Deploy via `npm run deploy:function`** — the JWT guard runs automatically, chained to the deploy (`deploy && npm run check:jwt-guard`). The guard ([scripts/check-jwt-guard.mjs](scripts/check-jwt-guard.mjs)) probes `classify-capture` unauthenticated; if it doesn't get a **401** the chained command fails loudly with a non-zero exit (failure is not swallowed).

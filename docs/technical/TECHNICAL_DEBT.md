@@ -106,3 +106,19 @@ Each entry: **what · why deferred · impact · fix when · source.**
   created; each needs RLS and composite `(child_id, organization_id)` FKs when added.
   (`ai_captures` ships in M4 **with** RLS from the start.)
 - **Fix when:** as each table ships.
+
+## TD-008 — `items.project_id` had a plain FK (cross-tenant smuggling) — ✅ RESOLVED 2026-07-16
+- **What:** `items.project_id` referenced `projects(id)` with a plain FK — nothing
+  forced the project/list to belong to the item's own org, so a member could point
+  their item at another tenant's list id. Same class as the 0003 red-team fix, which
+  covered `item_tags` / `item_responsible_roles` / `item_assigned_users` /
+  `item_collaborators` / `meeting_details` but **missed projects**.
+- **Impact:** integrity hole; RLS still blocked *reading* the foreign row, so no data
+  leak, but the reference itself was cross-tenant.
+- **Fix (shipped, `0011`):** `projects` renamed to `lists`; the FK is now composite
+  `(list_id, organization_id) → lists(id, organization_id)`, with any pre-existing
+  cross-tenant references nulled explicitly. Fixed as part of the PDL-032 work since
+  it rewrote that FK anyway.
+- **Verified:** `scripts/m6-structure-test.mjs` — an item cannot reference another
+  org's list; a list cannot move into another org's folder.
+- **Source:** found while sizing the PDL-006 reversal (impact report, 2026-07-16).
