@@ -180,7 +180,7 @@ each will be fully specced when we reach it.
 | **M0** | Foundation | Rock-solid base: tooling, config, structure, themed app shell. No features. |
 | **M1** | Identity & tenancy | Auth, organizations, memberships, roles, **RLS**, protected routes, org switcher. |
 | **M2** | Core domain | Projects & tasks data model + secure CRUD through the data layer. |
-| **M3** | Workspace UI | List + board views, minimal-click task actions, dark/light mode polish. |
+| **M3** | Workspace UI | Intent-based rail + saved views, Daily Review (triage), Search, minimal-click **item** actions, dark/light polish. *(Corrected 2026-07-16 — PDL-029/PDL-030. Previously read "List + board views, minimal-click task actions": that predates the 2026-07-11 freeze and contradicted Doc 5, which rejects boards by name. The unit is the Item, not the task — Notes have no done-state.)* |
 | **M4** | AI layer | Pluggable provider abstraction + first assistant action via Edge Functions. |
 | **M5** | Assistant depth | "Ask your workspace" queries, smart suggestions. |
 | **M6** | Collaboration | Comments, assignments, realtime updates. |

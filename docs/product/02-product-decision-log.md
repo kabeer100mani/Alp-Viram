@@ -209,3 +209,17 @@
 - **Alternatives:** Always confirm/clarify (annoying); always auto-fill silently (risky).
 - **Trade-offs:** Requires good confidence calibration to decide when to stay silent.
 - **Status:** Accepted
+
+### PDL-029 — No board view; the workspace is navigated by intent (2026-07-16)
+- **Decision:** Alp-Viram has **no board surface**. The workspace is navigated through the intent-based left rail and saved views specified in Doc 5 (Inbox · Today · Upcoming · Projects · Views · Search · People & Roles). `PROJECT_PLAN.md`'s M3 line ("List + **board** views") **predates the 2026-07-11 freeze and is superseded** by Doc 5; the roadmap line has been corrected.
+- **Why:** Doc 5 (`:124`) already rejects boards by name — tags+views *"avoids the **duplicate-board** / naming-drift failure of hierarchical tools"* — and the competitive analysis criticises Monday as *"Board-centric; no lightweight global inbox"*. The word "board" appears nowhere in Docs 1–6 as a workspace surface. Building one would contradict the frozen IA, not extend it.
+- **Alternatives:** (a) Build a board as a projection of `item_state` — rejected: it would need an explicit change request to unfreeze Doc 5, and re-introduces the failure mode the IA was written to avoid. (b) Defer the decision — rejected: it would leave M3's scope ambiguous.
+- **Trade-offs:** Users arriving from Trello/Monday will look for a board and not find one. Accepted deliberately: the differentiator is the Inbox + intent views, not another board tool.
+- **Status:** Accepted (ruled by Palash, 2026-07-16)
+
+### PDL-030 — Daily Review and Search ship in M3 (2026-07-16)
+- **Decision:** The **Daily Review** (triage) and **Search** are both in scope for **M3 — Workspace UI**, though the roadmap line mentions neither.
+- **Why:** PDL-016 makes Daily Review the *only* way items leave the Inbox. M4 shipped capture, so without it the Inbox is a one-way door — items go in and nothing comes out; M3 would deliver an Inbox that cannot be emptied. Search is Must-Have (Doc 4) and sits in the frozen rail; Doc 5 (`:170-172`) makes views+search the substitute for hierarchy navigation, so the navigation model is incomplete without it. The `items.search` tsvector already ships (migration `0002`).
+- **Alternatives:** Daily Review as its own later milestone (rejected — leaves the Inbox unusable in the interim); Search deferred (rejected — delivers the rail only partly).
+- **Trade-offs:** M3 is a larger milestone than its one-line roadmap summary implies.
+- **Status:** Accepted (ruled by Palash, 2026-07-16)
