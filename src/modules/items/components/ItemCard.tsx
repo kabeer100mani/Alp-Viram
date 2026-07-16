@@ -9,6 +9,7 @@ import {
 import type { Item } from '@/modules/items/types'
 import { itemStateLabel, itemTypeLabel } from '@/modules/items/presentation'
 import { ResponsibilityBar, type ResponsibilityContext } from '@/modules/items/components/ResponsibilityBar'
+import { ChecklistPanel } from '@/modules/items/components/ChecklistPanel'
 
 /**
  * One item, with its actions inline.
@@ -25,12 +26,17 @@ export function ItemCard({
   canWrite,
   onError,
   responsibility,
+  organizationId,
+  currentUserId,
 }: {
   item: Item
   canWrite: boolean
   onError?: (message: string) => void
   /** Present only in team mode (PDL-022 hides responsibility from solo users). */
   responsibility?: Omit<ResponsibilityContext, 'canWrite'>
+  /** Checklist/DoD need no team — they work solo too, so they're passed directly. */
+  organizationId?: string
+  currentUserId?: string
 }) {
   const complete = useCompleteItem()
   const reopen = useReopenItem()
@@ -123,6 +129,18 @@ export function ItemCard({
         <ResponsibilityBar
           itemId={item.id}
           ctx={{ ...responsibility, canWrite }}
+          onError={(m) => onError?.(m)}
+        />
+      )}
+
+      {/* Checklist + Definition of Done (PDL-033). Works solo — no team needed.
+          A Note has no done-state (IA), so neither applies to one. */}
+      {organizationId && currentUserId && item.type !== 'note' && (
+        <ChecklistPanel
+          item={item}
+          organizationId={organizationId}
+          currentUserId={currentUserId}
+          canWrite={canWrite}
           onError={(m) => onError?.(m)}
         />
       )}

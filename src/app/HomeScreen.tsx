@@ -156,6 +156,8 @@ export function HomeScreen() {
                           isLoading={searchLoading}
                           emptyMessage={`Nothing matches “${query.trim()}”.`}
                           responsibility={responsibility}
+                          organizationId={org.id}
+                          currentUserId={user.id}
                         />
                       )}
                     </>
@@ -177,7 +179,12 @@ export function HomeScreen() {
                                 <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
                                   {g.label} · {g.items.length}
                                 </h3>
-                                <ItemList items={g.items} responsibility={responsibility} />
+                                <ItemList
+                                  items={g.items}
+                                  responsibility={responsibility}
+                                  organizationId={org.id}
+                                  currentUserId={user.id}
+                                />
                               </div>
                             ))}
                           </div>
@@ -194,6 +201,8 @@ export function HomeScreen() {
                               : 'Nothing in this view.'
                           }
                           responsibility={responsibility}
+                          organizationId={org.id}
+                          currentUserId={user.id}
                         />
                       )}
                     </>

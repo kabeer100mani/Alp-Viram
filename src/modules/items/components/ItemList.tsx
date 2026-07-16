@@ -13,12 +13,17 @@ export function ItemList({
   isLoading,
   emptyMessage = 'Nothing here.',
   responsibility,
+  organizationId,
+  currentUserId,
 }: {
   items: Item[] | undefined
   isLoading?: boolean
   emptyMessage?: string
   /** Team-mode responsibility context; omitted for solo users. */
   responsibility?: Omit<ResponsibilityContext, 'canWrite'>
+  /** For checklist/DoD, which work solo too. */
+  organizationId?: string
+  currentUserId?: string
 }) {
   const [error, setError] = useState<string | null>(null)
   // One round trip for the whole page, answered by the database.
@@ -42,6 +47,8 @@ export function ItemList({
             canWrite={writable?.has(item.id) ?? false}
             onError={setError}
             responsibility={responsibility}
+            organizationId={organizationId}
+            currentUserId={currentUserId}
           />
         ))}
       </ul>
