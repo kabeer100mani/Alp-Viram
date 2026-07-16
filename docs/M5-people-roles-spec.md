@@ -1,11 +1,27 @@
-# M5 — People & Roles + Responsibility · Milestone Spec (DRAFT)
+# M5 — People & Roles + Responsibility · Milestone Spec
 
-> 🟡 **DRAFT — awaiting Palash's approval. No code until sign-off.**
-> Date: 2026-07-16 · Grounded in the **frozen** Product Design Package (2026-07-11).
+> 🟢 **FINALIZED 2026-07-16 with Palash's rulings — awaiting final sign-off to
+> begin. No implementation code written yet.**
+> Grounded in the **frozen** Product Design Package (2026-07-11).
 > Scope ruled by Palash 2026-07-16 (**PDL-031**); `PROJECT_PLAN.md:185` corrected.
 >
-> Where the frozen package specifies something, this spec follows it. Where it is
-> silent or self-contradictory, it **asks** — see §5 and §6.
+> **Rulings applied (2026-07-16):**
+> - **Member invites are IN scope** — the feature is pointless without a way to add
+>   a second person (§4.0). This is a substantial addition; see the proposed gate
+>   split below.
+> - **Item-assignee role permission stays as-is** (§5-B) — attaching an existing
+>   role follows item-write permission, matching `0005`. Approved, no change.
+> - **"Current Owner" wording fixed** to Doc 9 vocabulary in `03-user-journey.md`.
+>
+> **Proposed gate split** — invites roughly double the milestone and touch auth:
+>
+> | Gate | Scope | Rationale |
+> | --- | --- | --- |
+> | **A** | Member **invites** (token/link; email delivery deferred per PDL-011) + Members list | Without this, everything below is invisible to every (solo) user. Ships the ability to form a team. |
+> | **B** | **Roles** + time-bounded **role-assignments** management surface; **By Role** grouping | The differentiator's management surface — usable only once a team exists. |
+> | **C** | **Responsibility on the item card** (Responsible Roles / Assigned Users / Collaborators; "UNFILLED — needs owner"); live triage **Role chip** | Puts responsibility where work happens. |
+>
+> Gates are a proposal for your approval, mirroring M3.
 
 ---
 
@@ -65,7 +81,42 @@ role-assignments. Members read only.
 
 ## 4. Proposed scope
 
-### 4.1 People & Roles surface (rail, admin)
+### 4.0 Member invites (Gate A) — ruled in scope
+
+**Why the schema forces real work here.** Today there is *no* client path to add
+anyone to an org, even an existing user:
+- `organization_members` has `invited_by` / `invited_at` columns but **no pending
+  state and no email** — a row needs a real `user_id` referencing an existing
+  `profiles` row.
+- `profiles` has **no email column** (email lives in `auth.users`), and
+  `profiles_select` only exposes yourself or people **already** sharing your org.
+  So you cannot look up a stranger by email or id from the client — a chicken-and-egg
+  wall: you can't find someone until they're already a member.
+- There is **no `invitations` table**.
+
+**Proposed design (token/link invite; email delivery is deferred, PDL-011):**
+- **New migration** — an `invitations` table: `organization_id`, `email`, `role`,
+  `token` (unguessable), `status` (pending/accepted/revoked), `invited_by`,
+  `expires_at`. RLS: admins of the org manage its invites; the accept path reads a
+  row **by token only**. Composite FK + `organization_id` per the `0003` pattern.
+- **Edge Function** (service role, per TDL-011) for the two privileged steps the
+  client cannot do under RLS:
+  - *create invite* — admin-only; stores the invite; returns a shareable link.
+  - *accept invite* — run for a signed-in user whose email matches the invite:
+    inserts the membership (service role, since `members_insert` requires admin and
+    the invitee is not one), marks the invite accepted. The existing team-flip
+    trigger then flips the org to team mode automatically.
+- **UI**: an admin enters an email + role, gets a **copyable invite link** (no
+  email is sent — that's Future). A signed-in invitee visiting the link joins.
+- **Progressive disclosure**: the moment a second member joins, the team-flip
+  trigger sets `team_enabled` — People & Roles appears for that org (PDL-022),
+  with no extra client logic.
+
+**Deliberately deferred:** emailed invites (PDL-011 defers delivery channels);
+inviting by anything other than email; SSO/domain capture. Link-based is enough to
+form a team and unblock the differentiator.
+
+### 4.1 People & Roles surface (rail, admin) — Gate B
 - **Roles**: list · create · rename · **retire** (`is_active = false`, never delete).
 - **Members**: list org members with their platform permission.
 - **Role assignments**: assign a person to a role; **close** an assignment
@@ -74,7 +125,7 @@ role-assignments. Members read only.
 - Concurrent holders are allowed by design (no overlap constraint) — show them all.
 - Hidden entirely for solo users (PDL-022). Admin-only writes; members see read-only.
 
-### 4.2 Responsibility on the item card
+### 4.2 Responsibility on the item card — Gate C
 - Show **Responsible Roles** (0..N, ≤1 primary) and **Assigned Users** (0..N, ≤1
   primary) and **Collaborators**.
 - An unfilled role renders **"UNFILLED — needs owner"**.
@@ -94,36 +145,35 @@ milestone makes it real.
 
 ---
 
-## 5. Decisions needed from Palash
+## 5. Decisions — resolved (2026-07-16)
 
-| # | Question | My recommendation |
+| # | Question | Resolution |
 | --- | --- | --- |
-| **A** | **Does a member need to see People & Roles read-only, or is it admin-only entirely?** Doc 5 marks it "(admin)". But roles are readable by all members (`p_roles_read`), and an item card must show *who is responsible* to everyone. | Card shows responsibility to all; the **management surface** is admin-only. |
-| **B** | **Can a non-admin set an item's Responsible Role?** `0005` allows it if they can write the item (creator/assignee/role-holder) — creating roles is admin-only, but *attaching* an existing one is not. | Keep as built: attaching an existing role follows item-write permission. Flagging because it is a real permission boundary you may want tighter. |
-| **C** | **Assigned Users — who may assign?** Same as B: anyone who can write the item. | Keep as built. |
-| **D** | **Does M5 include inviting members?** Doc 4 Must-Have says Organization is *"auto-created, renamable, **invite members**"* — but invites are unbuilt, and without them a solo user can never get a second member, so **roles can never be exercised in practice**. | ⚠️ **This may be the real blocker.** See §6.2. |
+| **A** | Is People & Roles admin-only, or member-readable? | **Card shows responsibility to all** members (roles are readable via `p_roles_read`); the **management surface is admin-only**. My recommendation, adopted. |
+| **B** | Can a non-admin set an item's Responsible Role / Assigned User? | **Kept as built — Palash-approved.** Attaching an existing role or assigning a user follows **item-write** permission (`0005`): creator / assignee / current-role-holder / admin. Creating *roles* stays admin-only. |
+| **C** | Member invites in M5? | **Yes — Palash-ruled.** Implemented as Gate A (§4.0). Link/token based; email delivery deferred (PDL-011). |
 
 ## 6. Conflicts / gaps flagged
 
 ### 6.1 `in_progress` still absent from the product docs
 Noted in the M3 spec; unchanged. Not this milestone's problem, but still true.
 
-### 6.2 ⚠️ Roles are unreachable without member invites
-PDL-022 hides all role concepts from solo users, and every account today is solo
-because **there is no way to invite anyone** (`04:15` lists "invite members" as
-Must-Have; `0001`'s notes mention an invite path but no UI exists). So a
-freshly-built People & Roles surface would be **invisible to every current user**.
+### 6.2 ✅ RESOLVED — roles were unreachable without member invites
+Every account today is solo and there was no way to invite anyone, so a
+People & Roles surface would have shipped invisible. **Ruled in scope** — invites
+are Gate A (§4.0).
 
-Either M5 includes **member invites**, or the milestone ships something nobody can
-see. This is a scope question, not a design one — **flagged for ruling**.
+### 6.3 ✅ RESOLVED — "Current Owner" was pre-PDL-020 vocabulary
+`03:149-151` said "Responsible Role and **Current Owner**". PDL-020 split this into
+Responsible Roles + Assigned Users, the current person **derived** through the
+role. **Fixed 2026-07-16** in `03-user-journey.md` — annotated inline, not silently
+rewritten.
 
-### 6.3 "Current Owner" vocabulary is pre-PDL-020
-`03:145-149` says an item shows "Responsible Role (durable) and **Current Owner**
-(who's doing it now)". PDL-020 later split this into Responsible Roles + Assigned
-Users. → Recommend Doc 9's vocabulary; Doc 3's wording is stale (same class as the
-feature-catalogue fix on 2026-07-16).
+### 6.4 Email delivery of invites is deferred (PDL-011)
+Invites are **link/token** based — an admin copies a link; no email is sent.
+Flagged so "invite" is not read as "email invite".
 
-### 6.4 Temporary delegation is deferred
+### 6.5 Temporary delegation is deferred
 PDL-017 designs delegation (grants the right to *act*, never ownership, does not
 cascade). `delegations` is unbuilt (**TD-004**) and Doc 6 defers the UI. → Out of scope.
 

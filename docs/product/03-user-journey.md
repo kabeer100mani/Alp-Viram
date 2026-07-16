@@ -146,9 +146,15 @@ overdue"; "later" only means Someday, which is itself reviewed on a cadence.
 **Alp-Viram:**
 - The **Plan** surface (Today + a quiet "This Evening"-style section) shows only
   committed, dated work — no navigation to find "what's mine today."
-- Responsibility is clear at a glance: **Responsible Role** (durable) and
-  **Current Owner** (who's doing it now). If a role is unfilled, the item shows
+- Responsibility is clear at a glance: **Responsible Role(s)** (durable) and the
+  **Assigned User(s)** executing now. If a role is unfilled, the item shows
   "UNFILLED — needs owner," never a stale name.
+  <!-- Wording updated 2026-07-16 (PDL-031). "Current Owner" was pre-PDL-020
+       vocabulary; PDL-020 split responsibility into Responsible Roles (the role)
+       and Assigned Users (the people executing). The derived "who is responsible
+       now" still comes through the role, not a stored person (Doc 9 / TDL-012). -->
+- The current responsible person is **derived** through the role's time-bounded
+  assignment, never stored on the item (Doc 9).
 - Status changes and completion are one action from the item card.
 
 **Clicks challenged:**
