@@ -77,7 +77,7 @@ export function PeopleScreen({
           {(members ?? []).map((m) => (
             <li key={m.userId} className="flex items-center justify-between px-4 py-3">
               <span className="text-sm">{m.displayName ?? 'Member'}</span>
-              <span className="text-xs uppercase tracking-wide text-muted-foreground">{m.role}</span>
+              <span className="text-xs capitalize text-muted-foreground">{m.role}</span>
             </li>
           ))}
         </ul>
@@ -130,12 +130,12 @@ export function PeopleScreen({
 
           {pending && pending.length > 0 && (
             <div className="space-y-1 pt-2">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Pending</p>
+              <p className="text-xs text-muted-foreground">Pending</p>
               <ul className="space-y-1">
                 {pending.map((inv) => (
                   <li key={inv.id} className="flex items-center justify-between text-sm">
                     <span>
-                      {inv.email} · <span className="text-muted-foreground">{inv.role}</span>
+                      {inv.email} · <span className="capitalize text-muted-foreground">{inv.role}</span>
                     </span>
                     <Button
                       variant="ghost"

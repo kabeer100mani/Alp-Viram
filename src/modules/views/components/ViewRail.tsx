@@ -86,7 +86,7 @@ export function ViewRail({
       <ul className="space-y-0.5">{primary.map(entry)}</ul>
 
       <div className="space-y-0.5 border-t border-border pt-3">
-        <p className="px-2 pb-1 text-xs uppercase tracking-widest text-muted-foreground">Views</p>
+        <p className="px-2 pb-1 text-xs text-muted-foreground">Views</p>
         <ul className="space-y-0.5">{rest.map(entry)}</ul>
       </div>
 

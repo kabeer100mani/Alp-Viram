@@ -40,3 +40,27 @@ export function itemTypeLabel(item: Pick<Item, 'type' | 'is_reminder'>): string 
   if (item.type === 'task' && item.is_reminder) return 'Reminder'
   return typeLabels[item.type] ?? ''
 }
+
+export type Priority = Item['priority']
+export const priorityOptions: Priority[] = ['none', 'low', 'medium', 'high', 'urgent']
+
+const priorityLabels: Record<string, string> = {
+  none: '—',
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  urgent: 'Urgent',
+}
+export function priorityLabel(p: Priority): string {
+  return priorityLabels[p] ?? '—'
+}
+
+/**
+ * A neutral due-date presentation. Deliberately NOT red/shaming for past dates:
+ * there is no raw "overdue" state (FR-12b) and Doc 4 rejects a shaming state —
+ * lateness is surfaced by the Aging view, not by colouring a cell.
+ */
+export function formatDate(iso: string | null): string {
+  if (!iso) return ''
+  return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(iso))
+}

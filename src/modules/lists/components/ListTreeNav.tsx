@@ -68,7 +68,7 @@ export function ListTreeNav({
   return (
     <div className="space-y-1 border-t border-border pt-3">
       <div className="flex items-center justify-between px-2 pb-1">
-        <span className="text-xs uppercase tracking-widest text-muted-foreground">Lists</span>
+        <span className="text-xs text-muted-foreground">Lists</span>
         <span className="flex gap-1">
           <button
             type="button"

@@ -67,6 +67,14 @@ Pipeline and provider-agnosticism proven; **explicitly NOT Anthropic-verified**.
 - **TD-008 fixed** (was a real cross-tenant FK gap on `items.project_id`; migration `0011` composite FK). **Audit-trigger regression** from the rename fixed in `0013` (`log_item_change` still named `project_id`, breaking every item write — caught by the live red-team, invisible to unit tests).
 - Migrations `0010`–`0013`. Tests: `scripts/m6-structure-test.mjs` (15/15 live tenant-safety), `scripts/m6-structure-walkthrough.mjs` (12/12 browser). See [impact report](docs/impact-hierarchy-reversal.md).
 
+## Dense table layout (PDL-034, 2026-07-16)
+- **The item card is replaced by a dense, table-style layout** (`ItemTable` + `ItemRow`), used by **every** view. Columns: Item · Assignee (team-only, PDL-022) · Priority · Start · Due · Status. **Priority/Start/Due/Status edit inline in the row**; checklist/DoD/responsibility live in a **row-expand**. Items render in **collapsible groups with counts** (By Role → by role; every other view → by List). Old `ItemCard`/`ItemList` **deleted**.
+- `start_at` promoted from *Future* to a real nullable column (migration `0014`); it was the one requested column with no existing field. Batched **`item_assignee_summary`** RPC feeds the Assignee column in one call (not per-row). Plan: [docs/plan-dense-table-view.md](docs/plan-dense-table-view.md).
+- Verified: `scripts/m7-table-walkthrough.mjs` (13/13 browser: grouping, inline edits persist, row-expand, solo hides Assignee), 56 unit tests.
+
+## UI Style Rules
+- **No ALL-CAPS text anywhere.** Everything is **Proper Case**; the only exception is the app name ("Alp-Viram"). Never use the Tailwind `uppercase` class. DB-lowercase values (e.g. member `role`) render with `capitalize`. *(Palash, 2026-07-16.)*
+
 ## Deploy Safety Notes
 - **Never deploy Edge Functions with `--no-verify-jwt`** without an explicit, logged exception. On 2026-07-15 that flag was used by mistake and briefly left `classify-capture` open to unauthenticated requests; fixed by pinning `verify_jwt = true` in `supabase/config.toml`.
 - **Deploy via `npm run deploy:function`** — the JWT guard runs automatically, chained to the deploy (`deploy && npm run check:jwt-guard`). The guard ([scripts/check-jwt-guard.mjs](scripts/check-jwt-guard.mjs)) probes `classify-capture` unauthenticated; if it doesn't get a **401** the chained command fails loudly with a non-zero exit (failure is not swallowed).

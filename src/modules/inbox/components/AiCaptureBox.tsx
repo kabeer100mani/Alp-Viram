@@ -121,7 +121,7 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
           )}
 
           <div className="space-y-2">
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               AI proposal · confirm or edit
             </p>
             <div className="flex items-center gap-2">

@@ -66,6 +66,7 @@ export interface UpdateItemInput {
   body?: string | null
   dueAt?: string | null
   remindAt?: string | null
+  startAt?: string | null
   priority?: Item['priority']
   listId?: string | null
 }
@@ -92,6 +93,7 @@ export async function updateItem(id: string, input: UpdateItemInput): Promise<It
   if (input.body !== undefined) patch.body = input.body
   if (input.dueAt !== undefined) patch.due_at = input.dueAt
   if (input.remindAt !== undefined) patch.remind_at = input.remindAt
+  if (input.startAt !== undefined) patch.start_at = input.startAt
   if (input.priority !== undefined) patch.priority = input.priority
   if (input.listId !== undefined) patch.list_id = input.listId
   return patchItem(id, patch)

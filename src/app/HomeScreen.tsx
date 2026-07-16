@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/modules/auth/auth-context'
 import { useActiveOrg } from '@/modules/organizations/use-active-org'
 import { AiCaptureBox } from '@/modules/inbox/components/AiCaptureBox'
-import { ItemList } from '@/modules/items/components/ItemList'
+import { ItemTable } from '@/modules/items/components/ItemTable'
+import { groupByList, singleGroup } from '@/modules/items/grouping'
 import { ViewRail } from '@/modules/views/components/ViewRail'
 import { useByRoleGroups, useViewItems, useViews } from '@/modules/views/hooks/use-views'
 import { DailyReview } from '@/modules/review/components/DailyReview'
@@ -160,8 +161,8 @@ export function HomeScreen() {
                   ) : pane === 'list' ? (
                     <>
                       <h2 className="text-sm font-semibold">{activeList?.name}</h2>
-                      <ItemList
-                        items={listItems}
+                      <ItemTable
+                        groups={singleGroup(activeList?.name ?? 'List', listItems)}
                         isLoading={listLoading}
                         emptyMessage="This list is empty — set an item’s list in triage or on its card."
                         responsibility={responsibility}
@@ -183,8 +184,8 @@ export function HomeScreen() {
                       {query.trim().length < 2 ? (
                         <p className="text-sm text-muted-foreground">Type at least 2 characters.</p>
                       ) : (
-                        <ItemList
-                          items={results}
+                        <ItemTable
+                          groups={groupByList(results, allLists)}
                           isLoading={searchLoading}
                           emptyMessage={`Nothing matches “${query.trim()}”.`}
                           responsibility={responsibility}
@@ -202,44 +203,24 @@ export function HomeScreen() {
                           This view’s filter could not be read, so it is showing everything active.
                         </p>
                       )}
-                      {groupedByRole ? (
-                        groupsLoading ? (
-                          <p className="text-sm text-muted-foreground">Loading…</p>
-                        ) : roleGroups && roleGroups.length > 0 ? (
-                          <div className="space-y-4">
-                            {roleGroups.map((g) => (
-                              <div key={g.key} className="space-y-2">
-                                <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                                  {g.label} · {g.items.length}
-                                </h3>
-                                <ItemList
-                                  items={g.items}
-                                  responsibility={responsibility}
-                                  organizationId={org.id}
-                                  currentUserId={user.id}
-                                  lists={allLists}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground">Nothing to show.</p>
-                        )
-                      ) : (
-                        <ItemList
-                          items={items}
-                          isLoading={itemsLoading}
-                          emptyMessage={
-                            active?.name === 'Inbox'
-                              ? 'Inbox zero — capture something above.'
-                              : 'Nothing in this view.'
-                          }
-                          responsibility={responsibility}
-                          organizationId={org.id}
-                          currentUserId={user.id}
-                          lists={allLists}
-                        />
-                      )}
+                      {/* By Role groups by role; every other view groups by List. */}
+                      <ItemTable
+                        groups={
+                          groupedByRole
+                            ? (roleGroups ?? []).map((g) => ({ key: g.key, label: g.label, items: g.items }))
+                            : groupByList(items, allLists)
+                        }
+                        isLoading={groupedByRole ? groupsLoading : itemsLoading}
+                        emptyMessage={
+                          active?.name === 'Inbox'
+                            ? 'Inbox zero — capture something above.'
+                            : 'Nothing in this view.'
+                        }
+                        responsibility={responsibility}
+                        organizationId={org.id}
+                        currentUserId={user.id}
+                        lists={allLists}
+                      />
                     </>
                   )}
                 </section>

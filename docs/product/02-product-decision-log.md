@@ -242,6 +242,12 @@
 - **Alternatives:** (a) Enforced DoD (cannot complete until satisfied) — deferred: a materially different product decision that touches the completion path and needs a DB constraint to be real rather than cosmetic. (b) DoD as a flagged checklist — deferred; the note field is column-compatible with tightening later.
 - **Trade-offs:** An unenforced DoD is documentation, not a gate — it can go stale. Accepted for now; tightening later is additive.
 - **Status:** Accepted (ruled by Palash, 2026-07-16)
+
+### PDL-034 — Dense table layout; `start_at` promoted to a real field (2026-07-16)
+- **Decision:** Replace the spaced item-card layout with a **dense, table-style row layout** (rows + columns: Assignee, Priority, Start, Due, Status), applied to **every** view (they all share one presentation). Columns for Priority, Start, and Due are **editable inline in the row**; heavier editors (checklist, DoD, full responsibility) live behind a **row-expand**. Items group into **collapsible sections with counts** (e.g. by List). `start_at` — previously earmarked *Future* — becomes a real nullable column so the Start column uses an actual field.
+- **Why:** Palash's own use wants a scannable, ClickUp-style dense view with far less blank space; the frozen package prescribes **no layout** (it uses "card" only descriptively and locks *behaviours*, not density). A table keeps every locked behaviour: status/complete are still one action from the row, responsibility is still glanceable, the `state` enum stays hidden behind human labels (PDL-027), lateness stays neutral (no red "overdue", Doc 4), and the Assignee column is team-only (PDL-022).
+- **Alternatives:** (a) Table only for the List view — rejected: there is no separate list-view component; all views share `ItemList`, so one presentation is less code and consistent. (b) Keep cards as a toggle — deferred; revisit if the density is ever too tight. (c) Drop the Start column instead of adding `start_at` — rejected: the design already anticipated the field.
+- **Trade-offs:** A wide table is desktop-first (FR-20); narrow screens scroll horizontally / hide columns. The Assignee column needs a **batched** fetch (`item_assignee_summary`) rather than the per-row responsibility query, or it would be N round trips.
 - **Status:** Accepted (ruled by Palash, 2026-07-16)
 
 ### PDL-030 — Daily Review and Search ship in M3 (2026-07-16)

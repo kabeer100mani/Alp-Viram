@@ -155,7 +155,12 @@ overdue"; "later" only means Someday, which is itself reviewed on a cadence.
        now" still comes through the role, not a stored person (Doc 9 / TDL-012). -->
 - The current responsible person is **derived** through the role's time-bounded
   assignment, never stored on the item (Doc 9).
-- Status changes and completion are one action from the item card.
+- Status changes and completion are one action from the item **row**.
+  <!-- 2026-07-16 (PDL-034): items are presented as dense table ROWS, not spaced
+       cards. "One action from the row" is unchanged; only the layout is denser.
+       Priority/Start/Due are editable inline; checklist/DoD/responsibility are one
+       click away in a row-expand. -->
+
 
 **Clicks challenged:**
 - ❌ Drilling through project → list → task to act → one-tap from Today.

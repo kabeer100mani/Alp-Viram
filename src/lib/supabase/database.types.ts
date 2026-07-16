@@ -16,7 +16,7 @@ export interface Database {
           organization_id: string
           item_id: string | null
           actor_id: string | null
-          event_type: 'created' | 'state_changed' | 'completed' | 'responsible_role_added' | 'responsible_role_removed' | 'primary_role_changed' | 'assigned_user_added' | 'assigned_user_removed' | 'primary_user_changed' | 'moved_project' | 'tag_added' | 'tag_removed'
+          event_type: 'created' | 'state_changed' | 'completed' | 'responsible_role_added' | 'responsible_role_removed' | 'primary_role_changed' | 'assigned_user_added' | 'assigned_user_removed' | 'primary_user_changed' | 'moved_list' | 'tag_added' | 'tag_removed'
           payload: Json
           effective_at: string
           recorded_at: string
@@ -26,7 +26,7 @@ export interface Database {
           organization_id: string
           item_id?: string | null
           actor_id?: string | null
-          event_type: 'created' | 'state_changed' | 'completed' | 'responsible_role_added' | 'responsible_role_removed' | 'primary_role_changed' | 'assigned_user_added' | 'assigned_user_removed' | 'primary_user_changed' | 'moved_project' | 'tag_added' | 'tag_removed'
+          event_type: 'created' | 'state_changed' | 'completed' | 'responsible_role_added' | 'responsible_role_removed' | 'primary_role_changed' | 'assigned_user_added' | 'assigned_user_removed' | 'primary_user_changed' | 'moved_list' | 'tag_added' | 'tag_removed'
           payload?: Json
           effective_at?: string
           recorded_at?: string
@@ -36,7 +36,7 @@ export interface Database {
           organization_id?: string
           item_id?: string | null
           actor_id?: string | null
-          event_type?: 'created' | 'state_changed' | 'completed' | 'responsible_role_added' | 'responsible_role_removed' | 'primary_role_changed' | 'assigned_user_added' | 'assigned_user_removed' | 'primary_user_changed' | 'moved_project' | 'tag_added' | 'tag_removed'
+          event_type?: 'created' | 'state_changed' | 'completed' | 'responsible_role_added' | 'responsible_role_removed' | 'primary_role_changed' | 'assigned_user_added' | 'assigned_user_removed' | 'primary_user_changed' | 'moved_list' | 'tag_added' | 'tag_removed'
           payload?: Json
           effective_at?: string
           recorded_at?: string
@@ -320,6 +320,7 @@ export interface Database {
           deleted_at: string | null
           search: unknown | null
           definition_of_done: string | null
+          start_at: string | null
         }
         Insert: {
           id?: string
@@ -344,6 +345,7 @@ export interface Database {
           updated_at?: string
           deleted_at?: string | null
           definition_of_done?: string | null
+          start_at?: string | null
         }
         Update: {
           id?: string
@@ -368,6 +370,7 @@ export interface Database {
           updated_at?: string
           deleted_at?: string | null
           definition_of_done?: string | null
+          start_at?: string | null
         }
       }
       lists: {
@@ -666,7 +669,7 @@ export interface Database {
       }
     }
     Enums: {
-      activity_event_type: 'created' | 'state_changed' | 'completed' | 'responsible_role_added' | 'responsible_role_removed' | 'primary_role_changed' | 'assigned_user_added' | 'assigned_user_removed' | 'primary_user_changed' | 'moved_project' | 'tag_added' | 'tag_removed'
+      activity_event_type: 'created' | 'state_changed' | 'completed' | 'responsible_role_added' | 'responsible_role_removed' | 'primary_role_changed' | 'assigned_user_added' | 'assigned_user_removed' | 'primary_user_changed' | 'moved_list' | 'tag_added' | 'tag_removed'
       invitation_status: 'pending' | 'accepted' | 'revoked'
       item_state: 'captured' | 'committed' | 'in_progress' | 'done' | 'snoozed' | 'backlog'
       item_type: 'task' | 'note' | 'meeting'
