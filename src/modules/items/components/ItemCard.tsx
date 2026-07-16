@@ -8,6 +8,7 @@ import {
 } from '@/modules/items/hooks/use-items'
 import type { Item } from '@/modules/items/types'
 import { itemStateLabel, itemTypeLabel } from '@/modules/items/presentation'
+import { ResponsibilityBar, type ResponsibilityContext } from '@/modules/items/components/ResponsibilityBar'
 
 /**
  * One item, with its actions inline.
@@ -23,10 +24,13 @@ export function ItemCard({
   item,
   canWrite,
   onError,
+  responsibility,
 }: {
   item: Item
   canWrite: boolean
   onError?: (message: string) => void
+  /** Present only in team mode (PDL-022 hides responsibility from solo users). */
+  responsibility?: Omit<ResponsibilityContext, 'canWrite'>
 }) {
   const complete = useCompleteItem()
   const reopen = useReopenItem()
@@ -49,7 +53,8 @@ export function ItemCard({
   }
 
   return (
-    <li className="flex items-center justify-between gap-4 px-4 py-3">
+    <li className="space-y-2 px-4 py-3">
+      <div className="flex items-center justify-between gap-4">
       <div className="flex min-w-0 items-center gap-3">
         <span className="shrink-0 rounded bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
           {itemTypeLabel(item)}
@@ -110,6 +115,17 @@ export function ItemCard({
           </Button>
         )}
       </div>
+      </div>
+
+      {/* Responsibility — team mode only (PDL-022 hides it from solo users). A
+          Note has no owner-to-execute (IA), so no responsibility on notes. */}
+      {responsibility && item.type !== 'note' && (
+        <ResponsibilityBar
+          itemId={item.id}
+          ctx={{ ...responsibility, canWrite }}
+          onError={(m) => onError?.(m)}
+        />
+      )}
     </li>
   )
 }

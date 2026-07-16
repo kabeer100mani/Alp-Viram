@@ -32,12 +32,16 @@ vi.mock('@/modules/items/hooks/use-items', () => {
   const m = () => ({ mutate, isPending: false })
   return { useCompleteItem: m, useSnoozeItem: m }
 })
+vi.mock('@/modules/items/hooks/use-responsibility', () => {
+  const m = () => ({ mutate, isPending: false })
+  return { useSetPrimaryResponsibleRole: m, useItemResponsibility: () => ({ data: undefined }) }
+})
 
 const item = (over: Partial<Item> = {}): Item =>
   ({ id: 'i1', title: 'Prepare July MIS', type: 'task', state: 'captured', is_reminder: false, ...over }) as Item
 
 const renderReview = (isSolo = true) =>
-  render(<DailyReview organizationId="org-1" isSolo={isSolo} onClose={() => {}} />)
+  render(<DailyReview organizationId="org-1" currentUserId="user-1" isSolo={isSolo} onClose={() => {}} />)
 
 describe('Daily Review', () => {
   beforeEach(() => {

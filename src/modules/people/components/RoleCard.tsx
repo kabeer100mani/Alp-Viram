@@ -1,7 +1,14 @@
 import { useState } from 'react'
-import { UserMinus, X } from 'lucide-react'
+import { Pencil, UserMinus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useAssignments, useAssignUser, useCloseAssignment, useRetireRole } from '@/modules/people/hooks/use-roles'
+import { Input } from '@/components/ui/input'
+import {
+  useAssignments,
+  useAssignUser,
+  useCloseAssignment,
+  useRenameRole,
+  useRetireRole,
+} from '@/modules/people/hooks/use-roles'
 import { isCurrent, type Role } from '@/modules/people/data/roles-repository'
 import type { Member } from '@/modules/people/data/people-repository'
 
@@ -29,7 +36,10 @@ export function RoleCard({
   const assign = useAssignUser(role.organization_id)
   const close = useCloseAssignment(role.organization_id)
   const retire = useRetireRole(role.organization_id)
+  const rename = useRenameRole(role.organization_id)
   const [pick, setPick] = useState('')
+  const [editing, setEditing] = useState(false)
+  const [draftName, setDraftName] = useState(role.name)
 
   const current = (assignments ?? []).filter(isCurrent)
   const currentUserIds = new Set(current.map((a) => a.userId))
@@ -41,8 +51,41 @@ export function RoleCard({
   return (
     <li className="space-y-2 px-4 py-3">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium">{role.name}</span>
-        {isAdmin && (
+        {editing ? (
+          <form
+            className="flex items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const name = draftName.trim()
+              if (name && name !== role.name) rename.mutate({ id: role.id, name }, { onError: fail })
+              setEditing(false)
+            }}
+          >
+            <Input
+              autoFocus
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              aria-label={`Rename ${role.name}`}
+              className="h-8 max-w-[12rem] text-sm"
+            />
+            <Button type="submit" size="sm" variant="secondary" disabled={!draftName.trim()}>
+              Save
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => { setEditing(false); setDraftName(role.name) }}>
+              Cancel
+            </Button>
+          </form>
+        ) : (
+          <span className="flex items-center gap-1.5 text-sm font-medium">
+            {role.name}
+            {isAdmin && (
+              <button type="button" aria-label={`Rename ${role.name}`} onClick={() => setEditing(true)} className="text-muted-foreground hover:text-foreground">
+                <Pencil className="h-3 w-3" />
+              </button>
+            )}
+          </span>
+        )}
+        {isAdmin && !editing && (
           <Button
             variant="ghost"
             size="sm"

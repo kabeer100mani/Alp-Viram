@@ -1,6 +1,7 @@
 import { Check, Clock, Inbox as InboxIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useEditChip } from '@/modules/review/hooks/use-review'
+import { useItemResponsibility, useSetPrimaryResponsibleRole } from '@/modules/items/hooks/use-responsibility'
 import { itemTypeLabel } from '@/modules/items/presentation'
 import type { Project, Role } from '@/modules/review/data/review-repository'
 import type { Item, ItemType } from '@/modules/items/types'
@@ -21,6 +22,8 @@ export function TriageCard({
   item,
   projects,
   roles,
+  organizationId,
+  currentUserId,
   selected,
   onToggleSelected,
   onConfirm,
@@ -32,6 +35,8 @@ export function TriageCard({
   item: Item
   projects: Project[]
   roles: Role[]
+  organizationId: string
+  currentUserId: string
   selected: boolean
   onToggleSelected: () => void
   onConfirm: () => void
@@ -41,11 +46,15 @@ export function TriageCard({
   busy: boolean
 }) {
   const editChip = useEditChip()
+  const setRole = useSetPrimaryResponsibleRole(organizationId, item.id, currentUserId)
+  // Only fetch responsibility when there are roles to assign — a solo org has none.
+  const { data: resp } = useItemResponsibility(item.id, roles.length > 0)
   const chip = 'h-7 rounded-md border border-input bg-background px-2 text-xs'
 
   // A Note has no done-state (IA) — the 2-minute-rule Done does not apply.
   const completable = item.type !== 'note'
   const dueValue = item.due_at ? item.due_at.slice(0, 10) : ''
+  const primaryRoleId = resp?.responsibleRoles.find((r) => r.isPrimary)?.roleId ?? ''
 
   return (
     <li className="space-y-2 px-4 py-3">
@@ -99,11 +108,19 @@ export function TriageCard({
         )}
 
         {roles.length > 0 && (
-          <select aria-label={`Role for ${item.title}`} className={chip} defaultValue="" disabled>
-            {/* Responsibility is a join row, not a column — assigning it belongs
-                to the People & Roles surface, not here. Shown read-only so the
-                chip row matches the spec without pretending to work. */}
-            <option value="">Role — set in People &amp; Roles</option>
+          <select
+            aria-label={`Responsible role for ${item.title}`}
+            className={chip}
+            value={primaryRoleId}
+            disabled={busy}
+            onChange={(e) => setRole.mutate({ roleId: e.target.value || null })}
+          >
+            <option value="">No responsible role</option>
+            {roles.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
           </select>
         )}
 

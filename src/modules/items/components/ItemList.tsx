@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ItemCard } from '@/modules/items/components/ItemCard'
 import { useWritableItemIds } from '@/modules/views/hooks/use-views'
+import type { ResponsibilityContext } from '@/modules/items/components/ResponsibilityBar'
 import type { Item } from '@/modules/items/types'
 
 /**
@@ -11,10 +12,13 @@ export function ItemList({
   items,
   isLoading,
   emptyMessage = 'Nothing here.',
+  responsibility,
 }: {
   items: Item[] | undefined
   isLoading?: boolean
   emptyMessage?: string
+  /** Team-mode responsibility context; omitted for solo users. */
+  responsibility?: Omit<ResponsibilityContext, 'canWrite'>
 }) {
   const [error, setError] = useState<string | null>(null)
   // One round trip for the whole page, answered by the database.
@@ -37,6 +41,7 @@ export function ItemList({
             // action than to offer one the database will refuse.
             canWrite={writable?.has(item.id) ?? false}
             onError={setError}
+            responsibility={responsibility}
           />
         ))}
       </ul>

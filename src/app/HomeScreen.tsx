@@ -12,6 +12,9 @@ import { useByRoleGroups, useViewItems, useViews } from '@/modules/views/hooks/u
 import { DailyReview } from '@/modules/review/components/DailyReview'
 import { useSearch } from '@/modules/search/use-search'
 import { PeopleScreen } from '@/modules/people/components/PeopleScreen'
+import { InviteTeammate } from '@/modules/people/components/InviteTeammate'
+import { useMembers } from '@/modules/people/hooks/use-people'
+import { useRoles } from '@/modules/people/hooks/use-roles'
 import type { ResolvedView } from '@/modules/views/data/views-repository'
 
 /**
@@ -52,12 +55,21 @@ export function HomeScreen() {
   const isSolo = Boolean(org?.isPersonal && !org?.teamEnabled)
   const isAdmin = org?.role === 'owner' || org?.role === 'admin'
 
+  // Responsibility only exists in team mode (PDL-022). Fetch the roles + members
+  // the editors need once, here, and hand them down.
+  const { data: teamRoles } = useRoles(org?.id, !isSolo)
+  const { data: teamMembers } = useMembers(isSolo ? undefined : org?.id)
+  const responsibility =
+    !isSolo && org && user?.id && teamRoles && teamMembers
+      ? { organizationId: org.id, currentUserId: user.id, roles: teamRoles, members: teamMembers }
+      : undefined
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="space-y-6"
+      className="relative space-y-6"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
@@ -67,6 +79,10 @@ export function HomeScreen() {
           {!isSolo && org && <p className="text-sm text-muted-foreground">{org.name}</p>}
         </div>
         <div className="flex items-center gap-2">
+          {/* A solo user's one team action: invite the first teammate. Without
+              it they'd be stuck — People & Roles (with the invite form) is hidden
+              while solo (PDL-022). */}
+          {isSolo && org && <InviteTeammate organizationId={org.id} />}
           {/* Top bar: [Quick capture] [Daily Review] [theme] (IA §5). The nudge
               counts "N to triage" — never "N overdue" (FR-12b). */}
           <Button
@@ -92,7 +108,12 @@ export function HomeScreen() {
           <AiCaptureBox organizationId={org.id} userId={user.id} />
 
           {reviewOpen && (
-            <DailyReview organizationId={org.id} isSolo={isSolo} onClose={() => setReviewOpen(false)} />
+            <DailyReview
+              organizationId={org.id}
+              currentUserId={user.id}
+              isSolo={isSolo}
+              onClose={() => setReviewOpen(false)}
+            />
           )}
 
           <div className="flex gap-6">
@@ -134,6 +155,7 @@ export function HomeScreen() {
                           items={results}
                           isLoading={searchLoading}
                           emptyMessage={`Nothing matches “${query.trim()}”.`}
+                          responsibility={responsibility}
                         />
                       )}
                     </>
@@ -155,7 +177,7 @@ export function HomeScreen() {
                                 <h3 className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
                                   {g.label} · {g.items.length}
                                 </h3>
-                                <ItemList items={g.items} />
+                                <ItemList items={g.items} responsibility={responsibility} />
                               </div>
                             ))}
                           </div>
@@ -171,6 +193,7 @@ export function HomeScreen() {
                               ? 'Inbox zero — capture something above.'
                               : 'Nothing in this view.'
                           }
+                          responsibility={responsibility}
                         />
                       )}
                     </>

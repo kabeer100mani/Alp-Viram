@@ -32,10 +32,12 @@ import type { Item } from '@/modules/items/types'
  */
 export function DailyReview({
   organizationId,
+  currentUserId,
   isSolo,
   onClose,
 }: {
   organizationId: string
+  currentUserId: string
   isSolo: boolean
   onClose: () => void
 }) {
@@ -217,6 +219,8 @@ export function DailyReview({
                     item={item}
                     projects={projects ?? []}
                     roles={roles ?? []}
+                    organizationId={organizationId}
+                    currentUserId={currentUserId}
                     selected={selected.has(item.id)}
                     onToggleSelected={() => toggle(item.id)}
                     busy={busy}

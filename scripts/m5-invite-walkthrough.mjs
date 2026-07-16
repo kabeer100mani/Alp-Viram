@@ -39,6 +39,8 @@ try {
   await ap.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
   await ap.getByRole('navigation', { name: /views/i }).waitFor({ timeout: 15000 })
   check('solo admin sees NO People & Roles yet (PDL-022)', !(await ap.getByRole('button', { name: /people & roles/i }).count()))
+  // Gate C: the solo-invite escape hatch — the one team action a solo user needs.
+  check('solo admin DOES see "Invite a teammate" (no deadlock)', await ap.getByRole('button', { name: /invite a teammate/i }).isVisible())
   await ap.screenshot({ path: `${OUT}/1-admin-solo.png` })
 
   // ── Create an invite ─────────────────────────────────────────────────────
@@ -118,11 +120,52 @@ try {
   check('after assigning, the role is no longer unfilled', !/unfilled/i.test(await roleRow.innerText()))
   await ap.screenshot({ path: `${OUT}/5-roles.png` })
 
+  // Gate C: rename the role in place. Note: once editing, the name lives in an
+  // input VALUE (not text), so the row's hasText locator no longer matches — use
+  // page-level locators for the edit controls.
+  await roleRow.getByRole('button', { name: new RegExp(`rename ${roleName}`, 'i') }).click()
+  const renamed = `${roleName} renamed`
+  await ap.getByLabel(new RegExp(`rename ${roleName}`, 'i')).fill(renamed)
+  await ap.getByRole('button', { name: /^save$/i }).click()
+  await ap.getByText(renamed).waitFor({ timeout: 10000 })
+  check('admin can rename a role in place', await ap.getByText(renamed).isVisible())
+
   // The non-admin sees roles read-only: no Add-role, no Assign controls.
   await ip.getByRole('button', { name: /people & roles/i }).click()
   await ip.getByText(/durable responsibilities/i).waitFor({ timeout: 10000 })
   check('member sees roles read-only (no "Add role")', !(await ip.getByRole('button', { name: /add role/i }).count()))
   check('member cannot assign (no Assign control)', !(await ip.getByRole('button', { name: /^assign$/i }).count()))
+
+  // ── Gate C: responsibility on an item + By Role populates ─────────────────
+  // Create an item directly (avoids depending on live AI), then set its
+  // responsible role from the card and confirm the By Role view groups it.
+  const itemTitle = `MIS ${rand()}`
+  await ap.evaluate(async ({ title }) => {
+    const { getSupabaseClient } = await import('/src/lib/supabase/client.ts')
+    const sb = getSupabaseClient()
+    const orgId = (await sb.from('organizations').select('id').limit(1)).data[0].id
+    const uid = (await sb.auth.getUser()).data.user.id
+    await sb.from('items').insert({ organization_id: orgId, title, type: 'task', state: 'committed', created_by: uid })
+  }, { title: itemTitle })
+
+  await ap.getByRole('button', { name: 'Today' }).click().catch(() => {})
+  // The item is committed with no due date → it shows in Upcoming/By Role; open By Role.
+  await ap.getByRole('button', { name: 'By Role' }).click()
+  await ap.getByText(itemTitle).first().waitFor({ timeout: 10000 })
+  check('a new item starts under "Unassigned" in By Role', /unassigned/i.test(await ap.locator('section').last().innerText()))
+
+  // Set its responsible role from the card.
+  await ap.getByRole('button', { name: /responsibility for this item/i }).first().click()
+  const roleSelect = ap.locator('select[aria-label="Responsible role"]').first()
+  await roleSelect.waitFor({ timeout: 10000 })
+  await roleSelect.selectOption({ label: renamed })
+  await ap.waitForTimeout(1500)
+  await ap.reload({ waitUntil: 'networkidle' })
+  await ap.getByRole('navigation', { name: /views/i }).waitFor({ timeout: 15000 })
+  await ap.getByRole('button', { name: 'By Role' }).click()
+  await ap.getByText(renamed).first().waitFor({ timeout: 10000 })
+  check('after setting a responsible role, the item groups under that role in By Role', await ap.getByText(renamed).first().isVisible())
+  await ap.screenshot({ path: `${OUT}/6-by-role.png` })
 
   if (adminErrors.length || inviteeErrors.length) {
     console.log('\n⚠️  page errors:')
