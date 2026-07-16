@@ -62,6 +62,17 @@ describe('ItemRow (dense table)', () => {
     expect(screen.getByRole('option', { name: 'In progress' })).toBeInTheDocument()
   })
 
+  // PDL-037: the `captured` state reads "To Do". It used to read "Inbox", which
+  // collided with the Inbox *view* in the rail — one word meaning both a status and
+  // a place. The rail's Inbox view keeps its name; only the state label changed.
+  it('labels the captured state "To Do", not "Inbox" (which is a view)', () => {
+    renderRow({ state: 'captured' })
+    const status = screen.getByLabelText(/status for/i) as HTMLSelectElement
+    expect(status.value).toBe('captured') // the enum value is unchanged…
+    expect(screen.getByRole('option', { name: 'To Do' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Inbox' })).not.toBeInTheDocument()
+  })
+
   it('presents a reminder as "Reminder"', () => {
     renderRow({ is_reminder: true })
     expect(screen.getByText('Reminder')).toBeInTheDocument()

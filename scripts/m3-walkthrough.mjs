@@ -76,7 +76,14 @@ try {
   await item.waitFor({ timeout: 15000 })
   await page.screenshot({ path: `${OUT}/3-inbox.png` })
   check('captured item appears in the Inbox view', await item.isVisible())
-  check('card shows a human state ("Inbox"), not "captured"', await page.getByText('Inbox').first().isVisible())
+  // Scoped to the table: an unscoped getByText('Inbox') matched the RAIL's Inbox
+  // button, so this check passed for the wrong reason regardless of the row.
+  // PDL-037: the `captured` state now reads "To Do" — the rail's Inbox VIEW keeps
+  // its name, which is precisely the collision the rename removes.
+  const statusCell = page.getByLabel(/^Status for /i).first()
+  await statusCell.waitFor({ timeout: 15000 })
+  check('row shows a human state ("To Do"), not "captured"', (await statusCell.innerText()).includes('To Do'))
+  check('the raw "captured" enum never reaches the screen (PDL-027)', !(await page.locator('body').innerText()).includes('captured'))
 
   // ── 5. Complete it — one action from the row ────────────────────────────
   // PDL-034 replaced the card (and its Done button) with a dense table whose

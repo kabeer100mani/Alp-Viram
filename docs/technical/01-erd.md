@@ -132,8 +132,9 @@ erDiagram
 ## 5. Enumerations (proposed)
 
 - `item_type`: `task` · `note` · `meeting`
-- `item_state`: `captured` (Inbox) · `committed` · `in_progress` · `done` ·
-  `snoozed` · `backlog`
+- `item_state`: `captured` (displayed as **"To Do"** — PDL-037; this line said
+  "Inbox", which collided with the Inbox *view*) · `committed` · `in_progress` ·
+  `done` · `snoozed` · `backlog`
 - `priority`: `none` · `low` · `medium` · `high` · `urgent`
 - `org_member_role` (platform permission): `owner` · `admin` · `member`
 - `activity_event_type`: `created` · `state_changed` · `responsible_role_added` ·

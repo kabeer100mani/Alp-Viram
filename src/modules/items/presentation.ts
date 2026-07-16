@@ -14,7 +14,11 @@ import type { Item, ItemState, ItemType } from '@/modules/items/types'
  */
 
 const stateLabels: Record<ItemState, string> = {
-  captured: 'Inbox',
+  // "To Do", not "Inbox" (PDL-037). The frozen package named this state Inbox to
+  // make the point that Inbox is a *state*, not a container — but the rail also has
+  // an Inbox view, so the one word meant both a status and a place. The state is
+  // renamed; the Inbox view keeps its name. The `captured` enum value is unchanged.
+  captured: 'To Do',
   committed: 'Committed',
   in_progress: 'In progress',
   done: 'Done',

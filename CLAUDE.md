@@ -94,6 +94,7 @@ Three bugs Palash caught by *looking* at the screen, all invisible to green test
 - **Still open (found by audit, awaiting Palash's styling direction):** bare `—` for empty assignee ([ItemRow.tsx](src/modules/items/components/ItemRow.tsx)) and for read-only dates/estimate ([TaskPanel.tsx](src/modules/items/components/TaskPanel.tsx)); `{m.role}` rendered raw in [PeopleScreen.tsx](src/modules/people/components/PeopleScreen.tsx) — masked by `capitalize` today, but there is **no `roleLabel()` helper**, so it has no label path.
 
 ## UI Style Rules
+- **The `captured` state displays as "To Do", not "Inbox"** (PDL-037, ruled by Palash 2026-07-16). "Inbox" now names **only the view** in the rail (and "Inbox (no list)" as an item's *location*). The `captured` enum value is unchanged. This **amends the frozen package** — Doc 5 `:63`/`:196` and the ERD `:135` all said "Inbox"; all three are annotated. Doc 5 §2a's modelling argument ("Inbox is a state, not a container") **still stands** — only the label changed, because the doc had reused the view's word as the state's name.
 - **No ALL-CAPS text anywhere.** Everything is **Proper Case**; the only exception is the app name ("Alp-Viram"). Never use the Tailwind `uppercase` class. DB-lowercase values (e.g. member `role`) render with `capitalize`. *(Palash, 2026-07-16.)*
 
 ## Deploy Safety Notes

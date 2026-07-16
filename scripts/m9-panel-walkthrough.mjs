@@ -56,7 +56,11 @@ try {
 
   // ── Open the panel ─────────────────────────────────────────────────────────
   check('no panel before clicking', !(await page.getByRole('dialog').isVisible().catch(() => false)))
-  await page.getByRole('button', { name: title }).click()
+  // `exact: true` matters: getByRole matches the accessible name by SUBSTRING, and
+  // the Due cell's button is labelled "Due date for <title>" — which contains the
+  // title. Without exact, this silently becomes ambiguous the moment the
+  // writable-ids query resolves and the Due cell renders as a button.
+  await page.getByRole('button', { name: title, exact: true }).click()
   const panel = page.getByRole('dialog', { name: new RegExp(`details for ${title}`, 'i') })
   await panel.waitFor({ timeout: 10000 })
   check('clicking the task name opens the detail panel', await panel.isVisible())
@@ -148,14 +152,14 @@ try {
   check('Escape closes the panel', !(await panel.isVisible().catch(() => false)))
   check('the list is still there after closing', await page.getByRole('table').isVisible())
 
-  await page.getByRole('button', { name: newTitle }).click()
+  await page.getByRole('button', { name: newTitle, exact: true }).click()
   await panel.waitFor({ timeout: 5000 })
   await panel.getByRole('button', { name: 'Close', exact: true }).click()
   await page.waitForTimeout(500)
   check('the close button closes the panel', !(await panel.isVisible().catch(() => false)))
 
   // ── Complete from the panel (last — it removes the task from this view) ─────
-  await page.getByRole('button', { name: newTitle }).click()
+  await page.getByRole('button', { name: newTitle, exact: true }).click()
   await panel.waitFor({ timeout: 5000 })
   await panel.getByRole('button', { name: new RegExp(`complete ${newTitle}`, 'i') }).click()
   await page.waitForTimeout(1500)

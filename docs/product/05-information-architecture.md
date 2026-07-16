@@ -31,6 +31,11 @@ I recommend **against** treating **Inbox** as a hierarchy level, and **against**
 7 types. Here is why, and the corrected model.
 
 ### 2a. "Inbox" is a state, not a container
+> **Amended by PDL-037 (2026-07-16):** the *modelling* argument below stands
+> unchanged — Inbox is a state, not a hierarchy level. What changed is only the
+> **display label**: that state now reads **"To Do"** in the UI, because this section
+> also reused "Inbox" as the user-facing state name while the rail ships an Inbox
+> *view* — one word meaning both a status and a place. The view keeps the name.
 If Inbox sits *between* Project and Item as a container, it implies an Item is a
 child of the Inbox and must be "moved out" into a Project. That's wrong for two
 reasons:
@@ -60,7 +65,7 @@ Organization  ("Workspace"; you belong to several — Personal, Profile 1… —
    └── Item             (the unit of work — the ONLY required object besides Org)
           ├── type: Task | Note | Meeting
           ├── responsibility: Responsible Roles · Assigned Users · Collaborators
-          ├── lifecycle state: Captured(Inbox) → Committed → Done  (+ Snoozed/Backlog)
+          ├── lifecycle state: Captured("To Do", PDL-037) → Committed → Done  (+ Snoozed/Backlog)
           ├── list_id?      (OPTIONAL — no list ⇒ it lives in the Inbox)
           ├── checklist[]   (optional sub-steps)  ·  definition_of_done?  (note, not enforced)
           └── tags[]        (flat, many-to-many)
@@ -194,6 +199,7 @@ graveyard." The IA mitigations:
 
 ## 8. IA decisions summary (feeds the PDL)
 - Inbox is a **state/view**, not a hierarchy level. *(Correction to the proposal.)*
+  The state **displays as "To Do"** (PDL-037); "Inbox" now names only the view.
 - Required containment is only **Organization → Item**; **Project is optional**.
 - **3 stored Item types** (Task, Note, Meeting); Reminder/Follow-up/Knowledge are
   metadata; Question is routed.
