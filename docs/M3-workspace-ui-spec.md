@@ -12,6 +12,18 @@
 > - **No board view.** The frozen IA wins; `PROJECT_PLAN.md:183` is corrected (**PDL-029**).
 > - **Daily Review is in M3** — without it the Inbox is a one-way door (**PDL-030**).
 > - **Search is in M3** — Must-Have, in the frozen rail (**PDL-030**).
+> - All five defaults in §6 approved as written (2026-07-16).
+>
+> **Split into two gates** (approved 2026-07-16) — M3 is far larger than its
+> one-line roadmap summary implied:
+>
+> | Gate | Scope | Status |
+> | --- | --- | --- |
+> | **A** | View engine · write path · rail · 7 system views · one-action item cards · the 3 shipped-violation fixes (§7.6) | 🔵 **in progress** |
+> | **B** | Daily Review (triage) · Search · dark/light polish | ⬜ after Gate A |
+>
+> Gate A order: **write path → view engine → rail → cards → violation fixes.**
+> Everything else sits on the first two.
 
 ---
 

@@ -1,38 +1,45 @@
-import { useItems } from '@/modules/items/hooks/use-items'
-import type { ItemType } from '@/modules/items/types'
+import { useState } from 'react'
+import { ItemCard } from '@/modules/items/components/ItemCard'
+import { useWritableItemIds } from '@/modules/views/hooks/use-views'
+import type { Item } from '@/modules/items/types'
 
-const typeLabel: Record<ItemType, string> = {
-  task: 'Task',
-  note: 'Note',
-  meeting: 'Meeting',
-}
+/**
+ * Renders the items of the active view. Users never scroll a giant flat list —
+ * they filter (IA §Scale), so this is always a view's result, never "everything".
+ */
+export function ItemList({
+  items,
+  isLoading,
+  emptyMessage = 'Nothing here.',
+}: {
+  items: Item[] | undefined
+  isLoading?: boolean
+  emptyMessage?: string
+}) {
+  const [error, setError] = useState<string | null>(null)
+  // One round trip for the whole page, answered by the database.
+  const { data: writable } = useWritableItemIds((items ?? []).map((i) => i.id))
 
-export function ItemList({ organizationId }: { organizationId: string }) {
-  const { data: items, isLoading } = useItems(organizationId)
-
-  if (isLoading) {
-    return <p className="text-sm text-muted-foreground">Loading items…</p>
-  }
+  if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>
   if (!items || items.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">No items yet — capture your first above.</p>
-    )
+    return <p className="text-sm text-muted-foreground">{emptyMessage}</p>
   }
+
   return (
-    <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
-      {items.map((item) => (
-        <li key={item.id} className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <span className="rounded bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-              {typeLabel[item.type]}
-            </span>
-            <span className="text-sm">{item.title}</span>
-          </div>
-          <span className="text-xs uppercase tracking-wide text-muted-foreground">
-            {item.state}
-          </span>
-        </li>
-      ))}
-    </ul>
+    <div className="space-y-2">
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+        {items.map((item) => (
+          <ItemCard
+            key={item.id}
+            item={item}
+            // Until the answer arrives, offer nothing: better to briefly show no
+            // action than to offer one the database will refuse.
+            canWrite={writable?.has(item.id) ?? false}
+            onError={setError}
+          />
+        ))}
+      </ul>
+    </div>
   )
 }

@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -5,16 +6,36 @@ import { useAuth } from '@/modules/auth/auth-context'
 import { useActiveOrg } from '@/modules/organizations/use-active-org'
 import { AiCaptureBox } from '@/modules/inbox/components/AiCaptureBox'
 import { ItemList } from '@/modules/items/components/ItemList'
+import { ViewRail } from '@/modules/views/components/ViewRail'
+import { useViewItems, useViews } from '@/modules/views/hooks/use-views'
+import type { ResolvedView } from '@/modules/views/data/views-repository'
 
-/** Authenticated landing screen for Milestone 1 — proves identity + tenancy. */
+/**
+ * The workspace. Navigation is by intent — pick a view, act on the items in it.
+ *
+ * Progressive disclosure (PDL-022): a solo user is never shown Organization,
+ * membership or role concepts. The data model is identical underneath; only the
+ * UX differs. (This screen previously announced "Workspace / Mode: Personal
+ * (solo) / Your role: owner" to exactly the user who should never see them.)
+ */
 export function HomeScreen() {
   const { user, signOut } = useAuth()
-  const { data: org, isLoading } = useActiveOrg(user?.id)
+  const { data: org } = useActiveOrg(user?.id)
+  const [activeId, setActiveId] = useState<string | undefined>()
+
+  const { data: views, isLoading: viewsLoading } = useViews(org?.id)
+  const active: ResolvedView | undefined = useMemo(
+    () => views?.find((v) => v.id === activeId) ?? views?.find((v) => v.name === 'Inbox') ?? views?.[0],
+    [views, activeId],
+  )
+  const { data: items, isLoading: itemsLoading } = useViewItems(org?.id, active?.filter)
+
+  const inboxView = views?.find((v) => v.name === 'Inbox')
+  const { data: inboxItems } = useViewItems(org?.id, inboxView?.filter)
+
   const displayName =
-    (user?.user_metadata?.display_name as string | undefined) ??
-    user?.email?.split('@')[0] ??
-    'there'
-  const userId = user?.id
+    (user?.user_metadata?.display_name as string | undefined) ?? user?.email?.split('@')[0] ?? 'there'
+  const isSolo = Boolean(org?.isPersonal && !org?.teamEnabled)
 
   return (
     <motion.div
@@ -25,48 +46,54 @@ export function HomeScreen() {
     >
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1">
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            Milestone 1 · Identity &amp; Tenancy
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight">Welcome, {displayName}</h1>
-          <p className="text-muted-foreground">
-            {isLoading
-              ? 'Loading your workspace…'
-              : org
-                ? `You're in "${org.name}".`
-                : 'No workspace found.'}
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">Welcome, {displayName}</h1>
+          {/* A solo user has no "workspace" to speak of — saying so would leak
+              the tenancy model they are deliberately not shown (PDL-022). */}
+          {!isSolo && org && <p className="text-sm text-muted-foreground">{org.name}</p>}
         </div>
         <Button variant="outline" size="sm" onClick={() => void signOut()}>
           <LogOut className="h-4 w-4" /> Sign out
         </Button>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-5 text-card-foreground">
-        <h2 className="text-sm font-semibold">Your account</h2>
-        <dl className="mt-3 grid grid-cols-[7rem_1fr] gap-y-1 text-sm">
-          <dt className="text-muted-foreground">Email</dt>
-          <dd>{user?.email}</dd>
-          <dt className="text-muted-foreground">Workspace</dt>
-          <dd>{org?.name ?? '—'}</dd>
-          <dt className="text-muted-foreground">Mode</dt>
-          <dd>{org ? (org.isPersonal ? 'Personal (solo)' : 'Team') : '—'}</dd>
-          <dt className="text-muted-foreground">Your role</dt>
-          <dd className="capitalize">{org?.role ?? '—'}</dd>
-        </dl>
-      </div>
+      {org && user?.id && (
+        <>
+          <AiCaptureBox organizationId={org.id} userId={user.id} />
 
-      {org && userId && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold">AI Inbox</h2>
-          <AiCaptureBox organizationId={org.id} userId={userId} />
-          <ItemList organizationId={org.id} />
-        </section>
+          <div className="flex gap-6">
+            {viewsLoading || !views ? (
+              <p className="text-sm text-muted-foreground">Loading views…</p>
+            ) : (
+              <>
+                <ViewRail
+                  views={views}
+                  activeViewId={active?.id}
+                  onSelect={(v) => setActiveId(v.id)}
+                  inboxCount={inboxItems?.length}
+                  isSolo={isSolo}
+                />
+                <section className="min-w-0 flex-1 space-y-3">
+                  <h2 className="text-sm font-semibold">{active?.name}</h2>
+                  {active?.filterInvalid && (
+                    <p className="text-sm text-destructive">
+                      This view’s filter could not be read, so it is showing everything active.
+                    </p>
+                  )}
+                  <ItemList
+                    items={items}
+                    isLoading={itemsLoading}
+                    emptyMessage={
+                      active?.name === 'Inbox'
+                        ? 'Inbox zero — capture something above.'
+                        : 'Nothing in this view.'
+                    }
+                  />
+                </section>
+              </>
+            )}
+          </div>
+        </>
       )}
-
-      <p className="text-sm text-muted-foreground">
-        Next milestone: the AI Inbox — natural-language capture with classification.
-      </p>
     </motion.div>
   )
 }

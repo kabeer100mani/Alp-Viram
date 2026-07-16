@@ -98,6 +98,15 @@ check('B CANNOT attach a responsible role to gain write', Boolean(selfRoleErr))
 const { error: cbErr } = await A.from('items').update({ created_by: bId }).eq('id', I).select()
 check('created_by is immutable (no laundering attribution)', Boolean(cbErr))
 
+console.log('\n── UI affordance must match enforcement (writable_item_ids, M3) ──')
+// The item card asks the database which items it may write, rather than
+// re-implementing the rule in TypeScript where it could drift. If this ever
+// disagrees with the RLS results above, the UI is lying to someone.
+const { data: aCan } = await A.rpc('writable_item_ids', { p_ids: [I] })
+check('A (creator) is told it CAN write — card offers actions', (aCan ?? []).includes(I))
+const { data: bCan } = await B.rpc('writable_item_ids', { p_ids: [I] })
+check('B (plain member) is told it CANNOT write — card offers none', (bCan ?? []).length === 0)
+
 console.log('\n── Execution axis: assigned user ──')
 const { error: assignErr } = await A.from('item_assigned_users').insert({
   organization_id: org, item_id: I, user_id: bId, is_primary: true,

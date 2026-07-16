@@ -29,3 +29,17 @@ export class AuthError extends AppError {
     super(message, 'AUTH_ERROR', options)
   }
 }
+
+/**
+ * The caller is authenticated but not allowed to perform this write.
+ *
+ * RLS denies *silently*: a forbidden UPDATE matches no rows and returns no
+ * error, which is indistinguishable from success unless we check the affected
+ * rows. Repositories translate that into this error so it can never be mistaken
+ * for a successful write. See Doc 8 — Permission Model.
+ */
+export class PermissionError extends AppError {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, 'PERMISSION_DENIED', options)
+  }
+}
