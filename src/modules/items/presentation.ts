@@ -44,15 +44,18 @@ export function itemTypeLabel(item: Pick<Item, 'type' | 'is_reminder'>): string 
 export type Priority = Item['priority']
 export const priorityOptions: Priority[] = ['none', 'low', 'medium', 'high', 'urgent']
 
+// The enum values are frozen (ERD :137); these display labels are not prescribed
+// anywhere, so "none" reads as a word. It was "—", which rendered as a stray dash
+// wedged between the flag icon and the dropdown arrow and read as a broken control.
 const priorityLabels: Record<string, string> = {
-  none: '—',
+  none: 'None',
   low: 'Low',
   medium: 'Medium',
   high: 'High',
   urgent: 'Urgent',
 }
 export function priorityLabel(p: Priority): string {
-  return priorityLabels[p] ?? '—'
+  return priorityLabels[p] ?? 'None'
 }
 
 /**

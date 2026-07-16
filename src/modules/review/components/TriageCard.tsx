@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { useEditChip } from '@/modules/review/hooks/use-review'
 import { useItemResponsibility, useSetPrimaryResponsibleRole } from '@/modules/items/hooks/use-responsibility'
 import { itemTypeLabel } from '@/modules/items/presentation'
+import { DateCell } from '@/modules/items/components/DateCell'
 import type { List, Role } from '@/modules/review/data/review-repository'
 import type { Item, ItemType } from '@/modules/items/types'
 
@@ -53,7 +54,6 @@ export function TriageCard({
 
   // A Note has no done-state (IA) — the 2-minute-rule Done does not apply.
   const completable = item.type !== 'note'
-  const dueValue = item.due_at ? item.due_at.slice(0, 10) : ''
   const primaryRoleId = resp?.responsibleRoles.find((r) => r.isPrimary)?.roleId ?? ''
 
   return (
@@ -124,18 +124,14 @@ export function TriageCard({
           </select>
         )}
 
-        <input
-          type="date"
-          aria-label={`Due date for ${item.title}`}
-          className={chip}
-          value={dueValue}
-          disabled={busy}
-          onChange={(e) => {
-            const v = e.target.value
-            // Local noon → an unambiguous absolute instant (TD-005 discipline).
-            const dueAt = v ? new Date(`${v}T12:00:00`).toISOString() : null
-            editChip.mutate({ id: item.id, patch: { dueAt } })
-          }}
+        <DateCell
+          value={item.due_at}
+          label={`Due date for ${item.title}`}
+          canWrite
+          busy={busy}
+          placeholder="Due date"
+          className={`${chip} inline-flex items-center`}
+          onChange={(dueAt) => editChip.mutate({ id: item.id, patch: { dueAt } })}
         />
       </div>
 

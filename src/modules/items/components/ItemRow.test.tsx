@@ -85,6 +85,33 @@ describe('ItemRow (dense table)', () => {
     expect(screen.getByLabelText(/status for/i)).toBeInTheDocument()
   })
 
+  // An always-rendered <input type="date"> prints the browser's own "dd-mm-yyyy"
+  // placeholder as literal text in the cell. The cell must show a date, not a form
+  // control: no date input exists until the cell is actually clicked.
+  it('shows no date input (and so no "dd-mm-yyyy" text) until the Due cell is clicked', async () => {
+    const { container } = renderRow()
+    expect(container.querySelector('input[type="date"]')).toBeNull()
+
+    await userEvent.click(screen.getByLabelText(/due date for/i))
+    expect(container.querySelector('input[type="date"]')).not.toBeNull()
+  })
+
+  it('renders a set due date human-formatted, never as a raw ISO string', () => {
+    renderRow({ due_at: '2026-08-20T12:00:00Z' })
+    expect(screen.getByLabelText(/due date for/i)).toHaveTextContent('20 Aug')
+    expect(screen.queryByText(/2026-08-20/)).not.toBeInTheDocument()
+  })
+
+  // "—" rendered as a stray dash wedged between the flag and the dropdown arrow,
+  // which read as a broken control rather than a priority.
+  it('labels the "none" priority as a word, not a bare dash', () => {
+    renderRow({ priority: 'none' })
+    // Both the visible cell label and the select's own option read "None".
+    expect(screen.getAllByText('None').length).toBeGreaterThan(0)
+    expect(screen.getByRole('option', { name: 'None' })).toBeInTheDocument()
+    expect(screen.queryByText('—')).not.toBeInTheDocument()
+  })
+
   // PDL-036: the row carries only the four common fields; Start moved to the panel.
   it('has no Start column in the row', () => {
     renderRow()

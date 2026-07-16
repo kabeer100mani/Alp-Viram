@@ -57,13 +57,16 @@ describe('AiCaptureBox — displays what the (mock) provider returns', () => {
     await user.type(screen.getByPlaceholderText(/capture in plain words/i), 'remind me to review mis')
     await user.click(screen.getByRole('button', { name: /capture/i }))
 
-    // The proposal card reflects the mock's fields verbatim.
+    // The proposal card reflects the mock's fields — humanised, not verbatim.
     expect(await screen.findByText(/AI proposal/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/item type/i)).toHaveValue('task')
     expect(screen.getByDisplayValue('Review July MIS')).toBeInTheDocument()
     expect(screen.getByText(/reminder/i)).toBeInTheDocument()
-    expect(screen.getByText(/due 2026-07-17/i)).toBeInTheDocument()
-    expect(screen.getByText(/high/i)).toBeInTheDocument()
+    // A date is shown to a human as "17 Jul", never as the raw ISO string it
+    // arrived as. This assertion previously pinned the bug (`due 2026-07-17`).
+    expect(screen.getByText(/due 17 jul/i)).toBeInTheDocument()
+    expect(screen.queryByText(/2026-07-17/)).not.toBeInTheDocument()
+    expect(screen.getByText('High')).toBeInTheDocument()
     expect(screen.getByText(/confidence 42%/i)).toBeInTheDocument()
   })
 

@@ -78,11 +78,14 @@ try {
   check('captured item appears in the Inbox view', await item.isVisible())
   check('card shows a human state ("Inbox"), not "captured"', await page.getByText('Inbox').first().isVisible())
 
-  // ── 5. Complete it — one action from the card ───────────────────────────
-  const done = page.getByRole('button', { name: /^Complete /i }).first()
-  await done.waitFor({ timeout: 15000 })
-  check('card offers Done (creator may write)', await done.isVisible())
-  await done.click()
+  // ── 5. Complete it — one action from the row ────────────────────────────
+  // PDL-034 replaced the card (and its Done button) with a dense table whose
+  // Status select completes in one action; PDL-036 removed the row-expand. This
+  // step drove the old card and had been stale since PDL-034.
+  const status = page.getByLabel(/^Status for /i).first()
+  await status.waitFor({ timeout: 15000 })
+  check('row offers an inline Status control (creator may write)', await status.isVisible())
+  await status.selectOption('done')
 
   await page.waitForTimeout(2500)
   await page.screenshot({ path: `${OUT}/4-after-done.png` })
@@ -95,7 +98,7 @@ try {
   await inDone.waitFor({ timeout: 15000 })
   await page.screenshot({ path: `${OUT}/5-done-view.png` })
   check('completed item appears in the Done view (archived, not deleted)', await inDone.isVisible())
-  check('Done card offers Reopen (Done is recoverable)', await page.getByRole('button', { name: /^Reopen /i }).first().isVisible())
+  check('Done row offers Reopen (Done is recoverable)', await page.getByRole('button', { name: /^Reopen /i }).first().isVisible())
 
   // ══ GATE B ═════════════════════════════════════════════════════════════
   // ── 7. Daily Review — the only way items leave the Inbox (PDL-016) ──────
@@ -118,6 +121,10 @@ try {
 
   const reviewText = await review.innerText()
   check('Daily Review opens and counts "N to triage"', /to triage/i.test(reviewText))
+  // A bare <input type="date"> prints the browser's literal "dd-mm-yyyy" placeholder
+  // when empty — and on a triage card empty is the COMMON case, so it showed on
+  // nearly every card. The due chip now shows a date or a quiet "Due date" hint.
+  check('triage card shows no literal "dd-mm-yyyy" placeholder', !/dd-mm/i.test(reviewText))
   check('Daily Review states the 5–10 minute target (PDL-016)', /5–10 minutes/i.test(reviewText))
   check('Daily Review never says "overdue" (FR-12b)', !/overdue/i.test(reviewText))
   check('triage groups the queue by type', /Task · \d/.test(reviewText))

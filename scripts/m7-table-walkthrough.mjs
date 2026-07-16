@@ -50,16 +50,19 @@ try {
   check('a real table renders (role=table)', await table.isVisible())
   // Headers are CSS-uppercased, so innerText returns e.g. "PRIORITY" — compare lower.
   const head = (await table.innerText()).toLowerCase()
-  for (const col of ['priority', 'start', 'due', 'status']) {
+  // PDL-036 narrowed the row to Name | Assignee | Priority | Due date | Status —
+  // Start moved into the task panel, so it is deliberately absent here.
+  for (const col of ['name', 'priority', 'due date', 'status']) {
     check(`column header "${col}" present`, head.includes(col))
   }
+  check('Start column absent (moved to the task panel, PDL-036)', !head.includes('start'))
   // Solo user → no Assignee column (PDL-022).
   check('solo user sees NO Assignee column (PDL-022)', !head.includes('assignee'))
 
-  // Grouped collapsible section with a count ("Unassigned · 2").
-  const groupHeader = page.getByRole('button', { name: /unassigned · \d/i })
+  // Grouped collapsible section with a count ("Unassigned 2").
+  const groupHeader = page.getByRole('button', { name: /unassigned\s*\d/i })
   await groupHeader.waitFor({ timeout: 10000 })
-  check('grouped section shows a count ("Unassigned · N")', await groupHeader.isVisible())
+  check('grouped section shows a count ("Unassigned N")', await groupHeader.isVisible())
   await page.screenshot({ path: `${OUT}/1-table.png` })
 
   const row = page.getByRole('row').filter({ hasText: title }).first()
@@ -70,10 +73,15 @@ try {
   await page.waitForTimeout(1200)
   check('Priority is editable inline', (await row.getByLabel(new RegExp(`priority for ${title}$`, 'i')).inputValue()) === 'high')
 
-  // Inline Due edit.
-  await row.getByLabel(new RegExp(`due date for ${title}$`, 'i')).fill('2026-08-08')
+  // Inline Due edit. The cell shows a *date*, not a form control: it renders the
+  // formatted date (or a "Set date" hint) and swaps in the input only while editing,
+  // because a bare date input printed a literal "dd-mm-yyyy" placeholder in the cell.
+  const dueCell = () => row.getByLabel(new RegExp(`due date for ${title}$`, 'i'))
+  check('empty Due cell shows no "dd-mm-yyyy" placeholder text', !(await dueCell().innerText()).toLowerCase().includes('dd-mm'))
+  await dueCell().click()
+  await dueCell().fill('2026-08-08')
   await page.waitForTimeout(1200)
-  check('Due date is editable inline', (await row.getByLabel(new RegExp(`due date for ${title}$`, 'i')).inputValue()) === '2026-08-08')
+  check('Due date is editable inline', (await dueCell().innerText()).includes('8 Aug'))
 
   // Inline Status edit.
   await row.getByLabel(new RegExp(`status for ${title}$`, 'i')).selectOption('in_progress')
@@ -87,14 +95,13 @@ try {
   await row2.waitFor({ timeout: 10000 })
   check('the inline edits persisted (priority=high after reload)', (await row2.getByLabel(new RegExp(`priority for ${title}$`, 'i')).inputValue()) === 'high')
 
-  // Row-expand reveals the heavier editors (checklist/DoD).
-  await row2.getByRole('button', { name: new RegExp(`details for ${title}$`, 'i') }).click()
-  await page.waitForTimeout(500)
-  check('row-expand reveals the checklist/DoD panel', await page.getByRole('button', { name: new RegExp(`checklist and definition of done for ${title}$`, 'i') }).first().isVisible())
-  await page.screenshot({ path: `${OUT}/2-expand.png` })
+  // The row-expand is gone (PDL-036): the heavier editors moved to the task detail
+  // panel, which scripts/m9-panel-walkthrough.mjs covers end to end.
+  check('row no longer expands in place', !(await row2.getByRole('button', { name: new RegExp(`details for ${title}$`, 'i') }).count()))
+  await page.screenshot({ path: `${OUT}/2-row.png` })
 
   // Collapse a group hides its rows.
-  await page.getByRole('button', { name: /unassigned · \d/i }).click()
+  await page.getByRole('button', { name: /unassigned\s*\d/i }).click()
   await page.waitForTimeout(400)
   check('collapsing a group hides its rows', !(await page.getByRole('row').filter({ hasText: title }).count()))
 } catch (err) {

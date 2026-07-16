@@ -5,6 +5,7 @@ import {
   useSetItemState,
   useUpdateItem,
 } from '@/modules/items/hooks/use-items'
+import { DateCell } from '@/modules/items/components/DateCell'
 import {
   itemStateLabel,
   itemTypeLabel,
@@ -17,10 +18,6 @@ import { Avatar } from '@/components/ui/avatar'
 import type { Item, ItemState } from '@/modules/items/types'
 
 const STATUS_OPTIONS: ItemState[] = ['captured', 'committed', 'in_progress', 'done', 'snoozed', 'backlog']
-
-const dateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : '')
-// Local noon → an unambiguous absolute instant (TD-005 discipline).
-const toInstant = (v: string) => (v ? new Date(`${v}T12:00:00`).toISOString() : null)
 
 export interface RowColumns {
   showAssignee: boolean
@@ -68,8 +65,6 @@ export function ItemRow({
   const isDone = item.state === 'done'
 
   const cell = 'px-2 py-1 text-xs'
-  const bareSelect = 'h-6 w-full cursor-pointer rounded bg-transparent px-1 text-xs hover:bg-secondary/60 disabled:opacity-60 focus:outline-none'
-  const dateField = 'h-6 w-full rounded border border-transparent bg-transparent px-1 text-xs text-muted-foreground hover:border-input disabled:opacity-60'
 
   function changeStatus(next: ItemState) {
     if (next === item.state) return
@@ -108,13 +103,16 @@ export function ItemRow({
         </div>
       )}
 
-      {/* Priority — coloured flag + label */}
-      <div className={`${cell} flex items-center gap-1`}>
+      {/* Priority — one clean flag + label. The native select arrow is removed
+          (appearance-none): with it, the cell rendered flag + label + a detached
+          chevron pushed to the column edge, which read as a broken control. */}
+      <div className={`${cell} relative flex items-center gap-1.5`}>
         <Flag className={`h-3 w-3 shrink-0 ${priorityColor(item.priority)}`} fill="currentColor" />
-        {canWrite ? (
+        <span className={`truncate ${priorityColor(item.priority)}`}>{priorityLabel(item.priority)}</span>
+        {canWrite && (
           <select
             aria-label={`Priority for ${item.title}`}
-            className={`${bareSelect} ${priorityColor(item.priority)}`}
+            className="absolute inset-0 cursor-pointer opacity-0"
             value={item.priority}
             disabled={busy}
             onChange={(e) => update.mutate({ id: item.id, patch: { priority: e.target.value as Item['priority'] } }, { onError: fail })}
@@ -125,24 +123,22 @@ export function ItemRow({
               </option>
             ))}
           </select>
-        ) : (
-          <span className={priorityColor(item.priority)}>{priorityLabel(item.priority)}</span>
         )}
       </div>
 
       {/* Due date — neutral, never a red "overdue" cell (FR-12b) */}
       <div className={cell}>
-        {canWrite && !isNote ? (
-          <input
-            type="date"
-            aria-label={`Due date for ${item.title}`}
-            className={dateField}
-            value={dateInput(item.due_at)}
-            disabled={busy}
-            onChange={(e) => update.mutate({ id: item.id, patch: { dueAt: toInstant(e.target.value) } }, { onError: fail })}
-          />
+        {isNote ? (
+          <span className="text-muted-foreground" />
         ) : (
-          <span className="text-muted-foreground">{dateInput(item.due_at)}</span>
+          <DateCell
+            value={item.due_at}
+            label={`Due date for ${item.title}`}
+            canWrite={canWrite}
+            busy={busy}
+            className="w-full"
+            onChange={(iso) => update.mutate({ id: item.id, patch: { dueAt: iso } }, { onError: fail })}
+          />
         )}
       </div>
 
