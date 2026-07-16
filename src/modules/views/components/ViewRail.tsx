@@ -28,12 +28,16 @@ export function ViewRail({
   onSelect,
   inboxCount,
   isSolo,
+  onSearch,
+  searchActive,
 }: {
   views: ResolvedView[]
   activeViewId: string | undefined
   onSelect: (view: ResolvedView) => void
   inboxCount?: number
   isSolo: boolean
+  onSearch: () => void
+  searchActive: boolean
 }) {
   const primary = PRIMARY.map((n) => views.find((v) => v.name === n)).filter(
     (v): v is ResolvedView => Boolean(v),
@@ -83,9 +87,18 @@ export function ViewRail({
           </span>
         </li>
         <li>
-          <span className="flex cursor-not-allowed items-center gap-2 px-2 py-1.5 text-sm opacity-50">
+          <button
+            type="button"
+            onClick={onSearch}
+            aria-current={searchActive ? 'page' : undefined}
+            className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
+              searchActive
+                ? 'bg-secondary font-medium text-secondary-foreground'
+                : 'text-muted-foreground hover:bg-secondary/50'
+            }`}
+          >
             <Search className="h-4 w-4" /> Search
-          </span>
+          </button>
         </li>
       </ul>
 

@@ -96,6 +96,62 @@ try {
   await page.screenshot({ path: `${OUT}/5-done-view.png` })
   check('completed item appears in the Done view (archived, not deleted)', await inDone.isVisible())
   check('Done card offers Reopen (Done is recoverable)', await page.getByRole('button', { name: /^Reopen /i }).first().isVisible())
+
+  // ══ GATE B ═════════════════════════════════════════════════════════════
+  // ── 7. Daily Review — the only way items leave the Inbox (PDL-016) ──────
+  await page.getByPlaceholder(/capture in plain words/i).fill('Follow up with TCS')
+  await page.getByRole('button', { name: /capture/i }).click()
+  await page.getByText(/AI proposal/i).waitFor({ timeout: 45000 })
+  const triageTitle = await page.locator('select[aria-label="Item type"] + input').inputValue()
+  await page.getByRole('button', { name: /confirm/i }).click()
+  await page.getByText(/AI proposal/i).waitFor({ state: 'hidden', timeout: 20000 })
+
+  await page.getByRole('button', { name: /daily review/i }).click()
+  const review = page.getByRole('region', { name: /daily review/i })
+  await review.waitFor({ timeout: 15000 })
+
+  // The panel renders immediately and fetches its queue after; asserting on the
+  // text straight away raced the "Loading…" state. Wait for the queue itself.
+  const confirmOne = review.getByRole('button', { name: new RegExp(`^Confirm ${triageTitle}`, 'i') })
+  await confirmOne.waitFor({ timeout: 20000 })
+  await page.screenshot({ path: `${OUT}/6-daily-review.png` })
+
+  const reviewText = await review.innerText()
+  check('Daily Review opens and counts "N to triage"', /to triage/i.test(reviewText))
+  check('Daily Review states the 5–10 minute target (PDL-016)', /5–10 minutes/i.test(reviewText))
+  check('Daily Review never says "overdue" (FR-12b)', !/overdue/i.test(reviewText))
+  check('triage groups the queue by type', /Task · \d/.test(reviewText))
+  check('triage card shows the Type chip', await review.getByLabel(/type for/i).first().isVisible())
+  check('triage card shows the Due chip', await review.getByLabel(/due date for/i).first().isVisible())
+  check('solo user sees no Role chip (PDL-022)', !(await review.getByLabel(/role for/i).count()))
+
+  // Confirm it out of the Inbox — the Inbox's only exit.
+  await confirmOne.click()
+  await review.getByText(/inbox clear/i).waitFor({ timeout: 20000 })
+  await page.screenshot({ path: `${OUT}/7-inbox-clear.png` })
+  check('triage reaches "Inbox clear"', /inbox clear/i.test(await review.innerText()))
+
+  // Confirmed items land in Today/committed — they left the Inbox for real.
+  await rail.getByRole('button', { name: 'Inbox' }).click()
+  await page.waitForTimeout(1200)
+  check('confirmed item is gone from the Inbox view', !(await page.locator('body').innerText()).includes(triageTitle))
+
+  // ── 8. Search ──────────────────────────────────────────────────────────
+  await rail.getByRole('button', { name: /search/i }).click()
+  await page.getByLabel(/search your items/i).fill(triageTitle.slice(0, 6))
+  await page.waitForTimeout(2500)
+  await page.screenshot({ path: `${OUT}/8-search.png` })
+  check('search finds the item by full text', (await page.locator('body').innerText()).includes(triageTitle))
+
+  // ── 9. Dark/light persists across reload (FR-19) ────────────────────────
+  await page.getByRole('button', { name: /theme|dark|light/i }).first().click()
+  await page.waitForTimeout(500)
+  const darkAfterToggle = await page.evaluate(() => document.documentElement.classList.contains('dark'))
+  await page.reload({ waitUntil: 'networkidle' })
+  await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
+  const darkAfterReload = await page.evaluate(() => document.documentElement.classList.contains('dark'))
+  await page.screenshot({ path: `${OUT}/9-theme.png` })
+  check('theme choice survives a reload (FR-19)', darkAfterToggle === darkAfterReload)
 } catch (err) {
   check(`walkthrough threw: ${err instanceof Error ? err.message.split('\n')[0] : err}`, false)
   await page.screenshot({ path: `${OUT}/FAIL.png` }).catch(() => {})
