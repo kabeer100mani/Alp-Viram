@@ -33,11 +33,14 @@ _(Already made — do not revisit without discussion.)_
 - **M0** — foundation (tooling, config, structure, themed app shell): **COMPLETE**
 - **M1** — identity, multi-tenant foundation, RLS + isolation tests: **COMPLETE**
 - **M2** — core domain schema (items, roles, assignments, activity_events, meeting_details): **COMPLETE**
-- **M3 — Workspace UI**: **NEXT — spec written & scope ruled (2026-07-16); implementation not started.** See [M3 spec](docs/M3-workspace-ui-spec.md). Skipped when the AI Inbox was built out of order. Today's UI is a scaffold: `HomeScreen` + a flat read-only `ItemList`; **nothing in the UI can edit or complete an item**, and `items-repository.ts` has no update path.
-  - Scope: intent-based rail + 7 system saved views · **Daily Review (triage)** · **Search** · one-action item cards · write path · dark/light polish.
-  - **No board view** (**PDL-029**) — `PROJECT_PLAN.md`'s "board views" line predated the 2026-07-11 freeze and contradicted Doc 5, which rejects boards by name; the roadmap line is corrected. **Daily Review + Search are in M3** (**PDL-030**) — without Daily Review the Inbox is a one-way door (PDL-016 makes it the only exit).
-  - M3 must fix shipped code that already violates the frozen package: `HomeScreen` shows org/role to solo users (PDL-022 says hide), `ItemList` prints the raw `item_state` enum (PDL-027 forbids leaking internals), `AppShell` has no rail.
+- **M3 — Workspace UI**: **Gate A APPROVED (2026-07-16); Gate B built & verified, awaiting sign-off.** See [M3 spec](docs/M3-workspace-ui-spec.md).
+  - **Gate A** (`3358b02`): view engine (Zod-validated saved-view filters, TDL-010) · write path (none existed before) · intent-based rail · 7 system views seeded (`0007`) · one-action item cards · `writable_item_ids` RPC (`0008`).
+  - **Gate B** (`fd45618`): **Daily Review** (rollover → grouped triage → "Inbox clear", 5–10 min target) · **Search** (full-text over the `items.search` tsvector) · theme persistence verified.
+  - **No board view** (**PDL-029**) — `PROJECT_PLAN.md`'s "board views" line predated the 2026-07-11 freeze and contradicted Doc 5, which rejects boards by name; the roadmap line is corrected. **Daily Review + Search in M3** (**PDL-030**).
+  - Fixed three shipped violations of the frozen package: `HomeScreen` showed org/role to solo users (PDL-022), `ItemList` printed the raw `item_state` enum (PDL-027), `AppShell` had no rail.
+  - Verified: 48 unit tests · **browser walkthrough 28/28** (`node scripts/m3-walkthrough.mjs`, needs `npm run dev`) · live check that the UI never offers an action RLS refuses.
   - ⚠️ The "≤3 interactions / ≤10s capture" figures in Doc 6 are **not a spec** — PDL-026 defers targets until after the prototype. The only frozen number is **Daily Review 5–10 min**.
+  - Not built (Good-to-Have, "only if cheap"): duplicate detection/merge in triage, AI auto-grouping beyond type, drag-to-calendar timeboxing. **Projects** and **People & Roles** rail surfaces remain unbuilt (Projects sits disabled).
 - **M4 — AI Inbox / AI layer**: **COMPLETE — validated on Gemini `flash-lite`** (accepted at gate by Palash 2026-07-15). *(Previously mislabelled M3.)*
 - **Permission Model** (unnumbered — not in the plan's roadmap): **COMPLETE**, accepted at gate 2026-07-15. Migration `0005_permission_hardening.sql` (applied): access control keyed to the hybrid responsibility model. Closes **TD-001**, **TD-002**, and implements **TDL-012** (the derivation — previously the log's only *Proposed* decision).
   - Write = org admin **or** creator (PDL-021) **or** assigned user **or** current holder of a responsible role (derived, time-bounded). Collaborators get no write. **Read deliberately unchanged** (org-wide; fine-grained visibility stays deferred).

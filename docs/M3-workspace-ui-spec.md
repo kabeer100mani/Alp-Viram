@@ -19,11 +19,12 @@
 >
 > | Gate | Scope | Status |
 > | --- | --- | --- |
-> | **A** | View engine · write path · rail · 7 system views · one-action item cards · the 3 shipped-violation fixes (§7.6) | 🔵 **in progress** |
-> | **B** | Daily Review (triage) · Search · dark/light polish | ⬜ after Gate A |
+> | **A** | View engine · write path · rail · 7 system views · one-action item cards · the 3 shipped-violation fixes (§7.6) | ✅ **approved 2026-07-16** (`3358b02`, `f691bc0`) |
+> | **B** | Daily Review (triage) · Search · dark/light polish | ✅ **built & verified** (`fd45618`) — awaiting sign-off |
 >
-> Gate A order: **write path → view engine → rail → cards → violation fixes.**
-> Everything else sits on the first two.
+> **Verification:** 48 unit tests · browser walkthrough 28/28 (capture → view →
+> complete → triage → Inbox clear → search → theme persists) · live permission
+> check proving the UI never offers an action RLS refuses · typecheck/lint/build.
 
 ---
 
