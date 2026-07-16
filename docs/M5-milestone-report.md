@@ -1,7 +1,12 @@
 # M5 Milestone Report — People & Roles + Responsibility
 
-**Status:** ✅ **Built & verified across three gates — awaiting final sign-off.**
+**Status:** ✅ **COMPLETE — signed off by Palash 2026-07-16.**
 **Date:** 2026-07-16 · Grounded in the frozen Product Design Package + Docs 8/9.
+**Sign-off note:** accepted with its known gaps open and explicitly **not** silently
+carried as done — org rename and the multi-org switcher were both *Doc 4 Must Haves*
+left unbuilt here, and they are now in scope as **M6 Gate A**. No member-removal /
+role-change UI; the point-in-time responsibility read model and delegations (TD-004)
+stay deferred.
 Scope ruled by Palash (PDL-031); built to [the M5 spec](M5-people-roles-spec.md).
 
 ---
