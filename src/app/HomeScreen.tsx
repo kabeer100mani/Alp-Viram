@@ -11,6 +11,7 @@ import { ViewRail } from '@/modules/views/components/ViewRail'
 import { useViewItems, useViews } from '@/modules/views/hooks/use-views'
 import { DailyReview } from '@/modules/review/components/DailyReview'
 import { useSearch } from '@/modules/search/use-search'
+import { PeopleScreen } from '@/modules/people/components/PeopleScreen'
 import type { ResolvedView } from '@/modules/views/data/views-repository'
 
 /**
@@ -26,7 +27,8 @@ export function HomeScreen() {
   const { data: org } = useActiveOrg(user?.id)
   const [activeId, setActiveId] = useState<string | undefined>()
   const [reviewOpen, setReviewOpen] = useState(false)
-  const [searching, setSearching] = useState(false)
+  // The main pane shows exactly one of: a view, search, or People & Roles.
+  const [pane, setPane] = useState<'view' | 'search' | 'people'>('view')
   const [query, setQuery] = useState('')
 
   const { data: views, isLoading: viewsLoading } = useViews(org?.id)
@@ -43,6 +45,7 @@ export function HomeScreen() {
   const displayName =
     (user?.user_metadata?.display_name as string | undefined) ?? user?.email?.split('@')[0] ?? 'there'
   const isSolo = Boolean(org?.isPersonal && !org?.teamEnabled)
+  const isAdmin = org?.role === 'owner' || org?.role === 'admin'
 
   return (
     <motion.div
@@ -94,18 +97,22 @@ export function HomeScreen() {
               <>
                 <ViewRail
                   views={views}
-                  activeViewId={searching ? undefined : active?.id}
+                  activeViewId={pane === 'view' ? active?.id : undefined}
                   onSelect={(v) => {
-                    setSearching(false)
+                    setPane('view')
                     setActiveId(v.id)
                   }}
                   inboxCount={inboxItems?.length}
                   isSolo={isSolo}
-                  onSearch={() => setSearching(true)}
-                  searchActive={searching}
+                  onSearch={() => setPane('search')}
+                  searchActive={pane === 'search'}
+                  onPeople={() => setPane('people')}
+                  peopleActive={pane === 'people'}
                 />
                 <section className="min-w-0 flex-1 space-y-3">
-                  {searching ? (
+                  {pane === 'people' ? (
+                    <PeopleScreen organizationId={org.id} isAdmin={isAdmin} />
+                  ) : pane === 'search' ? (
                     <>
                       <h2 className="text-sm font-semibold">Search</h2>
                       <Input

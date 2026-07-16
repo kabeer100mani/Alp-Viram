@@ -13,7 +13,8 @@
     "test": "vitest",
     "test:run": "vitest run",
     "check:jwt-guard": "node scripts/check-jwt-guard.mjs",
-    "deploy:function": "npx supabase functions deploy classify-capture --project-ref jdngjwspqxhpkmqhcekc --use-api && npm run check:jwt-guard"
+    "deploy:function": "npx supabase functions deploy classify-capture --project-ref jdngjwspqxhpkmqhcekc --use-api && npm run deploy:invitations",
+    "deploy:invitations": "npx supabase functions deploy invitations --project-ref jdngjwspqxhpkmqhcekc --use-api && npm run check:jwt-guard"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.2",

@@ -4,3 +4,8 @@ project_id = "jdngjwspqxhpkmqhcekc"
 # the intended posture for the AI Inbox classifier — it is NOT an open endpoint.
 [functions.classify-capture]
 verify_jwt = true
+
+# Invitations: create is admin-only (enforced by RLS inside the function); accept
+# needs a signed-in user whose email matches the invite. Both require a valid JWT.
+[functions.invitations]
+verify_jwt = true

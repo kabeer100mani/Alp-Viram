@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,11 +11,15 @@ type Mode = 'signin' | 'signup'
 export function AuthScreen() {
   const { session, signInWithPassword, signUpWithPassword } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  // Return to wherever the user was headed before being sent to /login (e.g. an
+  // /invite?token=… link), falling back to the workspace.
+  const from = (location.state as { from?: string } | null)?.from ?? '/'
 
   // Once authenticated, leave the login page.
   useEffect(() => {
-    if (session) navigate('/', { replace: true })
-  }, [session, navigate])
+    if (session) navigate(from, { replace: true })
+  }, [session, navigate, from])
   const [mode, setMode] = useState<Mode>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

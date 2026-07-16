@@ -16,21 +16,28 @@ const env = Object.fromEntries(
 const url = env.VITE_SUPABASE_URL
 if (!url) throw new Error('VITE_SUPABASE_URL missing from .env')
 
-// Deliberately send NO Authorization / apikey header — an authed endpoint must 401.
-const res = await fetch(`${url}/functions/v1/classify-capture`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ input: 'jwt guard probe' }),
-})
-await res.text() // drain the body so the socket closes cleanly
+// Every authed Edge Function must reject an unauthenticated request. Add new
+// functions here as they ship, so none silently deploys open.
+const FUNCTIONS = ['classify-capture', 'invitations']
 
-if (res.status === 401) {
-  console.log('✅ JWT guard OK — unauthenticated request rejected (401).')
-} else {
-  console.error(
-    `❌ JWT GUARD FAILED — unauthenticated request returned ${res.status}, expected 401.\n` +
-      '   The function may have been deployed with --no-verify-jwt. Redeploy with\n' +
-      '   verify_jwt = true (see supabase/config.toml) before proceeding.',
-  )
-  process.exitCode = 1 // let the event loop drain, then exit non-zero
+let failed = false
+for (const fn of FUNCTIONS) {
+  // Deliberately send NO Authorization / apikey header — an authed endpoint must 401.
+  const res = await fetch(`${url}/functions/v1/${fn}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ probe: 'jwt guard' }),
+  })
+  await res.text() // drain the body so the socket closes cleanly
+  if (res.status === 401) {
+    console.log(`✅ ${fn}: unauthenticated request rejected (401).`)
+  } else {
+    failed = true
+    console.error(
+      `❌ ${fn}: unauthenticated request returned ${res.status}, expected 401.\n` +
+        '   It may have been deployed with --no-verify-jwt. Redeploy with\n' +
+        '   verify_jwt = true (see supabase/config.toml) before proceeding.',
+    )
+  }
 }
+if (failed) process.exitCode = 1 // let the event loop drain, then exit non-zero

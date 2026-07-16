@@ -30,6 +30,8 @@ export function ViewRail({
   isSolo,
   onSearch,
   searchActive,
+  onPeople,
+  peopleActive,
 }: {
   views: ResolvedView[]
   activeViewId: string | undefined
@@ -38,6 +40,8 @@ export function ViewRail({
   isSolo: boolean
   onSearch: () => void
   searchActive: boolean
+  onPeople: () => void
+  peopleActive: boolean
 }) {
   const primary = PRIMARY.map((n) => views.find((v) => v.name === n)).filter(
     (v): v is ResolvedView => Boolean(v),
@@ -102,13 +106,23 @@ export function ViewRail({
         </li>
       </ul>
 
-      {/* PDL-022: hidden entirely for a solo user. */}
+      {/* PDL-022: hidden entirely for a solo user. Appears once the org has a
+          second member (the team-flip trigger sets team_enabled). */}
       {!isSolo && (
-        <ul className="space-y-0.5 border-t border-border pt-3 text-muted-foreground">
+        <ul className="space-y-0.5 border-t border-border pt-3">
           <li>
-            <span className="flex cursor-not-allowed items-center gap-2 px-2 py-1.5 text-sm opacity-50">
+            <button
+              type="button"
+              onClick={onPeople}
+              aria-current={peopleActive ? 'page' : undefined}
+              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
+                peopleActive
+                  ? 'bg-secondary font-medium text-secondary-foreground'
+                  : 'text-muted-foreground hover:bg-secondary/50'
+              }`}
+            >
               <Users className="h-4 w-4" /> People &amp; Roles
-            </span>
+            </button>
           </li>
         </ul>
       )}

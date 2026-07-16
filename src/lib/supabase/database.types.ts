@@ -83,6 +83,47 @@ export interface Database {
           created_at?: string
         }
       }
+      invitations: {
+        Row: {
+          id: string
+          organization_id: string
+          email: string
+          role: 'owner' | 'admin' | 'member'
+          token: string
+          status: 'pending' | 'accepted' | 'revoked'
+          invited_by: string | null
+          accepted_by: string | null
+          expires_at: string
+          created_at: string
+          accepted_at: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          email: string
+          role?: 'owner' | 'admin' | 'member'
+          token: string
+          status?: 'pending' | 'accepted' | 'revoked'
+          invited_by?: string | null
+          accepted_by?: string | null
+          expires_at?: string
+          created_at?: string
+          accepted_at?: string | null
+        }
+        Update: {
+          id?: string
+          organization_id?: string
+          email?: string
+          role?: 'owner' | 'admin' | 'member'
+          token?: string
+          status?: 'pending' | 'accepted' | 'revoked'
+          invited_by?: string | null
+          accepted_by?: string | null
+          expires_at?: string
+          created_at?: string
+          accepted_at?: string | null
+        }
+      }
       item_assigned_users: {
         Row: {
           id: string
@@ -547,6 +588,7 @@ export interface Database {
     }
     Enums: {
       activity_event_type: 'created' | 'state_changed' | 'completed' | 'responsible_role_added' | 'responsible_role_removed' | 'primary_role_changed' | 'assigned_user_added' | 'assigned_user_removed' | 'primary_user_changed' | 'moved_project' | 'tag_added' | 'tag_removed'
+      invitation_status: 'pending' | 'accepted' | 'revoked'
       item_state: 'captured' | 'committed' | 'in_progress' | 'done' | 'snoozed' | 'backlog'
       item_type: 'task' | 'note' | 'meeting'
       org_member_role: 'owner' | 'admin' | 'member'
