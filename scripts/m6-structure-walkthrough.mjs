@@ -94,11 +94,39 @@ try {
   check('the DoD persisted to the server (survives a reload)', (await dod2.inputValue()) === dodText)
   check('the ticked checklist step also persisted', await card2.getByRole('checkbox', { name: /reconcile the numbers/i }).isChecked())
 
-  // Complete it — the other item UPDATE path.
-  await card2.getByRole('button', { name: new RegExp(`complete ${title}`, 'i') }).click()
+  // ── Folder → List tree (PDL-032) ──────────────────────────────────────────
+  const rail = page.getByRole('navigation', { name: /views/i })
+  const folderName = `Clients ${Math.random().toString(36).slice(2, 5)}`
+  const listName = `Acme ${Math.random().toString(36).slice(2, 5)}`
+
+  await rail.getByRole('button', { name: /^new folder$/i }).click()
+  await rail.getByLabel(/new folder name/i).fill(folderName)
+  await rail.getByRole('button', { name: /^add$/i }).click()
+  await rail.getByRole('button', { name: folderName, exact: true }).waitFor({ timeout: 10000 })
+  check('a folder can be created in the rail', await rail.getByRole('button', { name: folderName, exact: true }).isVisible())
+
+  // Add a list inside that folder.
+  await rail.getByRole('button', { name: new RegExp(`new list in ${folderName}`, 'i') }).click()
+  await rail.getByLabel(/new list name/i).fill(listName)
+  await rail.getByRole('button', { name: /^add$/i }).click()
+  const listNav = rail.getByRole('button', { name: new RegExp(`^${listName}`, 'i') })
+  await listNav.waitFor({ timeout: 10000 })
+  check('a list can be created inside a folder', await listNav.isVisible())
+
+  // File the item into the list via the card's List picker.
+  await card2.getByLabel(new RegExp(`list for ${title}`, 'i')).selectOption({ label: listName })
   await page.waitForTimeout(1500)
-  const paneText = await page.locator('section').last().innerText()
-  check('the item completes (leaves active views) — completion UPDATE works', !paneText.includes(title))
+
+  // Open the list — the item should be there.
+  await listNav.click()
+  await page.waitForTimeout(1200)
+  check('the list view shows the item filed into it', (await page.locator('section').last().innerText()).includes(title))
+  await page.screenshot({ path: `${OUT}/2-list.png` })
+
+  // Complete it — the other item UPDATE path.
+  await page.locator('li', { hasText: title }).getByRole('button', { name: new RegExp(`complete ${title}`, 'i') }).click()
+  await page.waitForTimeout(1500)
+  check('the item completes (leaves active views) — completion UPDATE works', !(await page.locator('section').last().innerText()).includes(title))
 } catch (err) {
   check(`walkthrough threw: ${err instanceof Error ? err.message.split('\n')[0] : err}`, false)
   await page.screenshot({ path: `${OUT}/FAIL.png` }).catch(() => {})

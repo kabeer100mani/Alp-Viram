@@ -1,15 +1,18 @@
-import { FolderKanban, Inbox, ListFilter, Search, Sun, Users } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { Inbox, ListFilter, Search, Sun, Users } from 'lucide-react'
 import type { ResolvedView } from '@/modules/views/data/views-repository'
 
 /**
- * The left rail, per IA §5. Each entry is a *view* or a surface — never a deep
- * tree. Views are how users navigate: by intent, not by hierarchy.
+ * The left rail, per IA §5 — amended by PDL-032 to carry the optional Folder →
+ * List tree (the `listTree` slot). Entries are intent views plus, now, optional
+ * structure. Views remain the primary way to navigate.
  *
  * Progressive disclosure (PDL-022): a solo user sees no Organization or
  * People & Roles. The data model underneath is identical — only the UX differs —
  * so these reappear the moment a second member joins.
  *
- * Search and Projects are Gate B / later; shown disabled so the rail matches the
+ * Search is live; the list tree fills in via the `listTree` slot. Kept a comment
+ * marker here for the
  * specified shape without pretending to work.
  */
 
@@ -32,6 +35,7 @@ export function ViewRail({
   searchActive,
   onPeople,
   peopleActive,
+  listTree,
 }: {
   views: ResolvedView[]
   activeViewId: string | undefined
@@ -42,6 +46,8 @@ export function ViewRail({
   searchActive: boolean
   onPeople: () => void
   peopleActive: boolean
+  /** The optional Folder → List tree (PDL-032), rendered between views and People. */
+  listTree?: ReactNode
 }) {
   const primary = PRIMARY.map((n) => views.find((v) => v.name === n)).filter(
     (v): v is ResolvedView => Boolean(v),
@@ -86,11 +92,6 @@ export function ViewRail({
 
       <ul className="space-y-0.5 border-t border-border pt-3 text-muted-foreground">
         <li>
-          <span className="flex cursor-not-allowed items-center gap-2 px-2 py-1.5 text-sm opacity-50">
-            <FolderKanban className="h-4 w-4" /> Projects
-          </span>
-        </li>
-        <li>
           <button
             type="button"
             onClick={onSearch}
@@ -105,6 +106,9 @@ export function ViewRail({
           </button>
         </li>
       </ul>
+
+      {/* Optional Folder → List tree (PDL-032). */}
+      {listTree}
 
       {/* PDL-022: hidden entirely for a solo user. Appears once the org has a
           second member (the team-flip trigger sets team_enabled). */}

@@ -3,6 +3,7 @@ import { ItemCard } from '@/modules/items/components/ItemCard'
 import { useWritableItemIds } from '@/modules/views/hooks/use-views'
 import type { ResponsibilityContext } from '@/modules/items/components/ResponsibilityBar'
 import type { Item } from '@/modules/items/types'
+import type { List } from '@/modules/lists/data/lists-repository'
 
 /**
  * Renders the items of the active view. Users never scroll a giant flat list —
@@ -15,6 +16,7 @@ export function ItemList({
   responsibility,
   organizationId,
   currentUserId,
+  lists,
 }: {
   items: Item[] | undefined
   isLoading?: boolean
@@ -24,6 +26,8 @@ export function ItemList({
   /** For checklist/DoD, which work solo too. */
   organizationId?: string
   currentUserId?: string
+  /** Optional lists to file items into (PDL-032). */
+  lists?: List[]
 }) {
   const [error, setError] = useState<string | null>(null)
   // One round trip for the whole page, answered by the database.
@@ -49,6 +53,7 @@ export function ItemList({
             responsibility={responsibility}
             organizationId={organizationId}
             currentUserId={currentUserId}
+            lists={lists}
           />
         ))}
       </ul>

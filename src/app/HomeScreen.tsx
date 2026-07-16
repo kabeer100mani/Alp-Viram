@@ -13,6 +13,8 @@ import { DailyReview } from '@/modules/review/components/DailyReview'
 import { useSearch } from '@/modules/search/use-search'
 import { PeopleScreen } from '@/modules/people/components/PeopleScreen'
 import { InviteTeammate } from '@/modules/people/components/InviteTeammate'
+import { ListTreeNav } from '@/modules/lists/components/ListTreeNav'
+import { useItemsInList, useAllLists } from '@/modules/lists/hooks/use-lists'
 import { useMembers } from '@/modules/people/hooks/use-people'
 import { useRoles } from '@/modules/people/hooks/use-roles'
 import type { ResolvedView } from '@/modules/views/data/views-repository'
@@ -30,9 +32,10 @@ export function HomeScreen() {
   const { data: org } = useActiveOrg(user?.id)
   const [activeId, setActiveId] = useState<string | undefined>()
   const [reviewOpen, setReviewOpen] = useState(false)
-  // The main pane shows exactly one of: a view, search, or People & Roles.
-  const [pane, setPane] = useState<'view' | 'search' | 'people'>('view')
+  // The main pane shows exactly one of: a view, search, People & Roles, or a list.
+  const [pane, setPane] = useState<'view' | 'search' | 'people' | 'list'>('view')
   const [query, setQuery] = useState('')
+  const [activeList, setActiveList] = useState<{ id: string; name: string } | undefined>()
 
   const { data: views, isLoading: viewsLoading } = useViews(org?.id)
   const active: ResolvedView | undefined = useMemo(
@@ -49,6 +52,11 @@ export function HomeScreen() {
   const inboxView = views?.find((v) => v.name === 'Inbox')
   const { data: inboxItems } = useViewItems(org?.id, inboxView?.filter)
   const { data: results, isLoading: searchLoading } = useSearch(org?.id, query)
+  const { data: allLists } = useAllLists(org?.id)
+  const { data: listItems, isLoading: listLoading } = useItemsInList(
+    org?.id,
+    pane === 'list' ? activeList?.id : undefined,
+  )
 
   const displayName =
     (user?.user_metadata?.display_name as string | undefined) ?? user?.email?.split('@')[0] ?? 'there'
@@ -134,10 +142,34 @@ export function HomeScreen() {
                   searchActive={pane === 'search'}
                   onPeople={() => setPane('people')}
                   peopleActive={pane === 'people'}
+                  listTree={
+                    <ListTreeNav
+                      organizationId={org.id}
+                      currentUserId={user.id}
+                      activeListId={pane === 'list' ? activeList?.id : undefined}
+                      onSelectList={(id, name) => {
+                        setActiveList({ id, name })
+                        setPane('list')
+                      }}
+                    />
+                  }
                 />
                 <section className="min-w-0 flex-1 space-y-3">
                   {pane === 'people' ? (
                     <PeopleScreen organizationId={org.id} isAdmin={isAdmin} currentUserId={user.id} />
+                  ) : pane === 'list' ? (
+                    <>
+                      <h2 className="text-sm font-semibold">{activeList?.name}</h2>
+                      <ItemList
+                        items={listItems}
+                        isLoading={listLoading}
+                        emptyMessage="This list is empty — set an item’s list in triage or on its card."
+                        responsibility={responsibility}
+                        organizationId={org.id}
+                        currentUserId={user.id}
+                        lists={allLists}
+                      />
+                    </>
                   ) : pane === 'search' ? (
                     <>
                       <h2 className="text-sm font-semibold">Search</h2>
@@ -158,6 +190,7 @@ export function HomeScreen() {
                           responsibility={responsibility}
                           organizationId={org.id}
                           currentUserId={user.id}
+                          lists={allLists}
                         />
                       )}
                     </>
@@ -184,6 +217,7 @@ export function HomeScreen() {
                                   responsibility={responsibility}
                                   organizationId={org.id}
                                   currentUserId={user.id}
+                                  lists={allLists}
                                 />
                               </div>
                             ))}
@@ -203,6 +237,7 @@ export function HomeScreen() {
                           responsibility={responsibility}
                           organizationId={org.id}
                           currentUserId={user.id}
+                          lists={allLists}
                         />
                       )}
                     </>

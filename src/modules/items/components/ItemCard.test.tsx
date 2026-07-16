@@ -13,6 +13,7 @@ vi.mock('@/modules/items/hooks/use-items', () => {
     useReopenItem: stub,
     useSnoozeItem: stub,
     useSetItemState: stub,
+    useUpdateItem: stub,
   }
 })
 

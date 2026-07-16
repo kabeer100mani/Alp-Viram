@@ -5,8 +5,10 @@ import {
   useReopenItem,
   useSetItemState,
   useSnoozeItem,
+  useUpdateItem,
 } from '@/modules/items/hooks/use-items'
 import type { Item } from '@/modules/items/types'
+import type { List } from '@/modules/lists/data/lists-repository'
 import { itemStateLabel, itemTypeLabel } from '@/modules/items/presentation'
 import { ResponsibilityBar, type ResponsibilityContext } from '@/modules/items/components/ResponsibilityBar'
 import { ChecklistPanel } from '@/modules/items/components/ChecklistPanel'
@@ -28,6 +30,7 @@ export function ItemCard({
   responsibility,
   organizationId,
   currentUserId,
+  lists,
 }: {
   item: Item
   canWrite: boolean
@@ -37,13 +40,17 @@ export function ItemCard({
   /** Checklist/DoD need no team — they work solo too, so they're passed directly. */
   organizationId?: string
   currentUserId?: string
+  /** Optional lists to file this item into (PDL-032); omitted when none exist. */
+  lists?: List[]
 }) {
   const complete = useCompleteItem()
   const reopen = useReopenItem()
   const snooze = useSnoozeItem()
   const setState = useSetItemState()
+  const update = useUpdateItem()
 
-  const busy = complete.isPending || reopen.isPending || snooze.isPending || setState.isPending
+  const busy =
+    complete.isPending || reopen.isPending || snooze.isPending || setState.isPending || update.isPending
   const fail = (err: unknown) =>
     onError?.(err instanceof Error ? err.message : 'That change could not be saved.')
 
@@ -71,6 +78,24 @@ export function ItemCard({
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
+        {/* File into an optional List (PDL-032) — only when lists exist and the
+            user may write; capture never needs one. */}
+        {canWrite && lists && lists.length > 0 && (
+          <select
+            aria-label={`List for ${item.title}`}
+            value={item.list_id ?? ''}
+            disabled={busy}
+            onChange={(e) => update.mutate({ id: item.id, patch: { listId: e.target.value || null } }, { onError: fail })}
+            className="h-7 rounded-md border border-input bg-background px-1 text-xs text-muted-foreground"
+          >
+            <option value="">No list</option>
+            {lists.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.name}
+              </option>
+            ))}
+          </select>
+        )}
         <span className="text-xs text-muted-foreground">{itemStateLabel(item.state)}</span>
 
         {canWrite && !isDone && (
