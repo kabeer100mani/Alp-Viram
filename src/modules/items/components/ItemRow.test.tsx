@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { ItemRow } from '@/modules/items/components/ItemRow'
 import type { Item } from '@/modules/items/types'
 
@@ -28,16 +29,21 @@ const item = (over: Partial<Item> = {}): Item =>
     ...over,
   }) as Item
 
-const renderRow = (over: Partial<Item> = {}, canWrite = true, showAssignee = false, assigneeName: string | null = null) =>
+const renderRow = (
+  over: Partial<Item> = {},
+  canWrite = true,
+  showAssignee = false,
+  assignee: { userId: string; name: string | null } | null = null,
+  onOpen = () => {},
+) =>
   render(
     <div>
       <ItemRow
         item={item(over)}
         canWrite={canWrite}
         columns={{ showAssignee }}
-        assigneeName={assigneeName}
-        organizationId="org-1"
-        currentUserId="user-1"
+        assignee={assignee}
+        onOpen={onOpen}
         onError={() => {}}
       />
     </div>,
@@ -67,18 +73,22 @@ describe('ItemRow (dense table)', () => {
     expect(screen.queryByRole('option', { name: 'Done' })).not.toBeInTheDocument()
   })
 
-  it('has no Start/Due editors on a Note (no execution)', () => {
+  it('has no Due editor on a Note (no execution)', () => {
     renderRow({ type: 'note' })
-    expect(screen.queryByLabelText(/start date for/i)).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/due date for/i)).not.toBeInTheDocument()
   })
 
-  it('offers inline Priority, Start, Due and Status editors on a writable task', () => {
+  it('offers inline Priority, Due and Status editors on a writable task', () => {
     renderRow()
     expect(screen.getByLabelText(/priority for/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/start date for/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/due date for/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/status for/i)).toBeInTheDocument()
+  })
+
+  // PDL-036: the row carries only the four common fields; Start moved to the panel.
+  it('has no Start column in the row', () => {
+    renderRow()
+    expect(screen.queryByLabelText(/start date for/i)).not.toBeInTheDocument()
   })
 
   // The UI must never offer an edit the DB will refuse (Doc 8).
@@ -90,22 +100,31 @@ describe('ItemRow (dense table)', () => {
     expect(screen.getByText('High')).toBeInTheDocument() // priority still shown, read-only
   })
 
-  it('shows the Assignee cell only when the column is enabled (team mode)', () => {
+  // PDL-036: the row no longer expands — clicking the name opens the detail panel.
+  it('opens the detail panel when the name is clicked', async () => {
+    const onOpen = vi.fn()
+    renderRow({}, true, false, null, onOpen)
+    await userEvent.click(screen.getByRole('button', { name: 'Prepare July MIS' }))
+    expect(onOpen).toHaveBeenCalledOnce()
+  })
+
+  it('shows the Assignee as an avatar only when the column is enabled (team mode)', () => {
     const { rerender } = renderRow({}, true, false)
-    expect(screen.queryByText('Priya')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('Priya')).not.toBeInTheDocument()
     rerender(
       <div>
         <ItemRow
           item={item()}
           canWrite
           columns={{ showAssignee: true }}
-          assigneeName="Priya"
-          organizationId="org-1"
-          currentUserId="user-1"
+          assignee={{ userId: 'u1', name: 'Priya' }}
+          onOpen={() => {}}
           onError={() => {}}
         />
       </div>,
     )
-    expect(screen.getByText('Priya')).toBeInTheDocument()
+    // Avatar only — initials, not the full name taking up a column.
+    expect(screen.getByTitle('Priya')).toBeInTheDocument()
+    expect(screen.queryByText('Priya')).not.toBeInTheDocument()
   })
 })

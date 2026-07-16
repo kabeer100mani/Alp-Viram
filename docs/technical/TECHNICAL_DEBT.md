@@ -122,3 +122,22 @@ Each entry: **what · why deferred · impact · fix when · source.**
 - **Verified:** `scripts/m6-structure-test.mjs` — an item cannot reference another
   org's list; a list cannot move into another org's folder.
 - **Source:** found while sizing the PDL-006 reversal (impact report, 2026-07-16).
+
+## TD-009 — field edits are not audited (Activity feed is sparse)
+- **What:** the `activity_event_type` enum covers `created`, `state_changed`,
+  `completed`, `moved_list`, the responsibility events and tags — but has **no event
+  for a field edit**. Changing an item's title, description, priority, dates or
+  estimate writes nothing to `activity_events`, so the PDL-036 Activity feed cannot
+  show them. The feed is *honest* (it shows everything that is logged) but thin.
+- **Impact:** no security or integrity impact — the audit trail is not *wrong*, just
+  incomplete. It does weaken "who changed this due date?", which is the question the
+  responsibility model makes people ask.
+- **Why not fixed now:** PDL-036 is UI-only by decision. Adding an event type +
+  trigger arm is a schema change to an append-only, permission-sensitive table and
+  deserves its own gate — not a silent widening inside a panel build.
+- **Fix when:** next time the audit schema is opened. Add e.g. a `field_changed`
+  event with `{field, from, to}` in `payload`, armed in `log_item_change`; the
+  renderer (`activityLabel`) already falls back to "updated this item" for unknown
+  types, so old rows stay readable.
+- **Source:** found building the PDL-036 Activity feed (2026-07-16) — the feed showed
+  only "created this item" after a dozen real edits.

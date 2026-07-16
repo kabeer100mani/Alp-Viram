@@ -324,6 +324,7 @@ export interface Database {
           search: unknown | null
           definition_of_done: string | null
           start_at: string | null
+          time_estimate_minutes: number | null
         }
         Insert: {
           id?: string
@@ -349,6 +350,7 @@ export interface Database {
           deleted_at?: string | null
           definition_of_done?: string | null
           start_at?: string | null
+          time_estimate_minutes?: number | null
         }
         Update: {
           id?: string
@@ -374,6 +376,7 @@ export interface Database {
           deleted_at?: string | null
           definition_of_done?: string | null
           start_at?: string | null
+          time_estimate_minutes?: number | null
         }
       }
       lists: {

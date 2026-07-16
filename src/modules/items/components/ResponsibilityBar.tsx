@@ -64,7 +64,7 @@ export function ResponsibilityBar({
   const collabIds = new Set((data?.collaborators ?? []).map((c) => c.userId))
 
   return (
-    <div className="pl-[3.25rem] text-xs">
+    <div className="text-xs">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}

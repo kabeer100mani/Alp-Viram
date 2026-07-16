@@ -1,29 +1,22 @@
-import { useState } from 'react'
-import { ChevronDown, ChevronRight, RotateCcw } from 'lucide-react'
+import { Flag, RotateCcw } from 'lucide-react'
 import {
   useCompleteItem,
   useReopenItem,
   useSetItemState,
   useUpdateItem,
 } from '@/modules/items/hooks/use-items'
-import { itemStateLabel, itemTypeLabel, priorityLabel, priorityOptions } from '@/modules/items/presentation'
-import { ResponsibilityBar, type ResponsibilityContext } from '@/modules/items/components/ResponsibilityBar'
-import { ChecklistPanel } from '@/modules/items/components/ChecklistPanel'
+import {
+  itemStateLabel,
+  itemTypeLabel,
+  priorityColor,
+  priorityLabel,
+  priorityOptions,
+  statusColor,
+} from '@/modules/items/presentation'
+import { Avatar } from '@/components/ui/avatar'
 import type { Item, ItemState } from '@/modules/items/types'
-import type { List } from '@/modules/lists/data/lists-repository'
 
-/** Statuses offered in the row's Status editor, in lifecycle order. */
 const STATUS_OPTIONS: ItemState[] = ['captured', 'committed', 'in_progress', 'done', 'snoozed', 'backlog']
-
-/** A labelled block inside the row-expand, so sections never run together. */
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <p className="pl-[3.25rem] text-xs font-medium">{title}</p>
-      {children}
-    </div>
-  )
-}
 
 const dateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : '')
 // Local noon → an unambiguous absolute instant (TD-005 discipline).
@@ -32,37 +25,38 @@ const toInstant = (v: string) => (v ? new Date(`${v}T12:00:00`).toISOString() : 
 export interface RowColumns {
   showAssignee: boolean
 }
+export interface RowAssignee {
+  userId: string
+  name: string | null
+}
 
 /**
- * One dense table row. Priority, Start and Due are edited inline (PDL-034); the
- * heavier editors — checklist, DoD, responsibility — live in the row-expand.
+ * One dense table row: Name | Assignee | Priority | Due date | Status.
  *
- * Every locked behaviour is kept: Status shows human labels, never the enum
- * (PDL-027); a Note has no Done; dates are neutral (no "overdue" colour, FR-12b);
- * and edits are offered only when `canWrite` (the DB rule, via writable_item_ids).
+ * The four common fields stay inline-editable here (PDL-034); everything heavier —
+ * description, checklist, definition of done, responsibility, activity — moved to
+ * the task detail panel (PDL-036), which opens on clicking the name. The row no
+ * longer expands.
+ *
+ * Locked behaviour kept: Status shows human labels, never the enum (PDL-027); a
+ * Note has no Done; dates are neutral (no "overdue" colour, FR-12b); edits appear
+ * only when `canWrite`.
  */
 export function ItemRow({
   item,
   canWrite,
   columns,
-  assigneeName,
-  responsibility,
-  organizationId,
-  currentUserId,
-  lists,
+  assignee,
+  onOpen,
   onError,
 }: {
   item: Item
   canWrite: boolean
   columns: RowColumns
-  assigneeName: string | null
-  responsibility?: Omit<ResponsibilityContext, 'canWrite'>
-  organizationId: string
-  currentUserId: string
-  lists?: List[]
+  assignee: RowAssignee | null
+  onOpen: () => void
   onError: (m: string) => void
 }) {
-  const [expanded, setExpanded] = useState(false)
   const update = useUpdateItem()
   const complete = useCompleteItem()
   const reopen = useReopenItem()
@@ -73,14 +67,14 @@ export function ItemRow({
   const isNote = item.type === 'note'
   const isDone = item.state === 'done'
 
-  const cell = 'px-2 py-1.5 text-xs'
-  const editor = 'h-7 w-full rounded border border-input bg-background px-1 text-xs disabled:opacity-60'
+  const cell = 'px-2 py-1 text-xs'
+  const bareSelect = 'h-6 w-full cursor-pointer rounded bg-transparent px-1 text-xs hover:bg-secondary/60 disabled:opacity-60 focus:outline-none'
+  const dateField = 'h-6 w-full rounded border border-transparent bg-transparent px-1 text-xs text-muted-foreground hover:border-input disabled:opacity-60'
 
   function changeStatus(next: ItemState) {
     if (next === item.state) return
     if (next === 'done') complete.mutate({ id: item.id, type: item.type }, { onError: fail })
     else if (isDone) {
-      // Leaving Done: reopen clears completed_at, then move to the chosen state.
       reopen.mutate({ id: item.id }, { onError: fail, onSuccess: () => {
         if (next !== 'committed') setState.mutate({ id: item.id, state: next }, { onError: fail })
       } })
@@ -88,172 +82,104 @@ export function ItemRow({
   }
 
   return (
-    <>
-      <div role="row" className="col-span-full grid grid-cols-subgrid items-center border-b border-border hover:bg-secondary/30">
-        {/* Title + expand + type */}
-        <div className={`${cell} flex min-w-0 items-center gap-1.5`}>
-          <button
-            type="button"
-            onClick={() => setExpanded((e) => !e)}
-            aria-expanded={expanded}
-            aria-label={`Details for ${item.title}`}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-          </button>
-          <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-secondary-foreground">
-            {itemTypeLabel(item)}
-          </span>
-          <span className={`truncate ${isDone ? 'text-muted-foreground line-through' : ''}`}>{item.title}</span>
-        </div>
-
-        {/* Assignee (team-only) */}
-        {columns.showAssignee && (
-          <div className={`${cell} truncate text-muted-foreground`}>{assigneeName ?? '—'}</div>
-        )}
-
-        {/* Priority — inline */}
-        <div className={cell}>
-          {canWrite ? (
-            <select
-              aria-label={`Priority for ${item.title}`}
-              className={editor}
-              value={item.priority}
-              disabled={busy}
-              onChange={(e) => update.mutate({ id: item.id, patch: { priority: e.target.value as Item['priority'] } }, { onError: fail })}
-            >
-              {priorityOptions.map((p) => (
-                <option key={p} value={p}>
-                  {priorityLabel(p)}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span className="text-muted-foreground">{priorityLabel(item.priority)}</span>
-          )}
-        </div>
-
-        {/* Start — inline (task/meeting only; a Note has no execution) */}
-        <div className={cell}>
-          {canWrite && !isNote ? (
-            <input
-              type="date"
-              aria-label={`Start date for ${item.title}`}
-              className={editor}
-              value={dateInput(item.start_at)}
-              disabled={busy}
-              onChange={(e) => update.mutate({ id: item.id, patch: { startAt: toInstant(e.target.value) } }, { onError: fail })}
-            />
-          ) : (
-            <span className="text-muted-foreground">{dateInput(item.start_at)}</span>
-          )}
-        </div>
-
-        {/* Due — inline. Neutral, never a red "overdue" cell (FR-12b). */}
-        <div className={cell}>
-          {canWrite && !isNote ? (
-            <input
-              type="date"
-              aria-label={`Due date for ${item.title}`}
-              className={editor}
-              value={dateInput(item.due_at)}
-              disabled={busy}
-              onChange={(e) => update.mutate({ id: item.id, patch: { dueAt: toInstant(e.target.value) } }, { onError: fail })}
-            />
-          ) : (
-            <span className="text-muted-foreground">{dateInput(item.due_at)}</span>
-          )}
-        </div>
-
-        {/* Status — inline. Human labels only (PDL-027); no Done for a Note. */}
-        <div className={`${cell} flex items-center gap-1`}>
-          {canWrite ? (
-            <select
-              aria-label={`Status for ${item.title}`}
-              className={editor}
-              value={item.state}
-              disabled={busy}
-              onChange={(e) => changeStatus(e.target.value as ItemState)}
-            >
-              {STATUS_OPTIONS.filter((s) => !(isNote && s === 'done')).map((s) => (
-                <option key={s} value={s}>
-                  {itemStateLabel(s)}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span className="text-muted-foreground">{itemStateLabel(item.state)}</span>
-          )}
-          {canWrite && isDone && (
-            <button
-              type="button"
-              aria-label={`Reopen ${item.title}`}
-              title="Reopen"
-              disabled={busy}
-              onClick={() => reopen.mutate({ id: item.id }, { onError: fail })}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
+    <div role="row" className="col-span-full grid grid-cols-subgrid items-center border-b border-border hover:bg-secondary/20">
+      {/* Name — the click target that opens the detail panel */}
+      <div className={`${cell} flex min-w-0 items-center gap-1.5`}>
+        <span className="shrink-0 rounded bg-accent px-1.5 py-0.5 text-[10px] text-accent-foreground">
+          {itemTypeLabel(item)}
+        </span>
+        <button
+          type="button"
+          onClick={onOpen}
+          className={`truncate text-left hover:underline ${isDone ? 'text-muted-foreground line-through' : ''}`}
+        >
+          {item.title}
+        </button>
       </div>
 
-      {/* Row-expand: the heavier editors, one click away — each a clearly
-          separated, labelled section so nothing runs together. */}
-      {expanded && (
-        <div role="row" className="col-span-full space-y-4 border-b border-border bg-background/60 py-3">
-          {isNote ? (
-            <p className="pl-[3.25rem] text-xs text-muted-foreground">
-              A note has no status, dates, checklist or definition of done.
-            </p>
+      {/* Assignee (team-only) — avatar only; the name lives in the panel */}
+      {columns.showAssignee && (
+        <div className={cell}>
+          {assignee ? (
+            <Avatar userId={assignee.userId} name={assignee.name} size="xs" />
           ) : (
-            <>
-              {/* Where this task lives — its parent List (NOT the checklist). */}
-              <Section title="List (where this task lives)">
-                <div className="pl-[3.25rem]">
-                  {canWrite && lists && lists.length > 0 ? (
-                    <select
-                      aria-label={`List for ${item.title}`}
-                      className={`${editor} max-w-[14rem]`}
-                      value={item.list_id ?? ''}
-                      disabled={busy}
-                      onChange={(e) => update.mutate({ id: item.id, patch: { listId: e.target.value || null } }, { onError: fail })}
-                    >
-                      <option value="">No list (Inbox)</option>
-                      {lists.map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">
-                      {lists?.find((l) => l.id === item.list_id)?.name ?? 'No list (Inbox)'}
-                    </span>
-                  )}
-                </div>
-              </Section>
-
-              {responsibility && (
-                <Section title="Responsibility">
-                  <ResponsibilityBar itemId={item.id} ctx={{ ...responsibility, canWrite }} onError={onError} />
-                </Section>
-              )}
-
-              {/* Checklist + Definition of Done shown directly (no second collapse). */}
-              <ChecklistPanel
-                item={item}
-                organizationId={organizationId}
-                currentUserId={currentUserId}
-                canWrite={canWrite}
-                onError={onError}
-                embedded
-              />
-            </>
+            <span className="text-muted-foreground">—</span>
           )}
         </div>
       )}
-    </>
+
+      {/* Priority — coloured flag + label */}
+      <div className={`${cell} flex items-center gap-1`}>
+        <Flag className={`h-3 w-3 shrink-0 ${priorityColor(item.priority)}`} fill="currentColor" />
+        {canWrite ? (
+          <select
+            aria-label={`Priority for ${item.title}`}
+            className={`${bareSelect} ${priorityColor(item.priority)}`}
+            value={item.priority}
+            disabled={busy}
+            onChange={(e) => update.mutate({ id: item.id, patch: { priority: e.target.value as Item['priority'] } }, { onError: fail })}
+          >
+            {priorityOptions.map((p) => (
+              <option key={p} value={p} className="text-foreground">
+                {priorityLabel(p)}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className={priorityColor(item.priority)}>{priorityLabel(item.priority)}</span>
+        )}
+      </div>
+
+      {/* Due date — neutral, never a red "overdue" cell (FR-12b) */}
+      <div className={cell}>
+        {canWrite && !isNote ? (
+          <input
+            type="date"
+            aria-label={`Due date for ${item.title}`}
+            className={dateField}
+            value={dateInput(item.due_at)}
+            disabled={busy}
+            onChange={(e) => update.mutate({ id: item.id, patch: { dueAt: toInstant(e.target.value) } }, { onError: fail })}
+          />
+        ) : (
+          <span className="text-muted-foreground">{dateInput(item.due_at)}</span>
+        )}
+      </div>
+
+      {/* Status — a coloured pill. Human labels only (PDL-027); no Done on a Note. */}
+      <div className={`${cell} flex items-center gap-1`}>
+        {canWrite ? (
+          <select
+            aria-label={`Status for ${item.title}`}
+            className={`h-6 cursor-pointer rounded-full px-2 text-[11px] font-medium focus:outline-none ${statusColor(item.state)}`}
+            value={item.state}
+            disabled={busy}
+            onChange={(e) => changeStatus(e.target.value as ItemState)}
+          >
+            {STATUS_OPTIONS.filter((s) => !(isNote && s === 'done')).map((s) => (
+              <option key={s} value={s} className="bg-background text-foreground">
+                {itemStateLabel(s)}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusColor(item.state)}`}>
+            {itemStateLabel(item.state)}
+          </span>
+        )}
+        {canWrite && isDone && (
+          <button
+            type="button"
+            aria-label={`Reopen ${item.title}`}
+            title="Reopen"
+            disabled={busy}
+            onClick={() => reopen.mutate({ id: item.id }, { onError: fail })}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+    </div>
   )
 }

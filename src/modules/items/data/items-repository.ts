@@ -69,6 +69,8 @@ export interface UpdateItemInput {
   startAt?: string | null
   priority?: Item['priority']
   listId?: string | null
+  /** Planned duration in minutes (an estimate, not tracking). Null clears it. */
+  timeEstimateMinutes?: number | null
 }
 
 async function patchItem(id: string, patch: Record<string, unknown>): Promise<Item> {
@@ -96,6 +98,7 @@ export async function updateItem(id: string, input: UpdateItemInput): Promise<It
   if (input.startAt !== undefined) patch.start_at = input.startAt
   if (input.priority !== undefined) patch.priority = input.priority
   if (input.listId !== undefined) patch.list_id = input.listId
+  if (input.timeEstimateMinutes !== undefined) patch.time_estimate_minutes = input.timeEstimateMinutes
   return patchItem(id, patch)
 }
 

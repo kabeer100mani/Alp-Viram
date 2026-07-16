@@ -66,7 +66,7 @@ export function ChecklistPanel({
   }
 
   return (
-    <div className="pl-[3.25rem] text-xs">
+    <div className="text-xs">
       {!embedded && (
         <button
           type="button"

@@ -74,9 +74,17 @@ Pipeline and provider-agnosticism proven; **explicitly NOT Anthropic-verified**.
 - Rail is a 3-level tree (`ListTreeNav`): Projects/Folders expand; only **Lists** are selectable (tasks live in Lists). Verified: `scripts/m8-hierarchy-test.mjs` (10/10 live: tenant + cross-project integrity, folderless, optional), `scripts/m8-hierarchy-walkthrough.mjs` (6/6 browser).
 
 ## Dense table layout (PDL-034, 2026-07-16)
-- **The item card is replaced by a dense, table-style layout** (`ItemTable` + `ItemRow`), used by **every** view. Columns: Item · Assignee (team-only, PDL-022) · Priority · Start · Due · Status. **Priority/Start/Due/Status edit inline in the row**; checklist/DoD/responsibility live in a **row-expand**. Items render in **collapsible groups with counts** (By Role → by role; every other view → by List). Old `ItemCard`/`ItemList` **deleted**.
+- **The item card is replaced by a dense, table-style layout** (`ItemTable` + `ItemRow`), used by **every** view. ⚠️ **Amended by PDL-036 below:** columns are now Name · Assignee (avatar-only, team-only, PDL-022) · Priority · Due date · Status — **Start moved off the row into the panel**, and the **row-expand no longer exists**. **Priority/Due/Status still edit inline in the row.** Items render in **collapsible groups with counts** (By Role → by role; every other view → by List). Old `ItemCard`/`ItemList` **deleted**.
 - `start_at` promoted from *Future* to a real nullable column (migration `0014`); it was the one requested column with no existing field. Batched **`item_assignee_summary`** RPC feeds the Assignee column in one call (not per-row). Plan: [docs/plan-dense-table-view.md](docs/plan-dense-table-view.md).
 - Verified: `scripts/m7-table-walkthrough.mjs` (13/13 browser: grouping, inline edits persist, row-expand, solo hides Assignee), 56 unit tests.
+
+## Task detail side-panel (PDL-036, 2026-07-16)
+- **The row-expand is replaced by a slide-in task detail panel** (`TaskPanel`), opened by clicking a task's **name**. It does **not** navigate away — the list stays mounted; Escape, the close button and the scrim all dismiss it. Contents: inline-editable title · quick fields (Status + complete checkmark, Dates start→due, Priority, **Time estimate**, List) · description (mapped to the existing `items.body`) · a **Fields** section (Checklist + Definition of Done, both shown directly) · a read-only **Activity** feed.
+- **UI only** — every write goes through the same hooks the row used, so `writable_item_ids`/RLS and Zod validation are unchanged, and no editor is offered that the DB would refuse.
+- `time_estimate_minutes` promoted from *Future* to a real nullable column (migration `0016`, `>0` + not-on-a-Note checks). It is an **estimate** (planned duration, entered "2h 30m") — **time tracking is still rejected**.
+- **Activity is read-only; comment-writing deferred.** It renders `activity_events` through `activityLabel()` (never the raw enum, PDL-027). ⚠️ **Field edits are not logged at all** (no such event type exists) → **TD-009**; the feed shows creation/state/completion/list-moves/responsibility/tags only.
+- Free-text fields (title, description, estimate) save on **blur** and are deliberately **not** disabled while other saves are in flight — disabling mid-typing silently dropped keystrokes (caught by the walkthrough).
+- Verified: `scripts/m9-panel-walkthrough.mjs` (**27/27** browser, incl. every quick field persisting to the DB and a **geometry check** that no field is clipped — the first cut rendered Due half outside the panel while every value assertion still passed), 58 unit tests.
 
 ## UI Style Rules
 - **No ALL-CAPS text anywhere.** Everything is **Proper Case**; the only exception is the app name ("Alp-Viram"). Never use the Tailwind `uppercase` class. DB-lowercase values (e.g. member `role`) render with `capitalize`. *(Palash, 2026-07-16.)*
@@ -94,6 +102,7 @@ Pipeline and provider-agnosticism proven; **explicitly NOT Anthropic-verified**.
 - **TD-004** (open): deferred tables (`recurrence_rules`, `attachments`, `delegations`) need RLS + composite FKs when they ship.
 - **TD-005** — ✅ **RESOLVED 2026-07-15**: AI naive/timezone-less datetimes caused a real time-shift risk (a 4pm IST reminder would have fired at 21:30 IST). Fixed: client sends IANA timezone, Edge Function resolves in the user's zone + normalises, Zod now requires `z.iso.datetime({ offset: true })`. Verified 4/4 in IST; 6 unit tests pin it.
 - **TD-006** (open): `confidence` is degenerate on Gemini `flash-lite` (1.0 on 28/30 *including the miss*) — unusable for triage though the UI shows it.
+- **TD-009** (open, 2026-07-16): **field edits are not audited** — no `activity_event_type` covers a title/priority/date/description change, so the PDL-036 Activity feed cannot show them. No security impact; fix when the audit schema is next opened.
 
 ## Tools & Resources
 - **Supabase project ref**: `jdngjwspqxhpkmqhcekc`
