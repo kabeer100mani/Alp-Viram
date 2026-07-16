@@ -54,7 +54,7 @@ Each entry: **what · why deferred · impact · fix when · source.**
   rejected rather than silently corrupted.
 - **Verified:** 4/4 previously-naive captures return `+05:30` and render back at
   the intended local wall time; 6 unit tests pin the gate.
-- **Source:** M3 real-provider batch run (Gemini flash-lite).
+- **Source:** M4 real-provider batch run (Gemini flash-lite).
 
 ## TD-006 — `confidence` is degenerate (no signal)
 - **What:** on Gemini `flash-lite`, `confidence` was `1.0` on 28/30 captures —
@@ -66,7 +66,7 @@ Each entry: **what · why deferred · impact · fix when · source.**
   or auto-accept thresholds — any future feature keying off it would be unsound.
 - **Fix when:** when confidence is needed for behaviour — calibrate/derive it
   server-side, or stop displaying it.
-- **Source:** M3 real-provider batch run (Gemini flash-lite).
+- **Source:** M4 real-provider batch run (Gemini flash-lite).
 
 ## TD-007 — organization deletion is incomplete (layers 2 & 3)
 - **What:** deleting an organization still fails. `0006` fixed **layer 1** (the
@@ -104,5 +104,5 @@ Each entry: **what · why deferred · impact · fix when · source.**
 ## TD-004 — deferred tables need RLS + composite FKs when they ship
 - **What:** `recurrence_rules`, `attachments`, `delegations` are designed but not yet
   created; each needs RLS and composite `(child_id, organization_id)` FKs when added.
-  (`ai_captures` ships in M3 **with** RLS from the start.)
+  (`ai_captures` ships in M4 **with** RLS from the start.)
 - **Fix when:** as each table ships.

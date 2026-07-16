@@ -1,4 +1,8 @@
-# M3 Milestone Report — AI Inbox
+# M4 Milestone Report — AI Inbox (AI layer)
+
+> **Renumbered 2026-07-16:** this milestone was originally labelled "M3". It is
+> the plan's **M4 (AI layer)** — `PROJECT_PLAN.md` §7 and its Revised milestone
+> note both say M4. The plan's real M3 (Workspace UI) was skipped and is next.
 
 **Status:** ✅ **COMPLETE — accepted at gate by Palash (2026-07-15), validated on Gemini `flash-lite`.**
 Pipeline and provider-agnosticism proven. **Explicitly NOT Anthropic-verified** — Anthropic re-test pending funding.
@@ -14,9 +18,10 @@ provider-agnostic design is demonstrated (three providers, one contract, no app
 changes). Accuracy on the tested model is **29/30 (97%)** with **30/30 responses
 passing Zod**.
 
-It is **not** being declared complete, for reasons in "Open questions" below —
-most importantly that the provider this milestone was scoped around
-(**Anthropic/Claude**) has still never had a successful real run.
+It was **accepted at gate on Gemini flash-lite** (see Gate decision below), with the
+caveats in "Open questions" recorded rather than waived — most importantly that the
+provider this milestone was scoped around (**Anthropic/Claude**) has still never had
+a successful real run.
 
 ---
 
@@ -48,7 +53,7 @@ the vendor on delivery" → task, "Meeting notes: decided to postpone launch" �
 The `Idea:` prefix is an explicit intent signal that the user is capturing a
 thought, not committing to work; classifying it as a task is wrong. Accuracy
 therefore stands at a true **29/30**. Note the model reported **confidence 1.0**
-on this miss — see TD-003.
+on this miss — see TD-006.
 
 ### Run B — `gemini-flash-latest` (fuller Flash; partial)
 16 / 30 before the free-tier **daily** request cap
@@ -69,10 +74,10 @@ Note `gemini-2.0-flash` is unusable on this key (free-tier `limit: 0`);
 4. **Provider-agnostic contract is real, not theoretical** — three providers now satisfy one Zod schema; swapping is an Edge Function + secret change, with zero app changes.
 
 ## Open questions / why this isn't "done"
-1. ❌ **Anthropic/Claude never validated.** M3 was scoped as "AI Inbox with Anthropic/Claude as initial provider". Blocked on account credits. The Anthropic branch is written but has never returned a successful real classification.
+1. ❌ **Anthropic/Claude never validated.** M4 was scoped as "AI Inbox with Anthropic/Claude as initial provider". Blocked on account credits. The Anthropic branch is written but has never returned a successful real classification.
 2. ⚠️ **Tested model is `flash-lite`**, a smaller variant than the Flash originally requested. 97% is a flash-lite number.
-3. ⚠️ **TD-003 — `confidence` is degenerate**: 1.0 on 28/30 including the miss. The UI shows "confidence 100%"; it carries no signal.
-4. ⚠️ **TD-002 — naive/inconsistent datetimes**: some `due_at` lack a timezone; Zod only checks `string`, so they reach `timestamptz` and can shift.
+3. ⚠️ **TD-006 — `confidence` is degenerate**: 1.0 on 28/30 including the miss. The UI shows "confidence 100%"; it carries no signal. **Open.**
+4. ✅ **TD-005 — naive/inconsistent datetimes**: some `due_at` lacked a timezone and would have been read as UTC by `timestamptz`. **Resolved 2026-07-15** — see the register.
 5. ⚠️ **Clarification rate 23%** (vs 13% on flash-latest) against a product north star of *minimising user effort*. Some questions are good ("Which vendor?"); others are arguably over-asking ("Meeting with Finance tomorrow" → "What time?").
 
 ## Gate decision (2026-07-15)
@@ -80,7 +85,9 @@ Note `gemini-2.0-flash` is unusable on this key (free-tier `limit: 0`);
 provider-agnosticism proven — and explicitly **not** as Anthropic-verified.
 Gemini is the **active** provider on cost grounds; **Anthropic/Claude remains the
 intended long-term provider**, to be re-tested once funded.
-**TD-002 (🔴 high) and TD-003 remain OPEN.**
+**TD-005 (naive datetimes) has since been RESOLVED; TD-006 (degenerate confidence)
+remains OPEN.** *(These were briefly mis-numbered TD-002/TD-003, colliding with the
+canonical register — corrected 2026-07-15.)*
 
 ## Reproducing
 ```

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useCreateItem } from '@/modules/items/hooks/use-items'
 
-/** Minimal capture box (M2). The AI-classified Inbox arrives in M3. */
+/** Minimal capture box (M2). The AI-classified Inbox arrived in M4. */
 export function CaptureBox({ organizationId, userId }: { organizationId: string; userId: string }) {
   const [title, setTitle] = useState('')
   const create = useCreateItem(organizationId)

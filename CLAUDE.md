@@ -28,17 +28,23 @@ _(Already made — do not revisit without discussion.)_
 - **AI provider — currently ACTIVE: Gemini** (`AI_PROVIDER=gemini`, `GEMINI_MODEL=gemini-flash-lite-latest`), chosen **on cost grounds** (free tier) while Anthropic is unfunded. **Anthropic/Claude remains the intended long-term provider**; its code path is implemented but unvalidated pending credits. Swapping is an `AI_PROVIDER` secret change + redeploy — no app changes (proven across three providers in M3).
 
 ## Milestone Status
+> **Numbering corrected 2026-07-16 (Palash).** The AI Inbox was previously labelled "M3"; it is the plan's **M4 (AI layer)** — `docs/PROJECT_PLAN.md` §7 and its Revised milestone note both say M4, as do `src/lib/ai/types.ts` and `provider.ts`. The plan's real **M3 (Workspace UI) was skipped** and is next. The Permission Model is **not** in the plan's roadmap (permissions were folded into M1); it is recorded as an unnumbered milestone.
+
+- **M0** — foundation (tooling, config, structure, themed app shell): **COMPLETE**
 - **M1** — identity, multi-tenant foundation, RLS + isolation tests: **COMPLETE**
 - **M2** — core domain schema (items, roles, assignments, activity_events, meeting_details): **COMPLETE**
-- **Permission Model** — **BUILT & VERIFIED, awaiting Palash's gate review.** Migration `0005_permission_hardening.sql` (applied 2026-07-15): access control keyed to the hybrid responsibility model. Closes **TD-001**, **TD-002**, and implements **TDL-012** (the derivation — previously the log's only *Proposed* decision).
+- **M3 — Workspace UI**: **NEXT — NOT STARTED.** List + board views, minimal-click item actions, dark/light polish. Skipped when the AI Inbox was built out of order. No full spec yet (the plan specs each milestone on arrival); spec to be drafted and approved **before** any code. Today's UI is a scaffold: `HomeScreen` + a flat read-only `ItemList`; **nothing in the UI can edit or complete an item**.
+- **M4 — AI Inbox / AI layer**: **COMPLETE — validated on Gemini `flash-lite`** (accepted at gate by Palash 2026-07-15). *(Previously mislabelled M3.)*
+- **Permission Model** (unnumbered — not in the plan's roadmap): **COMPLETE**, accepted at gate 2026-07-15. Migration `0005_permission_hardening.sql` (applied): access control keyed to the hybrid responsibility model. Closes **TD-001**, **TD-002**, and implements **TDL-012** (the derivation — previously the log's only *Proposed* decision).
   - Write = org admin **or** creator (PDL-021) **or** assigned user **or** current holder of a responsible role (derived, time-bounded). Collaborators get no write. **Read deliberately unchanged** (org-wide; fine-grained visibility stays deferred).
   - Verified: `node scripts/m5-permission-test.mjs` — **22 passing + 3 known failures (TD-007)**; incl. time-bounded revocation, self-assignment escalation, and the service role being unable to rewrite the audit log. `m1-isolation-test.mjs` still 14/14. Migration `0006` additionally fixed a pre-existing bug (org delete blocked by its own owner-protection trigger).
   - **DB access note:** `db.<ref>.supabase.co` is **IPv6-only** and unreachable from this environment (TD-003). Use the IPv4 session pooler — `PGHOST`/`PGPORT`/`PGUSER` in `.env` are set to it; apply migrations with `node scripts/db-apply.mjs <file>`.
   - Documented **after** implementation: [Doc 8 — Permission Model](docs/technical/08-permission-model.md), [Doc 9 — Responsibility Model](docs/technical/09-responsibility-model.md).
-- **M3** — AI Inbox: **COMPLETE — validated on Gemini `flash-lite`** (accepted at gate by Palash 2026-07-15). Pipeline and provider-agnosticism proven; **explicitly NOT Anthropic-verified**. See [M3 milestone report](docs/M3-milestone-report.md).
+### M4 — AI Inbox (detail)
+Pipeline and provider-agnosticism proven; **explicitly NOT Anthropic-verified**. See [M4 milestone report](docs/M4-milestone-report.md).
   - Accepted run, `gemini-flash-lite-latest`: 30/30 classified, **30/30 Zod-valid**, 30/30 stored + read back, **29/30 correct type (97%)**. Zero task-vs-meeting disagreements. The one miss — "Idea: add dark mode to the app" → task (expected note) — is **adjudicated as a genuine miss**, not a defensible call.
   - Partial run, `gemini-flash-latest` (fuller Flash): 16/30 — 16/16 correct, 16/16 Zod-valid — truncated by the free-tier **daily** request quota.
-  - **Anthropic re-test still PENDING FUNDING.** The Anthropic code path has never had a successful real run (account has no credits). Re-test when funded — M3 is not evidence about Claude's accuracy.
+  - **Anthropic re-test still PENDING FUNDING.** The Anthropic code path has never had a successful real run (account has no credits). Re-test when funded — M4 is not evidence about Claude's accuracy.
   - Providers supported in the Edge Function: `anthropic` | `gemini` | `mock`, via the `AI_PROVIDER` secret. `verify_jwt = true` is pinned in `supabase/config.toml`.
 
 ## Deploy Safety Notes
