@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { listMyOrgs, renameOrganization } from '@/modules/organizations/data/organizations-repository'
+import { deleteOrganization, listMyOrgs, renameOrganization } from '@/modules/organizations/data/organizations-repository'
 import { setActiveOrgId } from '@/modules/organizations/active-org-store'
 
 export function useMyOrgs(userId: string | undefined) {
@@ -17,6 +17,23 @@ export function useRenameOrganization(userId: string | undefined) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['my-orgs', userId] })
       void queryClient.invalidateQueries({ queryKey: ['active-org', userId] })
+    },
+  })
+}
+
+/**
+ * Delete an organization. On success, clear the persisted active-org choice (it may
+ * point at the org just deleted) and wipe the cache — every cached query was scoped
+ * to an org that may no longer exist.
+ */
+export function useDeleteOrganization(userId: string | undefined) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) => deleteOrganization(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['my-orgs', userId] })
+      void queryClient.invalidateQueries({ queryKey: ['active-org', userId] })
+      queryClient.clear()
     },
   })
 }

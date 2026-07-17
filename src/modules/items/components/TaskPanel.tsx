@@ -25,7 +25,12 @@ import { TagPicker } from '@/modules/tags/components/TagPicker'
 import type { Item, ItemState } from '@/modules/items/types'
 import type { List } from '@/modules/lists/data/lists-repository'
 
-const STATUS_OPTIONS: ItemState[] = ['captured', 'committed', 'in_progress', 'done', 'snoozed', 'backlog']
+// 'snoozed' is deliberately not hand-selectable (D-c / TD-011) — snooze is a
+// defer-until action with a date, set in Daily Review. A currently snoozed item
+// still shows "Snoozed" (added at render) so the control reflects its real state.
+const STATUS_OPTIONS: ItemState[] = ['captured', 'committed', 'in_progress', 'done', 'backlog']
+const statusOptionsFor = (state: ItemState): ItemState[] =>
+  state === 'snoozed' ? [...STATUS_OPTIONS, 'snoozed'] : STATUS_OPTIONS
 
 const dateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : '')
 const toInstant = (v: string) => (v ? new Date(`${v}T12:00:00`).toISOString() : null)
@@ -252,7 +257,7 @@ export function TaskPanel({
                     disabled={busy}
                     onChange={(e) => changeStatus(e.target.value as ItemState)}
                   >
-                    {STATUS_OPTIONS.filter((s) => !(isNote && s === 'done')).map((s) => (
+                    {statusOptionsFor(item.state).filter((s) => !(isNote && s === 'done')).map((s) => (
                       <option key={s} value={s} className="bg-background text-foreground">
                         {itemStateLabel(s)}
                       </option>

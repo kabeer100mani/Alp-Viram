@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import {
   completeItem,
   createItem,
@@ -7,6 +8,7 @@ import {
   snoozeItem,
   setItemState,
   updateItem,
+  wakeDueSnoozes,
   type CreateItemInput,
   type UpdateItemInput,
 } from '@/modules/items/data/items-repository'
@@ -68,4 +70,26 @@ export function useSnoozeItem() {
 
 export function useSetItemState() {
   return useItemMutation(({ id, state }: { id: string; state: ItemState }) => setItemState(id, state))
+}
+
+/**
+ * Wake due snoozes (TD-011) once when the workspace is ready, and again whenever
+ * `trigger` changes (e.g. Daily Review opening). If anything woke, refresh items and
+ * views so the woken work reappears in Today without a manual reload.
+ */
+export function useWakeDueSnoozes(organizationId: string | undefined, trigger?: unknown) {
+  const queryClient = useQueryClient()
+  useEffect(() => {
+    if (!organizationId) return
+    void wakeDueSnoozes()
+      .then((woken) => {
+        if (woken > 0) {
+          void queryClient.invalidateQueries({ queryKey: ['items'] })
+          void queryClient.invalidateQueries({ queryKey: ['views'] })
+        }
+      })
+      .catch(() => {
+        /* waking is best-effort — a failure must not break the workspace load */
+      })
+  }, [organizationId, trigger, queryClient])
 }

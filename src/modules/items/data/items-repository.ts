@@ -129,3 +129,15 @@ export async function reopenItem(id: string): Promise<Item> {
 export async function snoozeItem(id: string, until: string): Promise<Item> {
   return patchItem(id, { state: 'snoozed', snoozed_until: until })
 }
+
+/**
+ * Wake any of the caller's snoozes whose wake time has passed (TD-011): flips them
+ * from `snoozed` back to `committed`. Called opportunistically on app load and when
+ * Daily Review opens — the DB function (0020) is org-scoped and timezone-safe.
+ * Returns the number woken so the caller can refresh only when something changed.
+ */
+export async function wakeDueSnoozes(): Promise<number> {
+  const { data, error } = await getSupabaseClient().rpc('wake_due_snoozes')
+  if (error) throw error
+  return (data as number | null) ?? 0
+}

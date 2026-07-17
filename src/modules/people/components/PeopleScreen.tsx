@@ -12,6 +12,7 @@ import {
   useSetMemberActive,
 } from '@/modules/people/hooks/use-people'
 import type { Member, OrgMemberRole } from '@/modules/people/data/people-repository'
+import { useDeleteOrganization } from '@/modules/organizations/hooks/use-organizations'
 import { RolesSection } from '@/modules/people/components/RolesSection'
 
 /**
@@ -109,10 +110,14 @@ function MemberRow({
 export function PeopleScreen({
   organizationId,
   isAdmin,
+  isOwner,
+  orgName,
   currentUserId,
 }: {
   organizationId: string
   isAdmin: boolean
+  isOwner: boolean
+  orgName: string
   currentUserId: string
 }) {
   // Admins see deactivated members too (so deactivation isn't a black hole); the
@@ -259,6 +264,86 @@ export function PeopleScreen({
         isAdmin={isAdmin}
         currentUserId={currentUserId}
       />
+
+      {/* ── Danger zone: delete workspace (owner-only, TD-007) ───────────── */}
+      {isOwner && <DangerZone organizationId={organizationId} orgName={orgName} currentUserId={currentUserId} />}
     </section>
+  )
+}
+
+/**
+ * Permanently delete the workspace and everything in it (TD-007). Owner-only (RLS
+ * `orgs_delete` = is_org_owner; the caller only renders this for owners). A
+ * type-to-confirm gate stands in front of an irreversible, org-wide cascade.
+ */
+function DangerZone({
+  organizationId,
+  orgName,
+  currentUserId,
+}: {
+  organizationId: string
+  orgName: string
+  currentUserId: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [confirmText, setConfirmText] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const del = useDeleteOrganization(currentUserId)
+  const matches = confirmText.trim() === orgName
+
+  function onDelete() {
+    if (!matches) return
+    del.mutate(
+      { id: organizationId },
+      {
+        onError: (e) => setError(e instanceof Error ? e.message : 'The workspace could not be deleted.'),
+        // On success the cache is cleared and active-org reset; a reload lands the
+        // user on whatever org they have left (or their personal one).
+        onSuccess: () => window.location.assign('/'),
+      },
+    )
+  }
+
+  return (
+    <div className="space-y-3 rounded-lg border border-destructive/40 p-4">
+      <h3 className="text-sm font-medium text-destructive">Danger zone</h3>
+      {!open ? (
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            Permanently delete this workspace and everything in it. This cannot be undone.
+          </p>
+          <Button variant="ghost" size="sm" className="shrink-0 text-destructive hover:text-destructive" onClick={() => setOpen(true)}>
+            Delete workspace
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-sm">
+            This deletes <span className="font-medium">{orgName}</span> and every item, list, role, and record in
+            it, for everyone. To confirm, type the workspace name below.
+          </p>
+          <Input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            placeholder={orgName}
+            aria-label="Type the workspace name to confirm"
+          />
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm" onClick={() => { setOpen(false); setConfirmText(''); setError(null) }} disabled={del.isPending}>
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={!matches || del.isPending}
+              onClick={onDelete}
+            >
+              {del.isPending ? 'Deleting…' : 'Delete this workspace'}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

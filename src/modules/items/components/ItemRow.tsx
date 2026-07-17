@@ -19,7 +19,14 @@ import { TagChip } from '@/modules/tags/components/TagChip'
 import type { Tag } from '@/modules/tags/data/tags-repository'
 import type { Item, ItemState } from '@/modules/items/types'
 
-const STATUS_OPTIONS: ItemState[] = ['captured', 'committed', 'in_progress', 'done', 'snoozed', 'backlog']
+// 'snoozed' is deliberately NOT here (D-c / TD-011): snooze is a defer-*until*
+// action with a wake date (set in Daily Review), not a status you pick by hand —
+// hand-setting it with no date was the trap that hid work forever. A currently
+// snoozed item still shows "Snoozed" (its option is added at render so the control
+// reflects the real state).
+const STATUS_OPTIONS: ItemState[] = ['captured', 'committed', 'in_progress', 'done', 'backlog']
+const statusOptionsFor = (state: ItemState): ItemState[] =>
+  state === 'snoozed' ? [...STATUS_OPTIONS, 'snoozed'] : STATUS_OPTIONS
 
 export interface RowColumns {
   showAssignee: boolean
@@ -169,7 +176,7 @@ export function ItemRow({
             disabled={busy}
             onChange={(e) => changeStatus(e.target.value as ItemState)}
           >
-            {STATUS_OPTIONS.filter((s) => !(isNote && s === 'done')).map((s) => (
+            {statusOptionsFor(item.state).filter((s) => !(isNote && s === 'done')).map((s) => (
               <option key={s} value={s} className="bg-background text-foreground">
                 {itemStateLabel(s)}
               </option>

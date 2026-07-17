@@ -67,3 +67,25 @@ export async function renameOrganization(id: string, name: string): Promise<void
     throw new PermissionError('Only an admin can rename this workspace.')
   }
 }
+
+/**
+ * Permanently delete an organization and everything in it (TD-007). Irreversible.
+ *
+ * Owner-only (RLS `orgs_delete` = `is_org_owner`); the UI mirrors that and adds a
+ * type-to-confirm gate. The cascade completes because 0018 taught the audit triggers
+ * and the append-only guard to distinguish teardown from live-org tampering.
+ *
+ * A silent RLS 0-row (non-owner) becomes a PermissionError rather than a false
+ * "deleted". `.select()` forces the affected row back to tell the difference.
+ */
+export async function deleteOrganization(id: string): Promise<void> {
+  const { data, error } = await getSupabaseClient()
+    .from('organizations')
+    .delete()
+    .eq('id', id)
+    .select()
+  if (error) throw error
+  if (!data || data.length === 0) {
+    throw new PermissionError('Only the workspace owner can delete it.')
+  }
+}

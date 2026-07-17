@@ -70,7 +70,20 @@ Each entry: **what · why deferred · impact · fix when · source.**
   signal and must not gate anything.
 - **Source:** M4 real-provider batch run (Gemini flash-lite); resolved in M6.
 
-## TD-007 — organization deletion is incomplete (layers 2 & 3)
+## TD-007 — organization deletion is incomplete — ✅ RESOLVED 2026-07-17 (0018 + 0019)
+- **Resolution (M7 Gate B):** `0018` taught the two audit triggers to **skip logging on
+  DELETE when the org is already gone** (layer 2) and taught the append-only guard to
+  **allow the `item_id` SET NULL — an UPDATE — when the org is gone** (layer 3), using
+  the same "parent already deleted ⇒ teardown, not tampering" test as `0005`/`0006`.
+  `0019` added an **owner-only `orgs_delete` RLS policy** so deletion is reachable from
+  the client (an owner acting on their own tenant). A minimal **type-to-confirm
+  "delete workspace"** UI lives in the People screen (owner-only).
+- **Invariant held:** live-org `activity_events` stays fully append-only — the
+  service role still cannot UPDATE/DELETE an audit row. Verified: `m5-permission-test`
+  now **all green** (the 3 former known-failures pass) with the service-role positive
+  control still refusing; `m1-isolation` 14/14; `m11-offboarding-test` proves a
+  non-owner cannot delete and an owner can (with cascade).
+- **Original problem (for the record):**
 - **What:** deleting an organization still fails. `0006` fixed **layer 1** (the
   owner-protection trigger blocking its own `organization_members` cascade — "cannot
   remove the last owner"). Two pre-existing layers remain:
@@ -167,23 +180,23 @@ Each entry: **what · why deferred · impact · fix when · source.**
   via a SECURITY DEFINER view that isn't gated on the target's active status.
 - **Source:** found in the M7 Gate A offboarding walkthrough (2026-07-17).
 
-## TD-011 — a snoozed item never wakes (snoozed_until is written but never read)
-- **What:** `snoozeItem(id, until)` sets `state='snoozed'` + `snoozed_until`
-  ([items-repository.ts](../../src/modules/items/data/items-repository.ts) `:130`),
-  driven from Daily Review. But **nothing reads `snoozed_until` back** — no view, no
-  trigger, no cron — and **no system view includes the `snoozed` state** (`0007`).
-  So a snoozed item disappears from every active view and **never returns**, even
-  after its wake time passes. Same shape as the reminder bug (`remind_at` written,
-  never read) that migration `0017` fixed.
-- **Impact:** the "snooze/defer" Execution Must-Have (Doc 4) is **half-built**: defer
-  works, un-defer does not. A user who snoozes something to "tomorrow" will never see
-  it resurface — it's findable only by Search. Silent; looks like lost work.
-- **Fix when:** part of finishing the defer loop. Options: a "Snoozed" system view, or
-  (better, mirroring `0017`) fold `snoozed_until` into the surfacing logic so a due
-  snooze re-enters Today — e.g. a view predicate `state<>'snoozed' OR snoozed_until <= now`,
-  or a wake step that flips due snoozes back to `committed`. Timezone rules apply (TD-005).
+## TD-011 — a snoozed item never wakes — ✅ RESOLVED 2026-07-17 (0020)
+- **What (for the record):** `snoozeItem` set `state='snoozed'` + `snoozed_until` but
+  **nothing read `snoozed_until` back** and no system view showed `snoozed` items, so a
+  snoozed item vanished from every view and never returned. Same class as the reminder
+  bug `0017` fixed.
+- **Resolution (M7 Gate B):** `0020` adds **`wake_due_snoozes()`** — an org-scoped
+  SECURITY DEFINER function that flips snoozes with `snoozed_until <= now()` back to
+  `committed` (timezone-safe: absolute-instant comparison) — called on app load and
+  when Daily Review opens (`useWakeDueSnoozes`). It also seeds a **"Snoozed" system
+  view** (8th) so deferred items stay findable, and the client **drops `snoozed` from
+  the hand-set status dropdown** (D-c) — snooze is now only a defer-*until* action with
+  a date. A currently-snoozed item still shows "Snoozed" (option added at render).
+- **Verified:** `m11-snooze-test` (live, **IST**) — a due snooze wakes to `committed`
+  and rejoins active views; a future snooze stays hidden; the Snoozed view shows the
+  latter not the former; the status dropdown no longer offers "Snoozed".
 - **Source:** found in the MVP gap audit (2026-07-17), verified by grep — `snoozed_until`
-  has exactly one writer and zero readers.
+  had exactly one writer and zero readers.
 
 ## TD-012 — `ai_captures.provider` is hardcoded to 'anthropic' (wrong provenance)
 - **What:** [AiCaptureBox.tsx](../../src/modules/inbox/components/AiCaptureBox.tsx) `:73`

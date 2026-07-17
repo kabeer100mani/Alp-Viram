@@ -138,6 +138,20 @@ try {
   check('your own row has no Remove control (no self-lockout)', !(await selfRow.getByRole('button', { name: 'Remove', exact: true }).count()))
   await page.screenshot({ path: `${OUT}/1-offboarding.png` })
 
+  // ── Danger zone: delete-workspace confirm gate (owner-only) — NON-destructive ─
+  // The delete MECHANISM (owner-only, cascade) is covered by the red-team; here we
+  // only verify the type-to-confirm gate renders and gates, then CANCEL.
+  check('owner sees a Danger zone', (await page.getByText('Danger zone').count()) > 0)
+  await page.getByRole('button', { name: 'Delete workspace', exact: true }).click()
+  const confirmBtn = page.getByRole('button', { name: 'Delete this workspace', exact: true })
+  await confirmBtn.waitFor({ timeout: 5000 })
+  check('the delete button is disabled before the name is typed', await confirmBtn.isDisabled())
+  await page.getByLabel(/type the workspace name to confirm/i).fill('wrong name')
+  check('the delete button stays disabled on a wrong name', await confirmBtn.isDisabled())
+  await page.getByLabel(/type the workspace name to confirm/i).fill('My Workspace')
+  check('the delete button enables only when the exact name matches', !(await confirmBtn.isDisabled()))
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click() // do NOT delete
+
   // ── Password reset — request shows a generic message (no enumeration) ───────
   await page.evaluate(async () => {
     const { getSupabaseClient } = await import('/src/lib/supabase/client.ts')

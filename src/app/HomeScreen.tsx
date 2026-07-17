@@ -14,6 +14,7 @@ import { groupByList, singleGroup } from '@/modules/items/grouping'
 import { ViewRail } from '@/modules/views/components/ViewRail'
 import { ViewEditor } from '@/modules/views/components/ViewEditor'
 import { useByRoleGroups, useViewItems, useViews } from '@/modules/views/hooks/use-views'
+import { useWakeDueSnoozes } from '@/modules/items/hooks/use-items'
 import { DailyReview } from '@/modules/review/components/DailyReview'
 import { useSearch } from '@/modules/search/use-search'
 import { PeopleScreen } from '@/modules/people/components/PeopleScreen'
@@ -56,6 +57,9 @@ export function HomeScreen() {
     groupedByRole ? undefined : active?.filter,
   )
   const { data: roleGroups, isLoading: groupsLoading } = useByRoleGroups(org?.id, Boolean(groupedByRole))
+  // Wake any due snoozes on load and each time Daily Review opens (TD-011) — a
+  // deferred item returns to Today when its wake time passes.
+  useWakeDueSnoozes(org?.id, reviewOpen)
   // Tag pane: a plain view filtered to one tag. Uses the same view engine, so tag
   // filtering is just another filter — no bespoke query path (PDL-010).
   const { data: tagItems, isLoading: tagLoading } = useViewItems(
@@ -177,7 +181,7 @@ export function HomeScreen() {
                 />
                 <section className="min-w-0 flex-1 space-y-3">
                   {pane === 'people' ? (
-                    <PeopleScreen organizationId={org.id} isAdmin={isAdmin} currentUserId={user.id} />
+                    <PeopleScreen organizationId={org.id} isAdmin={isAdmin} isOwner={org.role === 'owner'} orgName={org.name} currentUserId={user.id} />
                   ) : pane === 'list' ? (
                     <>
                       <h2 className="text-sm font-semibold">{activeList?.name}</h2>

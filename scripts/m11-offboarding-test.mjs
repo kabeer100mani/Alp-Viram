@@ -148,6 +148,20 @@ try {
   const grantOwner = await other.c
     .from('organization_members').update({ role: 'owner' }).eq('id', otherMid).select()
   check('a non-owner admin cannot grant the owner role (trigger raises)', Boolean(grantOwner.error) || (grantOwner.data?.length ?? 0) === 0)
+
+  // ── Org deletion (TD-007): owner-only, and it actually cascades ─────────────
+  // A non-owner admin cannot delete the org (RLS orgs_delete = is_org_owner).
+  const { data: adminDel } = await other.c.from('organizations').delete().eq('id', owner.org).select()
+  check('a non-owner admin cannot delete the org (RLS 0-row)', (adminDel?.length ?? 0) === 0)
+  // The org still exists after that attempt.
+  const stillThere = SERVICE
+    ? await createClient(URL_, SERVICE, { auth: { persistSession: false } }).from('organizations').select('id').eq('id', owner.org)
+    : { data: [{ id: owner.org }] }
+  check('the org survives a non-owner delete attempt', (stillThere.data?.length ?? 0) === 1)
+  // The owner CAN delete it, and it cascades (0018/0019) — the whole point of TD-007.
+  const { error: ownerDelErr, data: ownerDel } = await owner.c.from('organizations').delete().eq('id', owner.org).select()
+  check('the owner can delete their org, and it cascades (TD-007)', !ownerDelErr && (ownerDel?.length ?? 0) === 1)
+  if (ownerDelErr) console.log(`     ↳ blocked by: ${ownerDelErr.message}`)
 } catch (e) {
   check(`red-team threw: ${e instanceof Error ? e.message : e}`, false)
 } finally {

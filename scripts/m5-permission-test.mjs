@@ -210,25 +210,20 @@ if (!SERVICE_KEY) {
     const { data: survived } = await S.from('activity_events').select('id').eq('id', evId)
     check('the audit row actually survived both attempts', (survived?.length ?? 0) === 1)
 
-    // MUST BE LAST — would destroy the test org.
+    // MUST BE LAST — destroys the test org.
     //
-    // TD-007: organization deletion is still incomplete. 0006 fixed the
-    // last-owner block (layer 1), but two pre-existing layers remain:
-    //   2. the AFTER DELETE audit triggers insert '..._removed' events for an
-    //      organization that is already gone → FK violation;
-    //   3. activity_events.item_id ON DELETE SET NULL is an UPDATE, which the
-    //      0005 append-only guard refuses.
-    // Deferred deliberately — there is no user-facing org delete today.
-    //
-    // NOTE: the 0005 guard's own cascade allowance is NOT in doubt; it was
-    // verified directly against an organization with no members.
+    // TD-007 RESOLVED (0018): org teardown now completes. 0006 fixed layer 1
+    // (last-owner); 0018 fixed layer 2 (audit triggers skip logging on DELETE when
+    // the org is gone) and layer 3 (the append-only guard allows the item_id SET
+    // NULL — an UPDATE — when the org is gone). The live-org append-only invariant
+    // is unchanged and still verified by the SERVICE-ROLE controls above.
     const { error: orgDelErr } = await S.from('organizations').delete().eq('id', org)
-    expectKnownFailure('organization delete cascades end-to-end', !orgDelErr, 'TD-007')
+    check('organization delete cascades end-to-end (TD-007 fixed, 0018)', !orgDelErr)
     if (orgDelErr) console.log(`     ↳ blocked by: ${orgDelErr.message}`)
     const { data: orgGone } = await S.from('organizations').select('id').eq('id', org)
-    expectKnownFailure('the organization is actually gone', (orgGone?.length ?? 0) === 0, 'TD-007')
+    check('the organization is actually gone', (orgGone?.length ?? 0) === 0)
     const { data: leftover } = await S.from('activity_events').select('id').eq('organization_id', org)
-    expectKnownFailure('activity_events cascaded away with the organization', (leftover?.length ?? 0) === 0, 'TD-007')
+    check('activity_events cascaded away with the organization', (leftover?.length ?? 0) === 0)
   }
 }
 
