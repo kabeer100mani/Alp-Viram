@@ -30,6 +30,19 @@ const STATUS_OPTIONS: ItemState[] = ['captured', 'committed', 'in_progress', 'do
 const dateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : '')
 const toInstant = (v: string) => (v ? new Date(`${v}T12:00:00`).toISOString() : null)
 
+// A reminder is a precise instant, not a day — it needs date + time. `remind_at` is
+// stored as an absolute UTC instant; a `datetime-local` control edits it in the
+// user's own wall-clock zone. new Date('…T09:00') reads the input as LOCAL time and
+// toISOString() renders the absolute UTC instant — the TD-005-correct round trip, so
+// a 9am reminder fires at 9am in the user's zone, not shifted by the UTC offset.
+function dtLocalInput(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+const toInstantFromLocal = (v: string) => (v ? new Date(v).toISOString() : null)
+
 /** A labelled row: label left, value right, "Empty" when unset. */
 function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -325,6 +338,27 @@ export function TaskPanel({
                   ) : (
                     <span className="text-xs text-muted-foreground">
                       {formatEstimate(item.time_estimate_minutes) || '—'}
+                    </span>
+                  )}
+                </QuickField>
+              )}
+
+              {!isNote && (
+                <QuickField label="Remind me">
+                  {canWrite ? (
+                    <input
+                      type="datetime-local"
+                      aria-label="Reminder"
+                      className={field}
+                      value={dtLocalInput(item.remind_at)}
+                      disabled={busy}
+                      onChange={(e) => update.mutate({ id: item.id, patch: { remindAt: toInstantFromLocal(e.target.value) } }, { onError: fail })}
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      {item.remind_at
+                        ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.remind_at))
+                        : '—'}
                     </span>
                   )}
                 </QuickField>

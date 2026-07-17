@@ -1,8 +1,12 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  createView,
+  deleteView,
   listViews,
+  renameView,
   runByRole,
   runView,
+  updateViewFilter,
   type ItemGroup,
   type ResolvedView,
 } from '@/modules/views/data/views-repository'
@@ -16,6 +20,34 @@ export function useViews(organizationId: string | undefined) {
     enabled: Boolean(organizationId),
     queryFn: () => listViews(organizationId as string),
   })
+}
+
+function useViewMutation<TArgs>(organizationId: string | undefined, fn: (args: TArgs) => Promise<unknown>) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: fn,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['views', organizationId] }),
+  })
+}
+
+export function useCreateView(organizationId: string | undefined, ownerId: string | undefined) {
+  return useViewMutation(organizationId, ({ name, filter }: { name: string; filter: ViewFilter }) =>
+    createView(organizationId as string, ownerId as string, name, filter),
+  )
+}
+
+export function useRenameView(organizationId: string | undefined) {
+  return useViewMutation(organizationId, ({ id, name }: { id: string; name: string }) => renameView(id, name))
+}
+
+export function useUpdateViewFilter(organizationId: string | undefined) {
+  return useViewMutation(organizationId, ({ id, filter }: { id: string; filter: ViewFilter }) =>
+    updateViewFilter(id, filter),
+  )
+}
+
+export function useDeleteView(organizationId: string | undefined) {
+  return useViewMutation(organizationId, ({ id }: { id: string }) => deleteView(id))
 }
 
 export function useViewItems(organizationId: string | undefined, filter: ViewFilter | undefined) {

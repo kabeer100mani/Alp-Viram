@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '@/lib/supabase/client'
-import { parseViewFilter, type ViewFilter } from '@/modules/views/view-filter'
+import { parseViewFilter, viewFilterSchema, type ViewFilter } from '@/modules/views/view-filter'
+import { PermissionError } from '@/core/errors'
 import type { Item } from '@/modules/items/types'
 import type { Tables } from '@/lib/supabase/database.types'
 
@@ -39,6 +40,88 @@ export async function listViews(organizationId: string): Promise<ResolvedView[]>
       filterInvalid: filter === null,
     }
   })
+}
+
+/**
+ * Custom saved views (Doc 4 Must Have: "system … + custom").
+ *
+ * Owner-private (M6 D4): RLS `p_views_read` serves a custom view only to its owner,
+ * and `p_views_write` blocks writing `is_system = true`, so the database already
+ * guarantees a user can neither see nor edit anyone else's view, nor touch a system
+ * view. The functions below mirror that — a custom view is always created for the
+ * current user, and rename/delete/retarget never touch system rows.
+ *
+ * The filter is **validated by Zod before it is stored** (TDL-010), not only when
+ * read — a view that could never be parsed back should never be saved in the first
+ * place. New custom views sort after every existing view.
+ */
+export async function createView(
+  organizationId: string,
+  ownerId: string,
+  name: string,
+  filter: ViewFilter,
+): Promise<void> {
+  const parsed = viewFilterSchema.safeParse(filter)
+  if (!parsed.success) throw new Error('That view filter is not valid.')
+
+  const client = getSupabaseClient()
+  const { data: maxRow } = await client
+    .from('saved_views')
+    .select('sort_order')
+    .eq('organization_id', organizationId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const nextOrder = ((maxRow as { sort_order: number } | null)?.sort_order ?? 0) + 10
+
+  const { data, error } = await client
+    .from('saved_views')
+    .insert({
+      organization_id: organizationId,
+      owner_id: ownerId,
+      name: name.trim(),
+      filter: parsed.data,
+      is_system: false,
+      sort_order: nextOrder,
+    })
+    .select()
+  if (error) throw error
+  if (!data || data.length === 0) throw new PermissionError('You cannot create a view here.')
+}
+
+export async function renameView(id: string, name: string): Promise<void> {
+  const { data, error } = await getSupabaseClient()
+    .from('saved_views')
+    .update({ name: name.trim() })
+    .eq('id', id)
+    .eq('is_system', false) // never rename a system view, even if RLS also blocks it
+    .select()
+  if (error) throw error
+  if (!data || data.length === 0) throw new PermissionError('You cannot rename this view.')
+}
+
+export async function updateViewFilter(id: string, filter: ViewFilter): Promise<void> {
+  const parsed = viewFilterSchema.safeParse(filter)
+  if (!parsed.success) throw new Error('That view filter is not valid.')
+  const { data, error } = await getSupabaseClient()
+    .from('saved_views')
+    .update({ filter: parsed.data })
+    .eq('id', id)
+    .eq('is_system', false)
+    .select()
+  if (error) throw error
+  if (!data || data.length === 0) throw new PermissionError('You cannot edit this view.')
+}
+
+export async function deleteView(id: string): Promise<void> {
+  const { data, error } = await getSupabaseClient()
+    .from('saved_views')
+    .delete()
+    .eq('id', id)
+    .eq('is_system', false)
+    .select()
+  if (error) throw error
+  if (!data || data.length === 0) throw new PermissionError('You cannot delete this view.')
 }
 
 export interface ItemGroup {
@@ -145,10 +228,14 @@ export async function runView(organizationId: string, filter: ViewFilter): Promi
 
   if (filter.types?.length) q = q.in('type', filter.types)
 
+  // Resolve dated windows against `nudge_at` = least(due_at, remind_at), NOT
+  // `due_at` — otherwise a reminder-only item (remind_at set, no due date) surfaces
+  // in no view at all once triaged (PDL-011; migration 0017). `nudge_at` is the
+  // first moment the item needs a human, so Today/Upcoming catch reminders too.
   if (filter.due === 'today') {
-    q = q.lt('due_at', startOfLocalDay(1)).not('due_at', 'is', null)
+    q = q.lt('nudge_at', startOfLocalDay(1)).not('nudge_at', 'is', null)
   } else if (filter.due === 'upcoming') {
-    q = q.gte('due_at', startOfLocalDay(1))
+    q = q.gte('nudge_at', startOfLocalDay(1))
   }
 
   // Aging = sitting untouched too long. Deliberately NOT "overdue": there is no
@@ -161,7 +248,9 @@ export async function runView(organizationId: string, filter: ViewFilter): Promi
 
   switch (filter.sort) {
     case 'due_asc':
-      q = q.order('due_at', { ascending: true, nullsFirst: false })
+      // Sort by nudge_at too — a reminder-only item has a null due_at, and ordering
+      // by due_at would bury it at the end of the very view it appears in for.
+      q = q.order('nudge_at', { ascending: true, nullsFirst: false })
       break
     case 'updated_desc':
       q = q.order('updated_at', { ascending: false })

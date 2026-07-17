@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Inbox, ListFilter, Search, Sun, Users } from 'lucide-react'
+import { Inbox, ListFilter, Pencil, Plus, Search, Sun, Users } from 'lucide-react'
 import type { ResolvedView } from '@/modules/views/data/views-repository'
 
 /**
@@ -36,6 +36,8 @@ export function ViewRail({
   onPeople,
   peopleActive,
   listTree,
+  onNewView,
+  onEditView,
 }: {
   views: ResolvedView[]
   activeViewId: string | undefined
@@ -48,6 +50,10 @@ export function ViewRail({
   peopleActive: boolean
   /** The optional Folder → List tree (PDL-032), rendered between views and People. */
   listTree?: ReactNode
+  /** Open the editor to create a custom view. */
+  onNewView?: () => void
+  /** Open the editor for an existing custom view (never a system view). */
+  onEditView?: (view: ResolvedView) => void
 }) {
   const primary = PRIMARY.map((n) => views.find((v) => v.name === n)).filter(
     (v): v is ResolvedView => Boolean(v),
@@ -57,8 +63,11 @@ export function ViewRail({
   const entry = (view: ResolvedView) => {
     const Icon = iconFor(view.name)
     const active = view.id === activeViewId
+    // A custom view (not system) can be edited by its owner — the pencil only
+    // appears for those, matching what RLS will actually allow (D4).
+    const editable = !view.isSystem && onEditView
     return (
-      <li key={view.id}>
+      <li key={view.id} className="group relative">
         <button
           type="button"
           onClick={() => onSelect(view)}
@@ -77,6 +86,16 @@ export function ViewRail({
             </span>
           ) : null}
         </button>
+        {editable && (
+          <button
+            type="button"
+            aria-label={`Edit view ${view.name}`}
+            onClick={() => onEditView(view)}
+            className="absolute right-1 top-1/2 hidden -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground group-hover:block"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
+        )}
       </li>
     )
   }
@@ -86,7 +105,19 @@ export function ViewRail({
       <ul className="space-y-0.5">{primary.map(entry)}</ul>
 
       <div className="space-y-0.5 border-t border-border pt-3">
-        <p className="px-2 pb-1 text-xs text-muted-foreground">Views</p>
+        <div className="flex items-center justify-between px-2 pb-1">
+          <p className="text-xs text-muted-foreground">Views</p>
+          {onNewView && (
+            <button
+              type="button"
+              aria-label="New view"
+              onClick={onNewView}
+              className="rounded p-0.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
         <ul className="space-y-0.5">{rest.map(entry)}</ul>
       </div>
 

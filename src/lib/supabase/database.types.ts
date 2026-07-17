@@ -325,6 +325,7 @@ export interface Database {
           definition_of_done: string | null
           start_at: string | null
           time_estimate_minutes: number | null
+          nudge_at: string | null
         }
         Insert: {
           id?: string

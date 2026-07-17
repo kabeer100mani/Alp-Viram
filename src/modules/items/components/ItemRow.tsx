@@ -1,4 +1,4 @@
-import { Flag, RotateCcw } from 'lucide-react'
+import { Bell, Flag, RotateCcw } from 'lucide-react'
 import {
   useCompleteItem,
   useReopenItem,
@@ -97,6 +97,11 @@ export function ItemRow({
         >
           {item.title}
         </button>
+        {/* A reminder is set — surfaced here so it's visible while scanning, since a
+            reminder-only item now appears in Today/Upcoming (PDL-011). */}
+        {item.remind_at && (
+          <Bell className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="Has a reminder" />
+        )}
         {/* Tags read-only here — the row is for scanning; editing lives in the panel
             (PDL-036). Clicking one filters, which is the point of a flat model. */}
         {tags.map((tag) => (

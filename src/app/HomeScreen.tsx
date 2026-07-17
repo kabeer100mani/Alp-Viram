@@ -12,6 +12,7 @@ import { TagChip } from '@/modules/tags/components/TagChip'
 import type { Tag } from '@/modules/tags/data/tags-repository'
 import { groupByList, singleGroup } from '@/modules/items/grouping'
 import { ViewRail } from '@/modules/views/components/ViewRail'
+import { ViewEditor } from '@/modules/views/components/ViewEditor'
 import { useByRoleGroups, useViewItems, useViews } from '@/modules/views/hooks/use-views'
 import { DailyReview } from '@/modules/review/components/DailyReview'
 import { useSearch } from '@/modules/search/use-search'
@@ -42,6 +43,7 @@ export function HomeScreen() {
   const [query, setQuery] = useState('')
   const [activeList, setActiveList] = useState<{ id: string; name: string } | undefined>()
   const [activeTag, setActiveTag] = useState<{ id: string; name: string } | undefined>()
+  const [viewEditor, setViewEditor] = useState<{ mode: 'new' } | { mode: 'edit'; view: ResolvedView } | null>(null)
 
   const { data: views, isLoading: viewsLoading } = useViews(org?.id)
   const active: ResolvedView | undefined = useMemo(
@@ -159,6 +161,8 @@ export function HomeScreen() {
                   searchActive={pane === 'search'}
                   onPeople={() => setPane('people')}
                   peopleActive={pane === 'people'}
+                  onNewView={() => setViewEditor({ mode: 'new' })}
+                  onEditView={(v) => setViewEditor({ mode: 'edit', view: v })}
                   listTree={
                     <ListTreeNav
                       organizationId={org.id}
@@ -273,6 +277,15 @@ export function HomeScreen() {
             )}
           </div>
         </>
+      )}
+
+      {org && user?.id && viewEditor && (
+        <ViewEditor
+          organizationId={org.id}
+          ownerId={user.id}
+          view={viewEditor.mode === 'edit' ? viewEditor.view : undefined}
+          onClose={() => setViewEditor(null)}
+        />
       )}
     </motion.div>
   )

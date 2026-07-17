@@ -124,6 +124,61 @@ try {
   await page.getByRole('button', { name: 'Clear', exact: true }).click()
   await page.waitForTimeout(500)
 
+  // ── Custom saved view: create → it appears in the rail → filter it → edit ──
+  const viewName = `My View ${Math.random().toString(36).slice(2, 5)}`
+  await page.getByRole('button', { name: 'New view', exact: true }).click()
+  const editor = page.getByRole('dialog', { name: /new view/i })
+  await editor.waitFor({ timeout: 10000 })
+  await editor.getByLabel('View name').fill(viewName)
+  // Filter to the tag we just made, so the view is meaningfully different.
+  await editor.getByRole('button', { name: tagName, exact: true }).click()
+  await editor.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.waitForTimeout(1500)
+  check('the custom view appears in the rail', await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: new RegExp(viewName) }).isVisible())
+
+  // It persisted, owner-private, non-system.
+  const viewRow = await page.evaluate(async (name) => {
+    const { getSupabaseClient } = await import('/src/lib/supabase/client.ts')
+    const { data } = await getSupabaseClient().from('saved_views').select('is_system, owner_id, filter').eq('name', name).single()
+    return data
+  }, viewName)
+  check('the saved view is non-system and owner-owned (D4)', viewRow && viewRow.is_system === false && Boolean(viewRow.owner_id))
+  check('the saved view stored the tag filter', Boolean(viewRow?.filter?.tags?.length))
+
+  await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: new RegExp(viewName) }).click()
+  await page.waitForTimeout(1200)
+  check('the custom view shows the tagged item', await page.getByRole('button', { name: title, exact: true }).isVisible())
+  await page.screenshot({ path: `${OUT}/4-custom-view.png` })
+
+  // Edit → rename it. The pencil is hidden until its row is hovered (group-hover),
+  // and Playwright can't hover a display:none element into being — hover the row first.
+  const renamed = viewName + ' v2'
+  await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: viewName, exact: true }).hover()
+  await page.getByRole('button', { name: new RegExp(`edit view ${viewName}`, 'i') }).click()
+  const editor2 = page.getByRole('dialog', { name: new RegExp(`edit view ${viewName}`, 'i') })
+  await editor2.waitFor({ timeout: 5000 })
+  await editor2.getByLabel('View name').fill(renamed)
+  await editor2.getByRole('button', { name: 'Save', exact: true }).click()
+  await page.waitForTimeout(1500)
+  check('the renamed view appears in the rail', await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: new RegExp(renamed) }).isVisible())
+
+  // Delete it.
+  await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: renamed, exact: true }).hover()
+  await page.getByRole('button', { name: new RegExp(`edit view ${renamed}`, 'i') }).click()
+  const editor3 = page.getByRole('dialog', { name: new RegExp(`edit view ${renamed}`, 'i') })
+  await editor3.waitFor({ timeout: 5000 })
+  await editor3.getByRole('button', { name: 'Delete', exact: true }).click()
+  await page.waitForTimeout(1500)
+  const gone = await page.evaluate(async (name) => {
+    const { getSupabaseClient } = await import('/src/lib/supabase/client.ts')
+    const { data } = await getSupabaseClient().from('saved_views').select('id').eq('name', name)
+    return (data?.length ?? 0) === 0
+  }, renamed)
+  check('deleting the custom view removes it', gone)
+
+  // System views have no edit pencil (read-only).
+  check('a system view (Inbox) has no edit control', !(await page.getByRole('button', { name: /edit view Inbox/i }).count()))
+
   // ── Org rename (solo admin) — the header updates ───────────────────────────
   // A solo user's OrgBar is silent until there's somewhere to switch, BUT rename
   // needs the bar visible; a solo org with team_enabled still shows the name only
