@@ -134,7 +134,6 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
               >
                 <option value="task">Task</option>
                 <option value="note">Note</option>
-                <option value="meeting">Meeting</option>
               </select>
               <Input
                 value={proposal.title}

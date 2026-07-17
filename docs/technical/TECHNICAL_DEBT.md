@@ -147,6 +147,26 @@ Each entry: **what · why deferred · impact · fix when · source.**
   `p_tags` so DELETE requires `is_org_admin` (closing the API gap the UI only hides).
 - **Source:** raised while speccing M6 (D1, 2026-07-16); ruled by Palash.
 
+## TD-013 — a deactivated member shows as "Member (Deactivated)", not their name
+- **What:** after an admin deactivates a member, the members list shows that person
+  as **"Member (Deactivated)"** — their name is gone. `profiles_select` is gated on
+  `shares_org_with`, which requires **both** memberships to be `is_active`
+  ([0001](../../supabase/migrations/0001_identity_and_tenancy.sql) `:80`); once the
+  target is inactive, the admin can no longer read their profile, so the name embed
+  returns null.
+- **Impact:** minor UX — an admin can't tell deactivated members apart by name, and
+  loses the name of someone they just deactivated. **Arguably correct** (a deactivated
+  person is no longer "sharing" the org), and **no security issue** (it hides *more*,
+  not less). But it makes offboarding read worse than it should.
+- **Why not fixed now:** the clean fix loosens `shares_org_with` (or `profiles_select`)
+  so remaining members can still read a *deactivated* co-member's name — that widens
+  profile visibility and is a security-adjacent RLS decision, out of the Tier-1
+  offboarding scope. Deferred deliberately (M7 Gate A).
+- **Fix when:** if offboarding UX needs it. Options: relax the target's `is_active`
+  requirement in `shares_org_with` for read; or carry the name in the members query
+  via a SECURITY DEFINER view that isn't gated on the target's active status.
+- **Source:** found in the M7 Gate A offboarding walkthrough (2026-07-17).
+
 ## TD-011 — a snoozed item never wakes (snoozed_until is written but never read)
 - **What:** `snoozeItem(id, until)` sets `state='snoozed'` + `snoozed_until`
   ([items-repository.ts](../../src/modules/items/data/items-repository.ts) `:130`),

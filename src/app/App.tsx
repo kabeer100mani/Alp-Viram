@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppProviders } from '@/app/providers'
 import { AppShell } from '@/components/layout/AppShell'
 import { AuthScreen } from '@/modules/auth/components/AuthScreen'
+import { ResetPassword } from '@/modules/auth/components/ResetPassword'
 import { ProtectedRoute } from '@/modules/auth/components/ProtectedRoute'
 import { HomeScreen } from '@/app/HomeScreen'
 import { AcceptInvite } from '@/modules/people/components/AcceptInvite'
@@ -11,6 +12,9 @@ export function App() {
     <AppProviders>
       <Routes>
         <Route path="/login" element={<AuthScreen />} />
+        {/* Public: the emailed recovery link lands here with a recovery session —
+            reachable while otherwise locked out, so NOT behind ProtectedRoute. */}
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route
           path="/"
           element={

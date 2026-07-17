@@ -8,6 +8,10 @@ export interface AuthContextValue {
   signInWithPassword: (email: string, password: string) => Promise<void>
   signUpWithPassword: (email: string, password: string, displayName?: string) => Promise<void>
   signOut: () => Promise<void>
+  /** Emails a password-reset link. Never reveals whether the address is registered. */
+  sendPasswordReset: (email: string) => Promise<void>
+  /** Sets a new password for the user in a recovery (or signed-in) session. */
+  updatePassword: (newPassword: string) => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined)

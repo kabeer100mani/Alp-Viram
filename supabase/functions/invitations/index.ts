@@ -11,9 +11,39 @@
 //            yet), so no client policy can perform this insert. The service role
 //            bypasses RLS; every check below is therefore explicit and manual.
 //
-// Email delivery is deferred (PDL-011): create returns a link for the admin to
-// share; no mail is sent.
+// Email delivery (M7 Gate A): if RESEND_API_KEY is configured, `create` emails the
+// invite link via Resend. If it isn't (or the send fails), the link is still
+// returned so the admin can share it manually — email is a bonus, never a gate.
 import { createClient } from 'npm:@supabase/supabase-js@2.110.2'
+
+const resendKey = Deno.env.get('RESEND_API_KEY') // absent until wired — link fallback
+const resendFrom = Deno.env.get('RESEND_FROM') ?? 'Alp-Viram <onboarding@resend.dev>'
+
+/**
+ * Best-effort invite email. Returns true if Resend accepted it. NEVER throws — a
+ * mail failure must not fail the invite (the link is always returned).
+ */
+async function sendInviteEmail(to: string, link: string, orgName: string): Promise<boolean> {
+  if (!resendKey) return false
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: resendFrom,
+        to,
+        subject: `You've been invited to ${orgName} on Alp-Viram`,
+        html: `<p>You've been invited to join <strong>${orgName}</strong> on Alp-Viram.</p>`
+          + `<p><a href="${link}">Accept the invitation</a></p>`
+          + `<p>If the link doesn't work, paste this into your browser:<br>${link}</p>`
+          + `<p>This link expires in 7 days.</p>`,
+      }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -54,6 +84,11 @@ Deno.serve(async (req: Request) => {
       const organizationId = String(body.organizationId ?? '')
       const email = String(body.email ?? '').trim().toLowerCase()
       const role = body.role === 'admin' ? 'admin' : 'member' // never owner
+      // The client passes its own origin so the emailed link matches the app the
+      // invite came from. Validated to an http(s) URL so it can't be abused as an
+      // open redirect vector in the email body.
+      const rawAppUrl = String(body.appUrl ?? '')
+      const appUrl = /^https?:\/\/[^\s]+$/.test(rawAppUrl) ? rawAppUrl.replace(/\/+$/, '') : ''
       if (!organizationId || !email) return json({ error: 'organizationId and email are required.' }, 400)
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'That is not a valid email.' }, 400)
 
@@ -80,7 +115,15 @@ Deno.serve(async (req: Request) => {
         .select('token')
         .single()
       if (error) return json({ error: error.message }, error.message.includes('row-level security') ? 403 : 400)
-      return json({ token: data.token }, 200)
+
+      // Best-effort email (only when appUrl is known and Resend is configured).
+      let emailed = false
+      if (appUrl) {
+        const { data: org } = await asUser.from('organizations').select('name').eq('id', organizationId).maybeSingle()
+        const orgName = (org as { name?: string } | null)?.name ?? 'a workspace'
+        emailed = await sendInviteEmail(email, `${appUrl}/invite?token=${data.token}`, orgName)
+      }
+      return json({ token: data.token, emailed }, 200)
     }
 
     // ── accept ────────────────────────────────────────────────────────────

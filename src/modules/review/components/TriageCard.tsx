@@ -85,7 +85,9 @@ export function TriageCard({
         >
           <option value="task">Task</option>
           <option value="note">Note</option>
-          <option value="meeting">Meeting</option>
+          {/* Meeting dropped for MVP (PDL-039) — no scheduling built. The enum
+              stays valid, so an existing meeting-typed item still shows its type. */}
+          {item.type === 'meeting' && <option value="meeting">Meeting</option>}
         </select>
 
         {lists.length > 0 && (

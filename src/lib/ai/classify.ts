@@ -25,5 +25,14 @@ export async function classifyCapture(input: string): Promise<Classification> {
   if (!parsed.success) {
     throw new Error('AI returned an unexpected shape.')
   }
+
+  // Meeting is dropped as a user-facing type for MVP (PDL-039): no scheduling was
+  // built, so a "Meeting" behaved identically to a Task while implying a lifecycle
+  // it didn't have. The enum stays valid in the schema (dormant, revivable), but a
+  // meeting-ish capture becomes a Task here so the model can never surface one. When
+  // Meeting is revived, delete this coercion — nothing else needs to change.
+  if (parsed.data.type === 'meeting') {
+    return { ...parsed.data, type: 'task' }
+  }
   return parsed.data
 }

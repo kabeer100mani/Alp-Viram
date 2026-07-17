@@ -48,6 +48,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null)
   }, [])
 
+  const sendPasswordReset = useCallback(async (email: string) => {
+    // The emailed link returns the user to /reset-password with a recovery session;
+    // detectSessionInUrl picks it up and fires a PASSWORD_RECOVERY auth event.
+    const { error } = await getSupabaseClient().auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    // Deliberately DO NOT surface "no such user" — the caller shows a generic
+    // message either way, so a reset request can't be used to probe which emails
+    // are registered (account-enumeration hygiene).
+    if (error) logger.error('Password reset request failed', { error: error.message })
+  }, [])
+
+  const updatePassword = useCallback(async (newPassword: string) => {
+    const { error } = await getSupabaseClient().auth.updateUser({ password: newPassword })
+    if (error) throw error
+  }, [])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
@@ -56,8 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithPassword,
       signUpWithPassword,
       signOut,
+      sendPasswordReset,
+      updatePassword,
     }),
-    [session, loading, signInWithPassword, signUpWithPassword, signOut],
+    [session, loading, signInWithPassword, signUpWithPassword, signOut, sendPasswordReset, updatePassword],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
