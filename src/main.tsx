@@ -13,3 +13,13 @@ createRoot(rootElement).render(
     <App />
   </StrictMode>,
 )
+
+// Register the PWA service worker in production only — in dev it would fight Vite's
+// HMR and cache stale modules. Requires HTTPS (or localhost), which Vercel provides.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      /* SW registration is best-effort — the app works without it, just not installable */
+    })
+  })
+}
