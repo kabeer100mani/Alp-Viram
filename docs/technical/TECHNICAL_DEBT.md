@@ -147,6 +147,38 @@ Each entry: **what · why deferred · impact · fix when · source.**
   `p_tags` so DELETE requires `is_org_admin` (closing the API gap the UI only hides).
 - **Source:** raised while speccing M6 (D1, 2026-07-16); ruled by Palash.
 
+## TD-011 — a snoozed item never wakes (snoozed_until is written but never read)
+- **What:** `snoozeItem(id, until)` sets `state='snoozed'` + `snoozed_until`
+  ([items-repository.ts](../../src/modules/items/data/items-repository.ts) `:130`),
+  driven from Daily Review. But **nothing reads `snoozed_until` back** — no view, no
+  trigger, no cron — and **no system view includes the `snoozed` state** (`0007`).
+  So a snoozed item disappears from every active view and **never returns**, even
+  after its wake time passes. Same shape as the reminder bug (`remind_at` written,
+  never read) that migration `0017` fixed.
+- **Impact:** the "snooze/defer" Execution Must-Have (Doc 4) is **half-built**: defer
+  works, un-defer does not. A user who snoozes something to "tomorrow" will never see
+  it resurface — it's findable only by Search. Silent; looks like lost work.
+- **Fix when:** part of finishing the defer loop. Options: a "Snoozed" system view, or
+  (better, mirroring `0017`) fold `snoozed_until` into the surfacing logic so a due
+  snooze re-enters Today — e.g. a view predicate `state<>'snoozed' OR snoozed_until <= now`,
+  or a wake step that flips due snoozes back to `committed`. Timezone rules apply (TD-005).
+- **Source:** found in the MVP gap audit (2026-07-17), verified by grep — `snoozed_until`
+  has exactly one writer and zero readers.
+
+## TD-012 — `ai_captures.provider` is hardcoded to 'anthropic' (wrong provenance)
+- **What:** [AiCaptureBox.tsx](../../src/modules/inbox/components/AiCaptureBox.tsx) `:73`
+  writes `provider: 'anthropic'` on every `ai_captures` row, regardless of the
+  `AI_PROVIDER` that actually classified it (currently **Gemini**). The stored
+  provenance is simply wrong.
+- **Impact:** low today, but it **undermines the TD-006 rationale** — `confidence` is
+  still stored "for future server-side calibration", and calibration keyed on a
+  mislabelled provider is unsound. Also corrupts any later "which provider did what"
+  analysis.
+- **Fix when:** cheap — thread the real provider back from the classify response (the
+  Edge Function knows it) into the `ai_captures` write, or read it from config. Do it
+  before any calibration work leans on the column.
+- **Source:** found in the MVP gap audit (2026-07-17).
+
 ## TD-009 — field edits are not audited (Activity feed is sparse)
 - **What:** the `activity_event_type` enum covers `created`, `state_changed`,
   `completed`, `moved_list`, the responsibility events and tags — but has **no event
