@@ -9,8 +9,13 @@ import {
   useRemoveResponsibleRole,
   useSetPrimaryResponsibleRole,
 } from '@/modules/items/hooks/use-responsibility'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import type { Role } from '@/modules/people/data/roles-repository'
 import type { Member } from '@/modules/people/data/people-repository'
+
+// Radix Select forbids an empty-string item value; "no responsible role" uses this.
+const NONE = '__none__'
 
 export interface ResponsibilityContext {
   organizationId: string
@@ -87,19 +92,22 @@ export function ResponsibilityBar({
           <div className="space-y-1">
             <p className="font-medium">Responsible role</p>
             {ctx.canWrite ? (
-              <select
-                aria-label="Responsible role"
-                className="h-8 rounded-md border border-input bg-background px-2"
-                value={primaryRole?.roleId ?? ''}
-                onChange={(e) => setPrimary.mutate({ roleId: e.target.value || null }, { onError: fail })}
+              <Select
+                value={primaryRole?.roleId ?? NONE}
+                onValueChange={(v) => setPrimary.mutate({ roleId: v === NONE ? null : v }, { onError: fail })}
               >
-                <option value="">No responsible role</option>
-                {ctx.roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger aria-label="Responsible role" className="h-8 w-auto min-w-[11rem] gap-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>No responsible role</SelectItem>
+                  {ctx.roles.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             ) : (
               <p>{glance}</p>
             )}
@@ -131,19 +139,24 @@ export function ResponsibilityBar({
                 </span>
               ))}
               {ctx.canWrite && (
-                <select
-                  aria-label="Assign a user"
-                  className="h-7 rounded-md border border-input bg-background px-1"
-                  value=""
-                  onChange={(e) => e.target.value && addUser.mutate({ userId: e.target.value }, { onError: fail })}
-                >
-                  <option value="">+ assign…</option>
-                  {ctx.members.filter((m) => !assignedIds.has(m.userId)).map((m) => (
-                    <option key={m.userId} value={m.userId}>
-                      {m.displayName ?? 'Member'}
-                    </option>
-                  ))}
-                </select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    aria-label="Assign a user"
+                    className="h-7 rounded-md border border-input bg-background px-2 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    + assign…
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {ctx.members.filter((m) => !assignedIds.has(m.userId)).map((m) => (
+                      <DropdownMenuItem key={m.userId} onSelect={() => addUser.mutate({ userId: m.userId }, { onError: fail })}>
+                        {m.displayName ?? 'Member'}
+                      </DropdownMenuItem>
+                    ))}
+                    {ctx.members.filter((m) => !assignedIds.has(m.userId)).length === 0 && (
+                      <DropdownMenuItem disabled>No one to add</DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           </div>
@@ -163,19 +176,24 @@ export function ResponsibilityBar({
                 </span>
               ))}
               {ctx.canWrite && (
-                <select
-                  aria-label="Add a collaborator"
-                  className="h-7 rounded-md border border-input bg-background px-1"
-                  value=""
-                  onChange={(e) => e.target.value && addCollab.mutate({ userId: e.target.value }, { onError: fail })}
-                >
-                  <option value="">+ collaborator…</option>
-                  {ctx.members.filter((m) => !collabIds.has(m.userId)).map((m) => (
-                    <option key={m.userId} value={m.userId}>
-                      {m.displayName ?? 'Member'}
-                    </option>
-                  ))}
-                </select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    aria-label="Add a collaborator"
+                    className="h-7 rounded-md border border-input bg-background px-2 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    + collaborator…
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {ctx.members.filter((m) => !collabIds.has(m.userId)).map((m) => (
+                      <DropdownMenuItem key={m.userId} onSelect={() => addCollab.mutate({ userId: m.userId }, { onError: fail })}>
+                        {m.displayName ?? 'Member'}
+                      </DropdownMenuItem>
+                    ))}
+                    {ctx.members.filter((m) => !collabIds.has(m.userId)).length === 0 && (
+                      <DropdownMenuItem disabled>No one to add</DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
           </div>

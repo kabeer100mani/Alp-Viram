@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { ChevronDown, ChevronRight, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   useAddChecklistItem,
   useChecklist,
@@ -90,12 +91,11 @@ export function ChecklistPanel({
             <ul className="space-y-1">
               {(checklist ?? []).map((c) => (
                 <li key={c.id} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={c.is_done}
                     disabled={!canWrite}
                     aria-label={c.text}
-                    onChange={(e) => setDone.mutate({ id: c.id, isDone: e.target.checked }, { onError: fail })}
+                    onCheckedChange={(v) => setDone.mutate({ id: c.id, isDone: v === true }, { onError: fail })}
                   />
                   <span className={c.is_done ? 'text-muted-foreground line-through' : ''}>{c.text}</span>
                   {canWrite && (

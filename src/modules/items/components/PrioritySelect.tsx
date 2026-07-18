@@ -6,8 +6,8 @@ import { priorityColor, priorityLabel, priorityOptions, type Priority } from '@/
 /**
  * A small styled priority dropdown.
  *
- * A native `<select>`'s option popup is browser chrome (white box, black text) and
- * cannot be styled cross-browser — so this renders a custom, theme-consistent option
+ * A native select element's option popup is browser chrome (white box, black text)
+ * and cannot be styled cross-browser — so this renders a custom, theme-consistent option
  * list. The list is **portaled to <body> with fixed positioning** because the trigger
  * often sits inside the dense table's `overflow-x-auto` wrapper, which would clip a
  * normally-positioned dropdown (the menu was in the DOM but visually cut off).

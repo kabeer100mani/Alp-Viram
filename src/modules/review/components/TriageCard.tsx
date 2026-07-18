@@ -1,11 +1,16 @@
 import { Check, Clock, Inbox as InboxIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useEditChip } from '@/modules/review/hooks/use-review'
 import { useItemResponsibility, useSetPrimaryResponsibleRole } from '@/modules/items/hooks/use-responsibility'
 import { itemTypeLabel } from '@/modules/items/presentation'
 import { DateCell } from '@/modules/items/components/DateCell'
 import type { List, Role } from '@/modules/review/data/review-repository'
 import type { Item, ItemType } from '@/modules/items/types'
+
+// Radix Select forbids an empty-string item value; unset List/Role use this sentinel.
+const NONE = '__none__'
 
 /**
  * A triage card: the item plus its AI chips — `Type ▸ List ▸ Role ▸ Due`.
@@ -59,10 +64,9 @@ export function TriageCard({
   return (
     <li className="space-y-2 px-4 py-3">
       <div className="flex items-start gap-3">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={selected}
-          onChange={onToggleSelected}
+          onCheckedChange={onToggleSelected}
           aria-label={`Select ${item.title}`}
           className="mt-1"
         />
@@ -74,56 +78,61 @@ export function TriageCard({
 
       {/* Chips: Type ▸ List ▸ Role ▸ Due */}
       <div className="flex flex-wrap items-center gap-2 pl-7">
-        <select
-          aria-label={`Type for ${item.title}`}
-          className={chip}
+        <Select
           value={item.type}
           disabled={busy}
-          onChange={(e) =>
-            editChip.mutate({ id: item.id, patch: { type: e.target.value as ItemType } as never })
-          }
+          onValueChange={(v) => editChip.mutate({ id: item.id, patch: { type: v as ItemType } as never })}
         >
-          <option value="task">Task</option>
-          <option value="note">Note</option>
-          {/* Meeting dropped for MVP (PDL-039) — no scheduling built. The enum
-              stays valid, so an existing meeting-typed item still shows its type. */}
-          {item.type === 'meeting' && <option value="meeting">Meeting</option>}
-        </select>
+          <SelectTrigger aria-label={`Type for ${item.title}`} className={`${chip} w-auto gap-1`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="task">Task</SelectItem>
+            <SelectItem value="note">Note</SelectItem>
+            {/* Meeting dropped for MVP (PDL-039) — no scheduling built. The enum
+                stays valid, so an existing meeting-typed item still shows its type. */}
+            {item.type === 'meeting' && <SelectItem value="meeting">Meeting</SelectItem>}
+          </SelectContent>
+        </Select>
 
         {lists.length > 0 && (
-          <select
-            aria-label={`List for ${item.title}`}
-            className={chip}
-            value={item.list_id ?? ''}
+          <Select
+            value={item.list_id ?? NONE}
             disabled={busy}
-            onChange={(e) =>
-              editChip.mutate({ id: item.id, patch: { listId: e.target.value || null } })
-            }
+            onValueChange={(v) => editChip.mutate({ id: item.id, patch: { listId: v === NONE ? null : v } })}
           >
-            <option value="">No list</option>
-            {lists.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger aria-label={`List for ${item.title}`} className={`${chip} w-auto gap-1`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>No list</SelectItem>
+              {lists.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
 
         {roles.length > 0 && (
-          <select
-            aria-label={`Responsible role for ${item.title}`}
-            className={chip}
-            value={primaryRoleId}
+          <Select
+            value={primaryRoleId || NONE}
             disabled={busy}
-            onChange={(e) => setRole.mutate({ roleId: e.target.value || null })}
+            onValueChange={(v) => setRole.mutate({ roleId: v === NONE ? null : v })}
           >
-            <option value="">No responsible role</option>
-            {roles.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger aria-label={`Responsible role for ${item.title}`} className={`${chip} w-auto gap-1`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NONE}>No responsible role</SelectItem>
+              {roles.map((r) => (
+                <SelectItem key={r.id} value={r.id}>
+                  {r.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
 
         <DateCell

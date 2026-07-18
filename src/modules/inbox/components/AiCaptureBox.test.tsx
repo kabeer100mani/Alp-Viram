@@ -73,7 +73,7 @@ describe('AiCaptureBox — displays what the (mock) provider returns', () => {
 
     // The proposal card reflects the mock's fields — humanised, not verbatim.
     expect(await screen.findByText(/AI proposal/i)).toBeInTheDocument()
-    expect(screen.getByLabelText(/item type/i)).toHaveValue('task')
+    expect(screen.getByLabelText(/item type/i)).toHaveTextContent('Task')
     expect(screen.getByDisplayValue('Review July MIS')).toBeInTheDocument()
     expect(screen.getByText(/reminder/i)).toBeInTheDocument()
     // A date is shown to a human as "17 Jul", never as the raw ISO string it

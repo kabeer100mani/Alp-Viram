@@ -52,14 +52,12 @@ const renderRow = (
 describe('ItemRow (dense table)', () => {
   beforeEach(() => mutate.mockReset())
 
-  // PDL-027: the raw item_state enum must never reach the user.
+  // PDL-027: the raw item_state enum must never reach the user. The Select trigger
+  // shows the human label; the enum string never appears as visible text.
   it('shows Status as a human label, never the enum', () => {
     renderRow({ state: 'in_progress' })
-    const status = screen.getByLabelText(/status for/i) as HTMLSelectElement
-    expect(status.value).toBe('in_progress') // option VALUE is the enum…
-    // …but no visible text leaks the enum.
+    expect(screen.getByLabelText(/status for/i)).toHaveTextContent('In progress')
     expect(screen.queryByText('in_progress')).not.toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'In progress' })).toBeInTheDocument()
   })
 
   // PDL-037: the `captured` state reads "To Do". It used to read "Inbox", which
@@ -67,10 +65,9 @@ describe('ItemRow (dense table)', () => {
   // a place. The rail's Inbox view keeps its name; only the state label changed.
   it('labels the captured state "To Do", not "Inbox" (which is a view)', () => {
     renderRow({ state: 'captured' })
-    const status = screen.getByLabelText(/status for/i) as HTMLSelectElement
-    expect(status.value).toBe('captured') // the enum value is unchanged…
-    expect(screen.getByRole('option', { name: 'To Do' })).toBeInTheDocument()
-    expect(screen.queryByRole('option', { name: 'Inbox' })).not.toBeInTheDocument()
+    const status = screen.getByLabelText(/status for/i)
+    expect(status).toHaveTextContent('To Do')
+    expect(status).not.toHaveTextContent('Inbox')
   })
 
   it('presents a reminder as "Reminder"', () => {
@@ -78,9 +75,12 @@ describe('ItemRow (dense table)', () => {
     expect(screen.getByText('Reminder')).toBeInTheDocument()
   })
 
-  // IA §Item types: a Note has no done-state.
-  it('offers no "Done" status option on a Note', () => {
+  // IA §Item types: a Note has no done-state. Open the status Select and confirm
+  // the menu opened (To Do present) but never offers Done for a Note.
+  it('offers no "Done" status option on a Note', async () => {
     renderRow({ type: 'note', title: 'Client prefers email' })
+    await userEvent.click(screen.getByLabelText(/status for/i))
+    expect(await screen.findByRole('option', { name: 'To Do' })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: 'Done' })).not.toBeInTheDocument()
   })
 

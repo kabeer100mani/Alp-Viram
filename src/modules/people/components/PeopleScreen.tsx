@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Copy, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   useChangeMemberRole,
   useCreateInvitation,
@@ -54,17 +55,20 @@ function MemberRow({
 
       {manageable ? (
         <div className="flex items-center gap-2">
-          <select
-            aria-label={`Role for ${member.displayName ?? 'member'}`}
-            className="h-7 rounded border border-input bg-background px-1 text-xs capitalize"
+          <Select
             value={member.role}
             disabled={busy}
-            onChange={(e) => changeRole.mutate({ membershipId: member.id, role: e.target.value as OrgMemberRole }, { onError: fail })}
+            onValueChange={(v) => changeRole.mutate({ membershipId: member.id, role: v as OrgMemberRole }, { onError: fail })}
           >
-            <option value="member">Member</option>
-            <option value="admin">Admin</option>
-            <option value="owner">Owner</option>
-          </select>
+            <SelectTrigger aria-label={`Role for ${member.displayName ?? 'member'}`} className="h-7 w-auto gap-1 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="member">Member</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="owner">Owner</SelectItem>
+            </SelectContent>
+          </Select>
 
           <Button
             variant="ghost"
@@ -200,15 +204,15 @@ export function PeopleScreen({
               className="flex-1"
               aria-label="Invitee email"
             />
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as 'admin' | 'member')}
-              className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-              aria-label="Invitee role"
-            >
-              <option value="member">Member</option>
-              <option value="admin">Admin</option>
-            </select>
+            <Select value={role} onValueChange={(v) => setRole(v as 'admin' | 'member')}>
+              <SelectTrigger aria-label="Invitee role" className="h-9 w-auto gap-1 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="member">Member</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
             <Button type="submit" disabled={createInvite.isPending || !email.trim()}>
               Create invite link
             </Button>

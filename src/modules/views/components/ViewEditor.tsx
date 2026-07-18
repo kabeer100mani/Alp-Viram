@@ -2,11 +2,16 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useCreateView, useDeleteView, useRenameView, useUpdateViewFilter } from '@/modules/views/hooks/use-views'
 import { useTags } from '@/modules/tags/hooks/use-tags'
 import { itemStateLabel } from '@/modules/items/presentation'
 import { itemStates, itemTypes, dueWindows, type ViewFilter } from '@/modules/views/view-filter'
 import type { ResolvedView } from '@/modules/views/data/views-repository'
+
+// Radix Select forbids an empty-string item value; "Any"/"Newest" defaults use this.
+const NONE = '__none__'
 
 /**
  * Create or edit a custom saved view (Doc 4 Must Have). A small form over the
@@ -140,35 +145,45 @@ export function ViewEditor({
         <div className="flex gap-4">
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Due</label>
-            <select
-              aria-label="Due window"
-              className="h-8 w-full rounded border border-input bg-background px-1 text-xs"
-              value={filter.due ?? ''}
-              onChange={(e) => patch({ due: (e.target.value || undefined) as ViewFilter['due'] })}
+            <Select
+              value={filter.due ?? NONE}
+              onValueChange={(v) => patch({ due: (v === NONE ? undefined : v) as ViewFilter['due'] })}
             >
-              <option value="">Any</option>
-              {dueWindows.filter((d) => d !== 'any').map((d) => (
-                <option key={d} value={d}>{d[0].toUpperCase() + d.slice(1)}</option>
-              ))}
-            </select>
+              <SelectTrigger aria-label="Due window" className="h-8 w-full gap-1 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>Any</SelectItem>
+                {dueWindows.filter((d) => d !== 'any').map((d) => (
+                  <SelectItem key={d} value={d}>{d[0].toUpperCase() + d.slice(1)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Sort</label>
-            <select
-              aria-label="Sort"
-              className="h-8 w-full rounded border border-input bg-background px-1 text-xs"
-              value={filter.sort ?? ''}
-              onChange={(e) => patch({ sort: (e.target.value || undefined) as ViewFilter['sort'] })}
+            <Select
+              value={filter.sort ?? NONE}
+              onValueChange={(v) => patch({ sort: (v === NONE ? undefined : v) as ViewFilter['sort'] })}
             >
-              <option value="">Newest</option>
-              <option value="due_asc">By date</option>
-              <option value="updated_desc">Recently updated</option>
-            </select>
+              <SelectTrigger aria-label="Sort" className="h-8 w-full gap-1 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>Newest</SelectItem>
+                <SelectItem value="due_asc">By date</SelectItem>
+                <SelectItem value="updated_desc">Recently updated</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         <label className="flex items-center gap-2 text-xs">
-          <input type="checkbox" checked={filter.waiting ?? false} onChange={(e) => patch({ waiting: e.target.checked || undefined })} />
+          <Checkbox
+            checked={filter.waiting ?? false}
+            onCheckedChange={(c) => patch({ waiting: c === true || undefined })}
+            aria-label="Only items waiting on someone else"
+          />
           Only items waiting on someone else
         </label>
 

@@ -16,3 +16,15 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: vi.fn(),
   }),
 })
+
+// Radix UI primitives (Select, DropdownMenu, …) use browser APIs jsdom lacks.
+// These no-op shims let them mount and open in component tests.
+Element.prototype.scrollIntoView = vi.fn()
+Element.prototype.hasPointerCapture = vi.fn(() => false)
+Element.prototype.setPointerCapture = vi.fn()
+Element.prototype.releasePointerCapture = vi.fn()
+window.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver

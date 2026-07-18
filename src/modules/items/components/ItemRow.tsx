@@ -15,6 +15,7 @@ import {
   statusColor,
 } from '@/modules/items/presentation'
 import { Avatar } from '@/components/ui/avatar'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { TagChip } from '@/modules/tags/components/TagChip'
 import type { Tag } from '@/modules/tags/data/tags-repository'
 import type { Item, ItemState } from '@/modules/items/types'
@@ -164,19 +165,21 @@ export function ItemRow({
       {/* Status — a coloured pill. Human labels only (PDL-027); no Done on a Note. */}
       <div className={`${cell} flex items-center gap-1`}>
         {canWrite ? (
-          <select
-            aria-label={`Status for ${item.title}`}
-            className={`h-6 cursor-pointer rounded-full px-2 text-[11px] font-medium focus:outline-none ${statusColor(item.state)}`}
-            value={item.state}
-            disabled={busy}
-            onChange={(e) => changeStatus(e.target.value as ItemState)}
-          >
-            {statusOptionsFor(item.state).filter((s) => !(isNote && s === 'done')).map((s) => (
-              <option key={s} value={s} className="bg-background text-foreground">
-                {itemStateLabel(s)}
-              </option>
-            ))}
-          </select>
+          <Select value={item.state} disabled={busy} onValueChange={(v) => changeStatus(v as ItemState)}>
+            <SelectTrigger
+              aria-label={`Status for ${item.title}`}
+              className={`h-6 w-auto gap-1 rounded-full border-0 px-2 text-[11px] font-medium shadow-none focus:ring-0 ${statusColor(item.state)}`}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptionsFor(item.state).filter((s) => !(isNote && s === 'done')).map((s) => (
+                <SelectItem key={s} value={s}>
+                  {itemStateLabel(s)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         ) : (
           <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusColor(item.state)}`}>
             {itemStateLabel(item.state)}

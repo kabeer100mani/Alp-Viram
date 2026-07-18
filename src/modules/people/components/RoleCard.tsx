@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Pencil, UserMinus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   useAssignments,
   useAssignUser,
@@ -10,6 +11,9 @@ import {
   useRetireRole,
 } from '@/modules/people/hooks/use-roles'
 import { isCurrent, type Role } from '@/modules/people/data/roles-repository'
+
+// Radix Select forbids an empty-string item value; the "Assign someone…" reset uses this.
+const ASSIGN_NONE = '__none__'
 import type { Member } from '@/modules/people/data/people-repository'
 
 /**
@@ -125,19 +129,19 @@ export function RoleCard({
 
       {isAdmin && assignable.length > 0 && (
         <div className="flex items-center gap-2">
-          <select
-            aria-label={`Assign someone to ${role.name}`}
-            value={pick}
-            onChange={(e) => setPick(e.target.value)}
-            className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-          >
-            <option value="">Assign someone…</option>
-            {assignable.map((m) => (
-              <option key={m.userId} value={m.userId}>
-                {m.displayName ?? 'Member'}
-              </option>
-            ))}
-          </select>
+          <Select value={pick || ASSIGN_NONE} onValueChange={(v) => setPick(v === ASSIGN_NONE ? '' : v)}>
+            <SelectTrigger aria-label={`Assign someone to ${role.name}`} className="h-8 w-auto gap-1 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ASSIGN_NONE}>Assign someone…</SelectItem>
+              {assignable.map((m) => (
+                <SelectItem key={m.userId} value={m.userId}>
+                  {m.displayName ?? 'Member'}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button
             size="sm"
             variant="secondary"

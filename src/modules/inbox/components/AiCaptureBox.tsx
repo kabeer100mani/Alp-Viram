@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Check, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { classifyCapture } from '@/lib/ai/classify'
 import type { Classification } from '@/lib/ai/classification'
 import { useCreateItem } from '@/modules/items/hooks/use-items'
@@ -207,15 +208,15 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
               AI proposal · confirm or edit
             </p>
             <div className="flex items-center gap-2">
-              <select
-                value={proposal.type}
-                onChange={(e) => setProposal({ ...proposal, type: e.target.value as ItemType })}
-                className="h-8 rounded-md border border-input bg-background px-2 text-sm"
-                aria-label="Item type"
-              >
-                <option value="task">Task</option>
-                <option value="note">Note</option>
-              </select>
+              <Select value={proposal.type} onValueChange={(v) => setProposal({ ...proposal, type: v as ItemType })}>
+                <SelectTrigger aria-label="Item type" className="h-8 w-auto gap-1 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="task">Task</SelectItem>
+                  <SelectItem value="note">Note</SelectItem>
+                </SelectContent>
+              </Select>
               <Input
                 value={proposal.title}
                 onChange={(e) => setProposal({ ...proposal, title: e.target.value })}

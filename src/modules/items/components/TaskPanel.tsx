@@ -20,6 +20,7 @@ import {
   statusColor,
 } from '@/modules/items/presentation'
 import { Avatar } from '@/components/ui/avatar'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ResponsibilityBar, type ResponsibilityContext } from '@/modules/items/components/ResponsibilityBar'
 import { ChecklistPanel } from '@/modules/items/components/ChecklistPanel'
 import { PrioritySelect } from '@/modules/items/components/PrioritySelect'
@@ -30,6 +31,9 @@ import type { List } from '@/modules/lists/data/lists-repository'
 // 'snoozed' is deliberately not hand-selectable (D-c / TD-011) — snooze is a
 // defer-until action with a date, set in Daily Review. A currently snoozed item
 // still shows "Snoozed" (added at render) so the control reflects its real state.
+// Radix Select forbids an empty-string item value, so an unset List uses this
+// sentinel in the control and maps back to null on write.
+const NONE = '__none__'
 const STATUS_OPTIONS: ItemState[] = ['captured', 'committed', 'in_progress', 'done', 'backlog']
 const statusOptionsFor = (state: ItemState): ItemState[] =>
   state === 'snoozed' ? [...STATUS_OPTIONS, 'snoozed'] : STATUS_OPTIONS
@@ -249,19 +253,21 @@ export function TaskPanel({
             <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
               <QuickField label="Status">
                 {canWrite ? (
-                  <select
-                    aria-label="Status"
-                    className={`h-7 cursor-pointer rounded-full px-2 text-[11px] font-medium focus:outline-none ${statusColor(item.state)}`}
-                    value={item.state}
-                    disabled={busy}
-                    onChange={(e) => changeStatus(e.target.value as ItemState)}
-                  >
-                    {statusOptionsFor(item.state).filter((s) => !(isNote && s === 'done')).map((s) => (
-                      <option key={s} value={s} className="bg-background text-foreground">
-                        {itemStateLabel(s)}
-                      </option>
-                    ))}
-                  </select>
+                  <Select value={item.state} disabled={busy} onValueChange={(v) => changeStatus(v as ItemState)}>
+                    <SelectTrigger
+                      aria-label="Status"
+                      className={`h-7 w-auto gap-1 rounded-full border-0 px-2 text-[11px] font-medium shadow-none focus:ring-0 ${statusColor(item.state)}`}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptionsFor(item.state).filter((s) => !(isNote && s === 'done')).map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {itemStateLabel(s)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 ) : (
                   <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusColor(item.state)}`}>
                     {itemStateLabel(item.state)}
@@ -369,20 +375,23 @@ export function TaskPanel({
               {!isNote && lists && lists.length > 0 && (
                 <QuickField label="List">
                   {canWrite ? (
-                    <select
-                      aria-label="List"
-                      className={`${field} cursor-pointer`}
-                      value={item.list_id ?? ''}
+                    <Select
+                      value={item.list_id ?? NONE}
                       disabled={busy}
-                      onChange={(e) => update.mutate({ id: item.id, patch: { listId: e.target.value || null } }, { onError: fail })}
+                      onValueChange={(v) => update.mutate({ id: item.id, patch: { listId: v === NONE ? null : v } }, { onError: fail })}
                     >
-                      <option value="">Inbox (no list)</option>
-                      {lists.map((l) => (
-                        <option key={l.id} value={l.id}>
-                          {l.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger aria-label="List" className={field}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE}>Inbox (no list)</SelectItem>
+                        {lists.map((l) => (
+                          <SelectItem key={l.id} value={l.id}>
+                            {l.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   ) : (
                     <span className="text-xs text-muted-foreground">{listName}</span>
                   )}
