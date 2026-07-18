@@ -114,7 +114,8 @@ try {
   check('a list can be created inside a folder', await listNav.isVisible())
 
   // File the item into the list via the card's List picker.
-  await card2.getByLabel(new RegExp(`list for ${title}`, 'i')).selectOption({ label: listName })
+  await card2.getByLabel(new RegExp(`list for ${title}`, 'i')).click()
+  await page.getByRole('option', { name: listName, exact: true }).click()
   await page.waitForTimeout(1500)
 
   // Open the list — the item should be there.

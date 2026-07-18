@@ -84,7 +84,8 @@ try {
 
   // The expand is a SIBLING role="row", not a child of the main row, so the List
   // picker is page-scoped (its aria-label carries the title, so it's unique).
-  await page.getByLabel(new RegExp(`list for ${title}$`, 'i')).selectOption({ label: ls })
+  await page.getByLabel(new RegExp(`list for ${title}$`, 'i')).click()
+  await page.getByRole('option', { name: ls, exact: true }).click()
   await page.waitForTimeout(1200)
 
   // The reload collapsed the tree — expand Project → Folder to reach the list.

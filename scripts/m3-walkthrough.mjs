@@ -64,7 +64,7 @@ try {
 
   // The AI writes a concise title ("Prepare July MIS"), not an echo of the raw
   // capture — so assert against what the app actually proposed, not our input.
-  const proposedTitle = await page.locator('select[aria-label="Item type"] + input').inputValue()
+  const proposedTitle = await page.getByLabel("Proposed title").inputValue()
   console.log(`   ↳ AI proposed title: "${proposedTitle}"`)
   check('AI proposed a non-empty title', proposedTitle.trim().length > 0)
 
@@ -92,7 +92,8 @@ try {
   const status = page.getByLabel(/^Status for /i).first()
   await status.waitFor({ timeout: 15000 })
   check('row offers an inline Status control (creator may write)', await status.isVisible())
-  await status.selectOption('done')
+  await status.click()
+  await page.getByRole('option', { name: 'Done', exact: true }).click()
 
   await page.waitForTimeout(2500)
   await page.screenshot({ path: `${OUT}/4-after-done.png` })
@@ -112,7 +113,7 @@ try {
   await page.getByPlaceholder(/capture in plain words/i).fill('Follow up with TCS')
   await page.getByRole('button', { name: /capture/i }).click()
   await page.getByText(/AI proposal/i).waitFor({ timeout: 45000 })
-  const triageTitle = await page.locator('select[aria-label="Item type"] + input').inputValue()
+  const triageTitle = await page.getByLabel("Proposed title").inputValue()
   await page.getByRole('button', { name: /confirm/i }).click()
   await page.getByText(/AI proposal/i).waitFor({ state: 'hidden', timeout: 20000 })
 
@@ -157,15 +158,14 @@ try {
   await page.screenshot({ path: `${OUT}/8-search.png` })
   check('search finds the item by full text', (await page.locator('body').innerText()).includes(triageTitle))
 
-  // ── 9. Dark/light persists across reload (FR-19) ────────────────────────
-  await page.getByRole('button', { name: /theme|dark|light/i }).first().click()
-  await page.waitForTimeout(500)
-  const darkAfterToggle = await page.evaluate(() => document.documentElement.classList.contains('dark'))
+  // ── 9. Dark-only (temporary, ClickUp build): the app is forced dark and the
+  // light/dark toggle is hidden. So the app is dark and stays dark across a reload.
+  const darkBefore = await page.evaluate(() => document.documentElement.classList.contains('dark'))
   await page.reload({ waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
   const darkAfterReload = await page.evaluate(() => document.documentElement.classList.contains('dark'))
   await page.screenshot({ path: `${OUT}/9-theme.png` })
-  check('theme choice survives a reload (FR-19)', darkAfterToggle === darkAfterReload)
+  check('app is dark and stays dark across reload (dark-only for now)', darkBefore && darkAfterReload)
 } catch (err) {
   check(`walkthrough threw: ${err instanceof Error ? err.message.split('\n')[0] : err}`, false)
   await page.screenshot({ path: `${OUT}/FAIL.png` }).catch(() => {})

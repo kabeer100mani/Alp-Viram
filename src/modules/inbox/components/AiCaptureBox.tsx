@@ -218,6 +218,7 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
                 </SelectContent>
               </Select>
               <Input
+                aria-label="Proposed title"
                 value={proposal.title}
                 onChange={(e) => setProposal({ ...proposal, title: e.target.value })}
                 className="flex-1"

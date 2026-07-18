@@ -87,10 +87,12 @@ try {
   await page.waitForTimeout(1200)
   check('Due date is editable inline', (await dueCell().innerText()).includes('8 Aug'))
 
-  // Inline Status edit.
-  await row.getByLabel(new RegExp(`status for ${title}$`, 'i')).selectOption('in_progress')
+  // Inline Status edit (shadcn Select: click the trigger, then the portaled option).
+  const statusCtl = row.getByLabel(new RegExp(`status for ${title}$`, 'i'))
+  await statusCtl.click()
+  await page.getByRole('option', { name: 'In progress', exact: true }).click()
   await page.waitForTimeout(1200)
-  check('Status is editable inline', (await row.getByLabel(new RegExp(`status for ${title}$`, 'i')).inputValue()) === 'in_progress')
+  check('Status is editable inline', /in progress/i.test(await statusCtl.innerText()))
 
   // Persist across reload.
   await page.reload({ waitUntil: 'networkidle' })

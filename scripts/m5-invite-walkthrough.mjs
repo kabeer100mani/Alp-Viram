@@ -114,7 +114,8 @@ try {
   check('a new role shows "UNFILLED — needs owner"', /unfilled/i.test(await roleRow.innerText()))
 
   // Assign the invitee to the role.
-  await roleRow.getByLabel(new RegExp(`assign someone to ${roleName}`, 'i')).selectOption({ index: 1 })
+  await roleRow.getByLabel(new RegExp(`assign someone to ${roleName}`, 'i')).click()
+  await ap.getByRole('option').nth(1).click()
   await roleRow.getByRole('button', { name: /^assign$/i }).click()
   await ap.waitForTimeout(1500)
   check('after assigning, the role is no longer unfilled', !/unfilled/i.test(await roleRow.innerText()))
@@ -156,9 +157,10 @@ try {
 
   // Set its responsible role from the card.
   await ap.getByRole('button', { name: /responsibility for this item/i }).first().click()
-  const roleSelect = ap.locator('select[aria-label="Responsible role"]').first()
+  const roleSelect = ap.getByLabel('Responsible role').first()
   await roleSelect.waitFor({ timeout: 10000 })
-  await roleSelect.selectOption({ label: renamed })
+  await roleSelect.click()
+  await ap.getByRole('option', { name: renamed, exact: true }).click()
   await ap.waitForTimeout(1500)
   await ap.reload({ waitUntil: 'networkidle' })
   await ap.getByRole('navigation', { name: /views/i }).waitFor({ timeout: 15000 })
