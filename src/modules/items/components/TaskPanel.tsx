@@ -96,6 +96,7 @@ export function TaskPanel({
   const [title, setTitle] = useState(item.title)
   const [body, setBody] = useState(item.body ?? '')
   const [estimate, setEstimate] = useState(formatEstimate(item.time_estimate_minutes))
+  const [waitingOn, setWaitingOn] = useState(item.waiting_on ?? '')
 
   const update = useUpdateItem()
   const complete = useCompleteItem()
@@ -117,6 +118,7 @@ export function TaskPanel({
   useEffect(() => setTitle(item.title), [item.id, item.title])
   useEffect(() => setBody(item.body ?? ''), [item.id, item.body])
   useEffect(() => setEstimate(formatEstimate(item.time_estimate_minutes)), [item.id, item.time_estimate_minutes])
+  useEffect(() => setWaitingOn(item.waiting_on ?? ''), [item.id, item.waiting_on])
 
   // Escape closes — the panel must feel as cheap to leave as to open.
   useEffect(() => {
@@ -160,6 +162,20 @@ export function TaskPanel({
     update.mutate(
       { id: item.id, patch: { timeEstimateMinutes: minutes } },
       { onError: fail, onSuccess: () => setEstimate(formatEstimate(minutes)) },
+    )
+  }
+
+  // "Waiting on" (TD-016): any non-empty value files the task into the Waiting view;
+  // clearing it removes it. Stored as free text on `items.waiting_on` (task-only).
+  function saveWaitingOn() {
+    const next = waitingOn.trim()
+    if ((item.waiting_on ?? '') === next) {
+      setWaitingOn(item.waiting_on ?? '')
+      return
+    }
+    update.mutate(
+      { id: item.id, patch: { waitingOn: next || null } },
+      { onError: fail, onSuccess: () => setWaitingOn(next) },
     )
   }
 
@@ -346,6 +362,27 @@ export function TaskPanel({
                         ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(item.remind_at))
                         : '—'}
                     </span>
+                  )}
+                </QuickField>
+              )}
+
+              {!isNote && (
+                <QuickField label="Waiting on" className="col-span-2">
+                  {canWrite ? (
+                    <input
+                      aria-label="Waiting on"
+                      placeholder="e.g. Priya's sign-off, vendor reply…"
+                      className={field}
+                      value={waitingOn}
+                      onChange={(e) => setWaitingOn(e.target.value)}
+                      onBlur={saveWaitingOn}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur()
+                        if (e.key === 'Escape') setWaitingOn(item.waiting_on ?? '')
+                      }}
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">{item.waiting_on || '—'}</span>
                   )}
                 </QuickField>
               )}

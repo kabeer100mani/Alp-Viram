@@ -97,6 +97,12 @@ export interface UpdateItemInput {
   listId?: string | null
   /** Planned duration in minutes (an estimate, not tracking). Null clears it. */
   timeEstimateMinutes?: number | null
+  /**
+   * What this task is blocked on / waiting for (free text, task-only — DB CHECK
+   * `chk_waiting_is_task`). Any non-null value surfaces the item in the Waiting view
+   * (TD-016); empty string is normalised to null (= not waiting).
+   */
+  waitingOn?: string | null
 }
 
 async function patchItem(id: string, patch: Record<string, unknown>): Promise<Item> {
@@ -125,6 +131,8 @@ export async function updateItem(id: string, input: UpdateItemInput): Promise<It
   if (input.priority !== undefined) patch.priority = input.priority
   if (input.listId !== undefined) patch.list_id = input.listId
   if (input.timeEstimateMinutes !== undefined) patch.time_estimate_minutes = input.timeEstimateMinutes
+  // Empty text = not waiting; store null so the Waiting view's "is not null" holds.
+  if (input.waitingOn !== undefined) patch.waiting_on = input.waitingOn?.trim() ? input.waitingOn.trim() : null
   return patchItem(id, patch)
 }
 

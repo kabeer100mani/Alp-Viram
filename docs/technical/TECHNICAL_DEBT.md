@@ -274,14 +274,16 @@ Each entry: **what · why deferred · impact · fix when · source.**
 - **Source:** ClickUp §1 native-control replacement (2026-07-18) — surfaced when the
   `selectOption` updates ran and these three failed on removed surfaces.
 
-## TD-016 — `waiting_on` is read by the Waiting view but written nowhere
-- **What:** `items.waiting_on` (text, nullable; `0002`) is filtered by the **"Waiting"
-  system view** (`views-repository` → `.not('waiting_on','is',null)`, seeded `0020`),
-  but **no code path ever sets it** — not `createItem`, not `updateItem`
-  (`UpdateItemInput`), no UI control, not the AI contract. So the **Waiting view is
-  permanently empty**. Same "field read somewhere / written nowhere" class that
-  `0017` (reminder → nudge_at) and `0020` (snooze wake) already fixed; this one is
-  still open. Found in the 2026-07-18 field audit.
+## TD-016 — ✅ RESOLVED 2026-07-18 — `waiting_on` now has a write path ("Waiting on" field)
+- **Was:** `items.waiting_on` (text, nullable; `0002`) is filtered by the **"Waiting"
+  system view** (filter `{waiting:true}` → `.not('waiting_on','is',null)`, seeded
+  `0020`), but **no code path ever set it** → the Waiting view was **permanently
+  empty**. Found in the 2026-07-18 field audit.
+- **Fix:** `UpdateItemInput` gained `waitingOn` (mapped to `waiting_on`, empty→null,
+  task-only per CHECK `chk_waiting_is_task`); the **TaskPanel has a "Waiting on"
+  free-text field** — any non-empty value files the task into the Waiting view,
+  clearing it removes it. No migration (column existed). Verified live: set → item
+  appears in Waiting; clear → it leaves.
 - **Impact:** a shipped system view that can never show anything — a silent
   dead-end, not a crash. No security impact.
 - **Fix when:** decide the product meaning of "waiting on someone else" and give it a
