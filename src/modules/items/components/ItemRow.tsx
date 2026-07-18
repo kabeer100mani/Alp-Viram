@@ -144,6 +144,7 @@ export function ItemRow({
             canWrite={canWrite}
             busy={busy}
             className="w-full"
+            assumed={item.due_assumed}
             onChange={(iso) => update.mutate({ id: item.id, patch: { dueAt: iso } }, { onError: fail })}
           />
         )}

@@ -32,6 +32,7 @@ export function DateCell({
   busy = false,
   placeholder = 'Set date',
   className = '',
+  assumed = false,
   onChange,
 }: {
   value: string | null
@@ -40,9 +41,14 @@ export function DateCell({
   busy?: boolean
   placeholder?: string
   className?: string
+  /** The date was defaulted by the app, not user-set — show a small "assumed" tag (PDL-047). */
+  assumed?: boolean
   onChange: (iso: string | null) => void
 }) {
   const [editing, setEditing] = useState(false)
+  // Same visual pattern as the "· suggested" list tag: a small appended marker that
+  // flags a date the app assumed, so it reads differently from a user-set one.
+  const assumedTag = assumed && value ? <span className="ml-1 text-[10px] text-primary">· assumed</span> : null
 
   if (canWrite && editing) {
     return (
@@ -66,7 +72,7 @@ export function DateCell({
   }
 
   const text = formatDateTime(value)
-  if (!canWrite) return <span className="text-muted-foreground">{text}</span>
+  if (!canWrite) return <span className="text-muted-foreground">{text}{assumedTag}</span>
 
   return (
     <button
@@ -75,7 +81,7 @@ export function DateCell({
       onClick={() => setEditing(true)}
       className={`h-6 rounded border border-transparent px-1 text-left text-xs text-muted-foreground hover:border-input ${className}`}
     >
-      {text || <span className="text-muted-foreground/50">{placeholder}</span>}
+      {text ? <>{text}{assumedTag}</> : <span className="text-muted-foreground/50">{placeholder}</span>}
     </button>
   )
 }

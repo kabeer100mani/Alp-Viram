@@ -22,6 +22,8 @@ export interface CreateItemInput {
   body?: string | null
   createdBy: string
   dueAt?: string | null
+  /** True when `dueAt` was defaulted by the app (e.g. to today), not user-set (PDL-047). */
+  dueAssumed?: boolean
   remindAt?: string | null
   isReminder?: boolean
   priority?: Item['priority']
@@ -47,6 +49,7 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
       body: input.body ?? null,
       created_by: input.createdBy,
       due_at: input.dueAt ?? null,
+      due_assumed: input.dueAssumed ?? false,
       remind_at: input.remindAt ?? null,
       // reminder is task-only metadata (DB CHECK enforces this)
       is_reminder: type === 'task' ? (input.isReminder ?? false) : false,
@@ -125,7 +128,11 @@ export async function updateItem(id: string, input: UpdateItemInput): Promise<It
   const patch: Record<string, unknown> = {}
   if (input.title !== undefined) patch.title = input.title
   if (input.body !== undefined) patch.body = input.body
-  if (input.dueAt !== undefined) patch.due_at = input.dueAt
+  // A user explicitly setting the due date makes it real, not assumed (PDL-047).
+  if (input.dueAt !== undefined) {
+    patch.due_at = input.dueAt
+    patch.due_assumed = false
+  }
   if (input.remindAt !== undefined) patch.remind_at = input.remindAt
   if (input.startAt !== undefined) patch.start_at = input.startAt
   if (input.priority !== undefined) patch.priority = input.priority

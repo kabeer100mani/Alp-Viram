@@ -141,6 +141,7 @@ export function TriageCard({
           canWrite
           busy={busy}
           placeholder="Due date"
+          assumed={item.due_assumed}
           className={`${chip} inline-flex items-center`}
           onChange={(dueAt) => editChip.mutate({ id: item.id, patch: { dueAt } })}
         />

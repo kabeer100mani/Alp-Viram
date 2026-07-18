@@ -81,15 +81,36 @@ describe('AiCaptureBox — displays what the (mock) provider returns', () => {
     expect(screen.getByLabelText(/item type/i)).toHaveTextContent('Task')
     expect(screen.getByDisplayValue('Review July MIS')).toBeInTheDocument()
     expect(screen.getByText(/reminder/i)).toBeInTheDocument()
-    // A date is shown to a human as "17 Jul", never as the raw ISO string it
-    // arrived as. This assertion previously pinned the bug (`due 2026-07-17`).
-    expect(screen.getByText(/due 17 jul/i)).toBeInTheDocument()
+    // The due date is an editable control (PDL-047) showing the humanised date
+    // ("17 Jul"), never the raw ISO string it arrived as. An extracted date is NOT
+    // marked "assumed".
+    expect(screen.getByLabelText('Due date')).toHaveTextContent(/17 jul/i)
     expect(screen.queryByText(/2026-07-17/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/assumed/i)).not.toBeInTheDocument()
     expect(screen.getByText('High')).toBeInTheDocument()
     // TD-006: confidence is no longer DISPLAYED — it was 1.0 on 28/30 captures
     // including the misclassification, so a percentage told the user something
     // untrue. It is still stored (see the persist test below), just not shown.
     expect(screen.queryByText(/confidence/i)).not.toBeInTheDocument()
+  })
+
+  // PDL-047: when the AI extracts no due date, the card defaults it to today and
+  // flags it "assumed" (never blank), still editable.
+  it('defaults the due date to today ("assumed") when the AI gave none', async () => {
+    classifyCapture.mockResolvedValue({ ...mockProposal, due_at: null })
+    const user = userEvent.setup()
+    renderBox()
+    await user.type(screen.getByPlaceholderText(/capture in plain words/i), 'reconcile the ledger')
+    await user.click(screen.getByRole('button', { name: /capture/i }))
+    await screen.findByText(/AI proposal/i)
+
+    const due = screen.getByLabelText('Due date')
+    expect(due).toHaveTextContent(/assumed/i) // marked as an app-assumed date
+    // Confirming sends today's date (non-null) flagged dueAssumed: true.
+    await user.click(screen.getByRole('button', { name: /confirm/i }))
+    const arg = mutateAsync.mock.calls[0][0]
+    expect(arg.dueAt).toBeTruthy()
+    expect(arg.dueAssumed).toBe(true)
   })
 
   it('persists the confirmed proposal via the item + ai_capture write path', async () => {

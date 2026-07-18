@@ -12,10 +12,18 @@ import { useCreateListInGeneral, useListsForRanking } from '@/modules/lists/hook
 import { useMembers } from '@/modules/people/hooks/use-people'
 import { rankLists } from '@/modules/inbox/rank-lists'
 import { createAiCapture } from '@/modules/inbox/data/ai-captures-repository'
-import { formatDateTime, priorityLabel } from '@/modules/items/presentation'
+import { PriorityFlag } from '@/components/app/PriorityFlag'
+import { DateCell } from '@/modules/items/components/DateCell'
 import type { ItemType } from '@/modules/items/types'
 
 type Stage = 'idle' | 'classifying' | 'proposal'
+
+/** Today at local midnight (= "no specific time", PDL-043) as a UTC instant. */
+function todayMidnightIso(): string {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d.toISOString()
+}
 
 /**
  * The AI Inbox: capture in plain words → AI classifies → user confirms/edits
@@ -34,12 +42,15 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
   // can be reassigned from the confirmation card. The picker only appears in a team
   // org (someone else to assign to); a solo user silently gets themselves (PDL-022).
   const [assigneeId, setAssigneeId] = useState(userId)
+  // Due date on the card (PDL-047): defaults to today ("assumed") when the AI extracts
+  // none, so it is never blank; editing it clears the assumed flag.
+  const [chosenDueAt, setChosenDueAt] = useState<string | null>(null)
+  const [dueAssumed, setDueAssumed] = useState(false)
   const create = useCreateItem(organizationId)
   const createList = useCreateListInGeneral(organizationId, userId)
   const { data: lists } = useListsForRanking(organizationId)
   const { data: members } = useMembers(organizationId)
   const activeMembers = members ?? []
-  const isTeam = activeMembers.length > 1
   const assigneeName = activeMembers.find((m) => m.userId === assigneeId)?.displayName ?? 'You'
 
   // The tap-to-answer List follow-up (PDL-042): shown when the AI flags it's unsure
@@ -60,6 +71,15 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
       setProposal(classification)
       setChosenListId(null)
       setAssigneeId(userId) // default assignee = creator (PDL-046)
+      // Default the due date to today when the AI extracted none (PDL-047), flagged
+      // "assumed"; a real extracted date is kept as-is (not assumed). Notes carry none.
+      if (classification.type !== 'note' && !classification.due_at) {
+        setChosenDueAt(todayMidnightIso())
+        setDueAssumed(true)
+      } else {
+        setChosenDueAt(classification.due_at)
+        setDueAssumed(false)
+      }
       setCreatingList(false)
       setNewListName('')
       setStage('proposal')
@@ -98,7 +118,9 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
         type: proposal.type,
         body: proposal.body,
         createdBy: userId,
-        dueAt: proposal.due_at,
+        // A note carries no due date; a task uses the chosen/assumed date (PDL-047).
+        dueAt: proposal.type === 'note' ? null : chosenDueAt,
+        dueAssumed: proposal.type === 'note' ? false : dueAssumed,
         remindAt: proposal.remind_at,
         isReminder: proposal.is_reminder,
         priority: proposal.priority,
@@ -238,50 +260,61 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
               />
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              {/* Assignee (PDL-046): always shown, already filled to the creator —
-                  a mandatory per-item field like Priority, NOT hidden for solo users
-                  (PDL-022 does not apply to it). Reassignment is offered only once
-                  there is someone else to pick (a team); solo shows a static chip. */}
-              {proposal.type !== 'note' &&
-                (isTeam ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      aria-label="Assignee"
-                      className="inline-flex items-center gap-1 rounded-full bg-secondary py-0.5 pl-0.5 pr-2 text-secondary-foreground outline-none hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <Avatar userId={assigneeId} name={assigneeName} size="xs" />
-                      <span>{assigneeName}</span>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      {activeMembers.map((m) => (
-                        <DropdownMenuItem key={m.userId} onSelect={() => setAssigneeId(m.userId)} className="gap-2">
-                          <Avatar userId={m.userId} name={m.displayName} size="xs" />
-                          {(m.displayName ?? 'Member') + (m.userId === userId ? ' (you)' : '')}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <span
+              {/* Assignee (PDL-046): always shown, already filled to the creator — a
+                  mandatory per-item field like Priority (PDL-022 does not apply). Always
+                  clickable; the picker lists the org's members (solo → just you, so
+                  reassignment only offers others once they exist). */}
+              {proposal.type !== 'note' && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
                     aria-label="Assignee"
-                    className="inline-flex items-center gap-1 rounded-full bg-secondary py-0.5 pl-0.5 pr-2 text-secondary-foreground"
+                    className="inline-flex items-center gap-1 rounded-full bg-secondary py-0.5 pl-0.5 pr-2 text-secondary-foreground outline-none hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Avatar userId={assigneeId} name={assigneeName} size="xs" />
                     <span>{assigneeName}</span>
-                  </span>
-                ))}
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {activeMembers.map((m) => (
+                      <DropdownMenuItem key={m.userId} onSelect={() => setAssigneeId(m.userId)} className="gap-2">
+                        <Avatar userId={m.userId} name={m.displayName} size="xs" />
+                        {(m.displayName ?? 'Member') + (m.userId === userId ? ' (you)' : '')}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              {/* Priority — editable flag, same control as the table (point 3). */}
+              <span className="inline-flex items-center rounded bg-secondary px-2 py-0.5">
+                <PriorityFlag
+                  value={proposal.priority}
+                  canWrite
+                  ariaLabel="Priority"
+                  onChange={(p) => setProposal({ ...proposal, priority: p })}
+                />
+              </span>
+
+              {/* Due date (PDL-047): always shown for a task; defaults to today
+                  ("· assumed") when the AI extracted none, and is clickable to change.
+                  Editing clears the assumed flag. */}
+              {proposal.type !== 'note' && (
+                <span className="inline-flex items-center rounded bg-secondary px-1.5 py-0.5">
+                  <DateCell
+                    value={chosenDueAt}
+                    label="Due date"
+                    canWrite
+                    assumed={dueAssumed}
+                    placeholder="Set date"
+                    onChange={(iso) => {
+                      setChosenDueAt(iso)
+                      setDueAssumed(false)
+                    }}
+                  />
+                </span>
+              )}
+
               {proposal.is_reminder && (
                 <span className="rounded bg-secondary px-2 py-0.5 text-secondary-foreground">Reminder</span>
-              )}
-              {proposal.due_at && (
-                <span className="rounded bg-secondary px-2 py-0.5 text-secondary-foreground">
-                  Due {formatDateTime(proposal.due_at)}
-                </span>
-              )}
-              {proposal.priority !== 'none' && (
-                <span className="rounded bg-secondary px-2 py-0.5 text-secondary-foreground">
-                  {priorityLabel(proposal.priority)}
-                </span>
               )}
               {/* No confidence chip (TD-006). The value was 1.0 on 28/30 real
                   captures — INCLUDING the misclassification — so "confidence 100%"

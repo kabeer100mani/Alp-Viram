@@ -326,6 +326,7 @@ export interface Database {
           start_at: string | null
           time_estimate_minutes: number | null
           nudge_at: string | null
+          due_assumed: boolean
         }
         Insert: {
           id?: string
@@ -352,6 +353,7 @@ export interface Database {
           definition_of_done?: string | null
           start_at?: string | null
           time_estimate_minutes?: number | null
+          due_assumed?: boolean
         }
         Update: {
           id?: string
@@ -378,6 +380,7 @@ export interface Database {
           definition_of_done?: string | null
           start_at?: string | null
           time_estimate_minutes?: number | null
+          due_assumed?: boolean
         }
       }
       lists: {
