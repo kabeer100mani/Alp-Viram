@@ -73,7 +73,7 @@ try {
   const prio = () => row.getByLabel(new RegExp(`priority for ${title}$`, 'i'))
   await prio().click()
   // The menu is portaled to <body> (escapes the table's overflow clip) — query the page.
-  await page.getByRole('option', { name: /High/ }).click()
+  await page.getByRole('menuitem', { name: /High/ }).click()
   await page.waitForTimeout(1200)
   check('Priority is editable inline', (await prio().innerText()).includes('High'))
 
@@ -90,7 +90,7 @@ try {
   // Inline Status edit (shadcn Select: click the trigger, then the portaled option).
   const statusCtl = row.getByLabel(new RegExp(`status for ${title}$`, 'i'))
   await statusCtl.click()
-  await page.getByRole('option', { name: 'In progress', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'In progress', exact: true }).click()
   await page.waitForTimeout(1200)
   check('Status is editable inline', /in progress/i.test(await statusCtl.innerText()))
 

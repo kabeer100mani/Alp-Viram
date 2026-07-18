@@ -93,7 +93,7 @@ try {
   await status.waitFor({ timeout: 15000 })
   check('row offers an inline Status control (creator may write)', await status.isVisible())
   await status.click()
-  await page.getByRole('option', { name: 'Done', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Done', exact: true }).click()
 
   await page.waitForTimeout(2500)
   await page.screenshot({ path: `${OUT}/4-after-done.png` })
