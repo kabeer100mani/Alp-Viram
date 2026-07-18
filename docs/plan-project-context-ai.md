@@ -94,3 +94,35 @@ This is **not** a small feature, and the honest range depends heavily on how muc
 | **D4** | **Sequencing.** Confirm: List follow-up first, Project-context as a second layer — not both together? |
 
 No PDLs recorded and no code written — this is the plan. Tell me your rulings and I'll turn the approved slice into a build spec.
+
+---
+
+## Addendum (2026-07-18) — Does the matching even need AI? Keyword matching vs AI reasoning
+
+Palash asked for an **honest** comparison, not an AI-by-default answer. Here it is, and the honest conclusion is: **for a large share of cases, plain string/keyword matching is genuinely good enough — and it should be the *first pass*, with AI only as a fallback.** That's cheaper, more reliable, more private, and de-risks the thin AI foundation.
+
+### The two approaches, head to head
+
+| | **Keyword / string matching (no AI)** | **AI reasoning** |
+| --- | --- | --- |
+| **How** | Does the capture text contain a List/Project name, a person's name, or a role word? Rank those. | Send the capture + one project's context; the model reasons about the best List/role. |
+| **Cost** | **Free** — no tokens, no API call. | Tokens per call; real money at volume on Anthropic. |
+| **Latency** | Instant. | A network round-trip. |
+| **Determinism** | Fully deterministic + explainable ("matched 'Acme'"). | Non-deterministic; hard to explain a wrong guess. |
+| **Privacy** | **Nothing leaves the app.** | Sends project context/rosters to the provider (against the "minimize data to AI" NFR). |
+| **Handles explicit mentions** ("prep **Acme** deck", "email **Finance**") | ✅ Excellent — this is the common case. | ✅ Also fine (overkill). |
+| **Handles implicit/semantic** ("reconcile the books" → Finance; "the client deck" → Acme when Acme is the only client) | ❌ Misses — no world knowledge, no synonyms. | ✅ This is where AI earns its cost. |
+| **Typos / abbreviations / synonyms** | ⚠️ Partial (fuzzy match helps a bit). | ✅ Better. |
+| **Failure mode** | Silent miss (no match → falls through to "just ask", which is fine). | Confident-but-wrong guess (worse — needs the user to catch it). |
+
+### Honest verdict
+- **For List ranking specifically, keyword matching is often good enough** — and it fits the approved model perfectly (D1: *the app owns the options, the user taps to confirm*). Ranking the org's real lists by "does its name/project appear in the text" needs **no AI at all**; when nothing matches, we fall back to the plain PDL-042 "which list?" tap. So the **List half can largely skip AI.**
+- **For responsibility, AI adds more real value** — "who's likely responsible" is more semantic (role inferred from the nature of the work, not a literal name in the text). But even here, keyword matching catches the obvious cases (a role or person named outright).
+- **The worst option is "AI by default for everything"** — it's the most expensive, least private, least reliable-to-explain, and leans hardest on the foundation PDL-031 says isn't trusted yet.
+
+### Recommendation: **hybrid, keyword-first**
+1. **First pass — keyword/fuzzy match** (free, deterministic) against the org's real Lists, people, and roles, plus the project's free-text context. This alone handles the explicit-mention majority.
+2. **Fall back to AI** only when the first pass is empty or ambiguous — and only with **one** project's context (Fork B).
+3. Everything stays a **ranked suggestion the user taps to confirm** (D1 / PDL-042) — so a keyword mis-rank costs nothing; the user still chooses.
+
+This is cheaper, more private, and reduces AI dependency — and it directly answers "don't default to AI." **It also lets us ship the List-ranking win early with little or no AI**, and reserve AI spend for the responsibility case where it actually pays. I'd fold this into the Project-context build: **keyword-first ranking**, AI as the optional second pass.
