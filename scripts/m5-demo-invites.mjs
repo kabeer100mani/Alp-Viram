@@ -52,7 +52,7 @@ if (seedErr) console.warn('warning: could not seed items — ' + seedErr.message
 
 console.log(`
 ════════════════════════════════════════════════════════════════════
-  Alp-Viram — invite demo   (app: ${ORIGIN})
+  SutraDhar — invite demo   (app: ${ORIGIN})
 ════════════════════════════════════════════════════════════════════
 
 ADMIN (optional — to watch the team form and send your own invites):

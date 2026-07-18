@@ -16,10 +16,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-              A
-            </div>
-            <span className="text-sm font-semibold tracking-tight">Alp-Viram</span>
+            <img src="/favicon.svg" alt="" className="h-7 w-auto" />
+            <span className="text-sm font-semibold tracking-tight">SutraDhar</span>
           </div>
           {SHOW_THEME_TOGGLE && <ThemeToggle />}
         </div>

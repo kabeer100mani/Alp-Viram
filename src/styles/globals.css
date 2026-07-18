@@ -28,7 +28,7 @@
   --card-foreground: #e8e9eb;
   --popover: #26282e;              /* §2 bg-surface (popovers/menus) */
   --popover-foreground: #e8e9eb;
-  --primary: #4b6bfb;              /* §2 action-primary (primary buttons) */
+  --primary: #8b3ffb;              /* SutraDhar brand purple (logo gradient top) */
   --primary-foreground: #ffffff;
   --secondary: #26282e;            /* §2 bg-surface (subtle chips) */
   --secondary-foreground: #b6b8bd; /* §2 text-secondary */
@@ -40,7 +40,7 @@
   --destructive-foreground: #ffffff;
   --border: #383b43;               /* §2 border-default */
   --input: #383b43;
-  --ring: #7b68ee;                 /* §2 accent/brand — focus rings, selected states */
+  --ring: #8b3ffb;                 /* SutraDhar brand purple — focus rings, selected states */
 
   /* §2 tokens with no shadcn equivalent. Consumed by the §3 components via arbitrary
      values, e.g. bg-[--bg-rail], text-[--text-secondary]. */
@@ -55,11 +55,11 @@
   --text-primary: #e8e9eb;
   --text-secondary: #b6b8bd;
   --text-muted: #8a8d93;
-  /* §2 calls this "--accent"; renamed --brand to avoid clashing with shadcn's
-     hover --accent above. Same colour, single definition. */
-  --brand: #7b68ee;
-  --accent-soft: rgba(123, 104, 238, 0.16);
-  --action-primary: #4b6bfb;
+  /* SutraDhar brand purple (logo gradient top, #8b3ffb). §2 called this "--accent";
+     renamed --brand to avoid clashing with shadcn's hover --accent above. */
+  --brand: #8b3ffb;
+  --accent-soft: rgba(139, 63, 251, 0.16);
+  --action-primary: #8b3ffb;
   --danger-date: #f06a6a;
 
   /* Status pill colours (§2). */

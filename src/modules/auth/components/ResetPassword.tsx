@@ -63,10 +63,8 @@ export function ResetPassword() {
         className="w-full max-w-sm rounded-xl border border-border bg-card p-6 text-card-foreground shadow-sm"
       >
         <div className="mb-6 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-bold text-primary-foreground">
-            A
-          </div>
-          <span className="font-semibold tracking-tight">Alp-Viram</span>
+          <img src="/favicon.svg" alt="" className="h-8 w-auto" />
+          <span className="font-semibold tracking-tight">SutraDhar</span>
         </div>
 
         <h1 className="text-lg font-semibold">Set a new password</h1>

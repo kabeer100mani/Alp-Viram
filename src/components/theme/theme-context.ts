@@ -12,7 +12,7 @@ export interface ThemeContextValue {
   toggleTheme: () => void
 }
 
-export const THEME_STORAGE_KEY = 'alp-viram-theme'
+export const THEME_STORAGE_KEY = 'sutradhar-theme'
 
 export const ThemeContext = createContext<ThemeContextValue | undefined>(undefined)
 

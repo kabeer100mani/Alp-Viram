@@ -1,4 +1,4 @@
-// Alp-Viram service worker.
+// SutraDhar service worker.
 //
 // Purpose: make the app installable ("Add to Home Screen" / "Install"), which
 // requires a registered SW with a fetch handler. It is deliberately CONSERVATIVE
@@ -12,7 +12,7 @@
 //     filenames, so a cached old asset is never confused with a new one).
 //
 // Bump CACHE when the caching logic itself changes, to evict old entries.
-const CACHE = 'alp-viram-v1'
+const CACHE = 'sutradhar-v1'
 const APP_SHELL = '/'
 
 self.addEventListener('install', (event) => {
