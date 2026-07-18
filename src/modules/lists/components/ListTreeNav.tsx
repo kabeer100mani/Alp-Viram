@@ -1,8 +1,14 @@
 import { useState, type FormEvent } from 'react'
-import { ChevronDown, ChevronRight, Folder as FolderIcon, List as ListIcon, Plus } from 'lucide-react'
+import { ChevronDown, ChevronRight, Folder as FolderIcon, Info, List as ListIcon, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useCreateFolder, useCreateList, useCreateProject, useProjectTree } from '@/modules/lists/hooks/use-lists'
+import {
+  useCreateFolder,
+  useCreateList,
+  useCreateProject,
+  useProjectTree,
+  useUpdateProjectContext,
+} from '@/modules/lists/hooks/use-lists'
 
 /**
  * The container tree in the rail (PDL-035): Organization → Project → Folder → List.
@@ -35,10 +41,15 @@ export function ListTreeNav({
   const createProject = useCreateProject(organizationId, currentUserId)
   const createFolder = useCreateFolder(organizationId, currentUserId)
   const createList = useCreateList(organizationId, currentUserId)
+  const updateContext = useUpdateProjectContext(organizationId)
 
   const [open, setOpen] = useState<Set<string>>(new Set())
   const [adding, setAdding] = useState<Adding | null>(null)
   const [name, setName] = useState('')
+  // The new project's free-text context (PDL-044) — what it's about / who's involved.
+  const [context, setContext] = useState('')
+  // Editing an existing project's context: { id, value } while open.
+  const [editCtx, setEditCtx] = useState<{ id: string; value: string } | null>(null)
 
   const toggle = (id: string) =>
     setOpen((prev) => {
@@ -57,11 +68,18 @@ export function ListTreeNav({
     e.preventDefault()
     const n = name.trim()
     if (!n || !adding) return
-    if (adding.kind === 'project') createProject.mutate({ name: n })
+    if (adding.kind === 'project') createProject.mutate({ name: n, context: context.trim() || null })
     else if (adding.kind === 'folder') createFolder.mutate({ projectId: adding.projectId, name: n })
     else createList.mutate({ projectId: adding.projectId, name: n, folderId: adding.folderId })
     setName('')
+    setContext('')
     setAdding(null)
+  }
+
+  function saveContext() {
+    if (!editCtx) return
+    updateContext.mutate({ id: editCtx.id, context: editCtx.value })
+    setEditCtx(null)
   }
 
   const iconBtn = (label: string, onClick: () => void, node: React.ReactNode) => (
@@ -116,9 +134,34 @@ export function ListTreeNav({
                   {pOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                   {project.name}
                 </button>
+                {iconBtn(`Context for ${project.name}`, () => setEditCtx({ id: project.id, value: project.context ?? '' }), <Info className="h-3 w-3" />)}
                 {iconBtn(`New folder in ${project.name}`, () => { startAdd({ kind: 'folder', projectId: project.id }); ensureOpen(project.id) }, <FolderIcon className="h-3 w-3" />)}
                 {iconBtn(`New list in ${project.name}`, () => { startAdd({ kind: 'list', projectId: project.id, folderId: null }); ensureOpen(project.id) }, <Plus className="h-3 w-3" />)}
               </div>
+
+              {/* Inline free-text context editor (PDL-044): what it's about / who's
+                  involved. Feeds keyword ranking of the capture follow-up. */}
+              {editCtx?.id === project.id && (
+                <div className="space-y-1 px-2 py-1">
+                  <textarea
+                    autoFocus
+                    value={editCtx.value}
+                    onChange={(e) => setEditCtx({ id: project.id, value: e.target.value })}
+                    placeholder="What is this project about? Who's involved?"
+                    aria-label={`Context for ${project.name}`}
+                    rows={3}
+                    className="w-full rounded border border-input bg-background p-1.5 text-xs"
+                  />
+                  <div className="flex gap-1">
+                    <Button type="button" size="sm" variant="secondary" onClick={saveContext} disabled={updateContext.isPending}>
+                      Save
+                    </Button>
+                    <Button type="button" size="sm" variant="ghost" onClick={() => setEditCtx(null)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {pOpen && (
                 <ul className="space-y-0.5">
@@ -152,18 +195,31 @@ export function ListTreeNav({
       </ul>
 
       {adding && (
-        <form onSubmit={submitAdd} className="flex items-center gap-1 px-2 pt-1">
-          <Input
-            autoFocus
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={adding.kind === 'project' ? 'Project name' : adding.kind === 'folder' ? 'Folder name' : 'List name'}
-            aria-label={adding.kind === 'project' ? 'New project name' : adding.kind === 'folder' ? 'New folder name' : 'New list name'}
-            className="h-7 text-xs"
-          />
-          <Button type="submit" size="sm" variant="secondary" disabled={!name.trim()}>
-            Add
-          </Button>
+        <form onSubmit={submitAdd} className="space-y-1 px-2 pt-1">
+          <div className="flex items-center gap-1">
+            <Input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={adding.kind === 'project' ? 'Project name' : adding.kind === 'folder' ? 'Folder name' : 'List name'}
+              aria-label={adding.kind === 'project' ? 'New project name' : adding.kind === 'folder' ? 'New folder name' : 'New list name'}
+              className="h-7 text-xs"
+            />
+            <Button type="submit" size="sm" variant="secondary" disabled={!name.trim()}>
+              Add
+            </Button>
+          </div>
+          {/* Optional context for a new project (PDL-044) — never blocks creation. */}
+          {adding.kind === 'project' && (
+            <textarea
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+              placeholder="Optional: what's it about? who's involved? (helps filing)"
+              aria-label="New project context"
+              rows={2}
+              className="w-full rounded border border-input bg-background p-1.5 text-xs"
+            />
+          )}
         </form>
       )}
     </div>

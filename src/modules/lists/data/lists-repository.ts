@@ -68,16 +68,63 @@ export async function listAllLists(organizationId: string): Promise<List[]> {
   return (data ?? []) as List[]
 }
 
+/** A list plus its project's name + free-text context — the input to keyword ranking. */
+export interface ListForRanking {
+  id: string
+  name: string
+  projectName: string | null
+  projectContext: string | null
+}
+
+/**
+ * Lists with their project's name + context (PDL-044), for keyword-ranking the
+ * capture follow-up. Two FKs are not in play here — a list has one project — so a
+ * plain embed on the project is unambiguous.
+ */
+export async function listsForRanking(organizationId: string): Promise<ListForRanking[]> {
+  const { data, error } = await client()
+    .from('lists')
+    .select('id, name, projects(name, context)')
+    .eq('organization_id', organizationId)
+    .eq('is_archived', false)
+    .order('name')
+  if (error) throw error
+  return (data ?? []).map((row) => {
+    const rel = (row as { projects: { name: string | null; context: string | null } | { name: string | null; context: string | null }[] | null }).projects
+    const project = Array.isArray(rel) ? rel[0] : rel
+    return {
+      id: (row as { id: string }).id,
+      name: (row as { name: string }).name,
+      projectName: project?.name ?? null,
+      projectContext: project?.context ?? null,
+    }
+  })
+}
+
 // ── create (member-writable) ────────────────────────────────────────────────
 
-export async function createProject(organizationId: string, name: string, createdBy: string): Promise<Project> {
+export async function createProject(
+  organizationId: string,
+  name: string,
+  createdBy: string,
+  context?: string | null,
+): Promise<Project> {
   const { data, error } = await client()
     .from('projects')
-    .insert({ organization_id: organizationId, name: name.trim(), created_by: createdBy })
+    .insert({ organization_id: organizationId, name: name.trim(), created_by: createdBy, context: context?.trim() || null })
     .select('*')
     .single()
   if (error) throw error
   return data as Project
+}
+
+/** Set a project's free-text context (PDL-044). Member-writable, like create. */
+export async function updateProjectContext(id: string, context: string): Promise<void> {
+  const { error } = await client()
+    .from('projects')
+    .update({ context: context.trim() || null })
+    .eq('id', id)
+  if (error) throw error
 }
 
 export async function createFolder(

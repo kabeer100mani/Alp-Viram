@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input'
 import { classifyCapture } from '@/lib/ai/classify'
 import type { Classification } from '@/lib/ai/classification'
 import { useCreateItem } from '@/modules/items/hooks/use-items'
-import { useAllLists } from '@/modules/lists/hooks/use-lists'
+import { useListsForRanking } from '@/modules/lists/hooks/use-lists'
+import { rankLists } from '@/modules/inbox/rank-lists'
 import { createAiCapture } from '@/modules/inbox/data/ai-captures-repository'
 import { formatDateTime, priorityLabel } from '@/modules/items/presentation'
 import type { ItemType } from '@/modules/items/types'
@@ -24,12 +25,16 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
   const [chosenListId, setChosenListId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const create = useCreateItem(organizationId)
-  const { data: lists } = useAllLists(organizationId)
+  const { data: lists } = useListsForRanking(organizationId)
 
   // The tap-to-answer List follow-up (PDL-042): shown only when the AI flags it's
   // unsure which list AND the org actually has lists. The AI never guesses a list
-  // (PDL-032) — it flags the dimension; these buttons are the org's REAL lists.
+  // (PDL-032) — it flags the dimension; these buttons are the org's REAL lists,
+  // keyword-RANKED against the capture using project names + context (PDL-044).
   const askList = Boolean(proposal?.clarify === 'list' && (lists?.length ?? 0) > 0)
+  const ranked = askList ? rankLists(input, lists ?? []) : []
+  // Pre-highlight the single best keyword match — a *suggestion* the user confirms.
+  const topId = ranked[0]?.score > 0 ? ranked[0].id : null
 
   async function runClassify(text: string) {
     setStage('classifying')
@@ -109,7 +114,7 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
             <div className="space-y-2">
               <p className="text-sm font-medium">Which list?</p>
               <div className="flex flex-wrap gap-1.5">
-                {lists?.map((l) => (
+                {ranked.map((l) => (
                   <button
                     key={l.id}
                     type="button"
@@ -118,10 +123,15 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
                     className={`rounded-full border px-2.5 py-1 text-xs ${
                       chosenListId === l.id
                         ? 'border-primary bg-primary/10 text-foreground'
-                        : 'border-input text-muted-foreground hover:border-input'
+                        : l.id === topId
+                          ? 'border-primary/60 text-foreground' // keyword-suggested (PDL-044)
+                          : 'border-input text-muted-foreground hover:border-input'
                     }`}
                   >
                     {l.name}
+                    {l.id === topId && chosenListId !== l.id && (
+                      <span className="ml-1 text-[10px] text-primary">· suggested</span>
+                    )}
                   </button>
                 ))}
                 <button

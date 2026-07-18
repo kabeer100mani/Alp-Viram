@@ -70,8 +70,10 @@ try {
 
   // ── Quick fields persist ───────────────────────────────────────────────────
   await panel.getByLabel('Priority').selectOption('high')
-  await panel.getByLabel('Due date').fill('2026-08-20')
-  await panel.getByLabel('Start date').fill('2026-08-10')
+  // Start/End are now time-aware datetime-local (PDL-043) — need a full datetime.
+  // Noon keeps the UTC date stable across the runner's zone.
+  await panel.getByLabel('End', { exact: true }).fill('2026-08-20T12:00')
+  await panel.getByLabel('Start', { exact: true }).fill('2026-08-10T12:00')
   await panel.getByLabel('Time estimate').fill('2h 30m')
   await panel.getByLabel('Description').fill('Pull the numbers from the ledger first.')
   await panel.getByLabel('Title').click() // blur the description → saves
@@ -92,8 +94,8 @@ try {
     const box = await panel.boundingBox()
     return el && box && el.x >= box.x && el.x + el.width <= box.x + box.width + 1
   }
-  check('Start date input is not clipped by the panel edge', await fits('Start date'))
-  check('Due date input is not clipped by the panel edge', await fits('Due date'))
+  check('Start input is not clipped by the panel edge', await fits('Start'))
+  check('End input is not clipped by the panel edge', await fits('End'))
   check('Time estimate input is not clipped by the panel edge', await fits('Time estimate'))
 
   // Read the truth back from the DB, not from the DOM.

@@ -6,6 +6,8 @@ import {
   getProjectTree,
   listAllLists,
   listItemsInList,
+  listsForRanking,
+  updateProjectContext,
 } from '@/modules/lists/data/lists-repository'
 
 export function useProjectTree(organizationId: string | undefined) {
@@ -24,6 +26,15 @@ export function useAllLists(organizationId: string | undefined) {
   })
 }
 
+/** Lists + their project name/context, for keyword-ranking the capture follow-up. */
+export function useListsForRanking(organizationId: string | undefined) {
+  return useQuery({
+    queryKey: ['lists-ranking', organizationId],
+    enabled: Boolean(organizationId),
+    queryFn: () => listsForRanking(organizationId as string),
+  })
+}
+
 export function useItemsInList(organizationId: string | undefined, listId: string | undefined) {
   return useQuery({
     queryKey: ['items', organizationId, 'list', listId],
@@ -39,13 +50,21 @@ function useTreeMutation<TArgs>(organizationId: string | undefined, fn: (args: T
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['project-tree', organizationId] })
       void queryClient.invalidateQueries({ queryKey: ['all-lists', organizationId] })
+      void queryClient.invalidateQueries({ queryKey: ['lists-ranking', organizationId] })
     },
   })
 }
 
 export function useCreateProject(organizationId: string | undefined, createdBy: string) {
-  return useTreeMutation(organizationId, ({ name }: { name: string }) =>
-    createProject(organizationId as string, name, createdBy),
+  return useTreeMutation(organizationId, ({ name, context }: { name: string; context?: string | null }) =>
+    createProject(organizationId as string, name, createdBy, context),
+  )
+}
+
+/** Set a project's free-text context (PDL-044). */
+export function useUpdateProjectContext(organizationId: string | undefined) {
+  return useTreeMutation(organizationId, ({ id, context }: { id: string; context: string }) =>
+    updateProjectContext(id, context),
   )
 }
 

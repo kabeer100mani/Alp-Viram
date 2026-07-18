@@ -19,9 +19,15 @@ vi.mock('@/modules/inbox/data/ai-captures-repository', () => ({
 vi.mock('@/modules/items/hooks/use-items', () => ({
   useCreateItem: () => ({ mutateAsync, isPending: false }),
 }))
-// The org's real lists back the tap-to-answer follow-up (PDL-042).
+// The org's real lists (with project name/context) back the tap-to-answer follow-up
+// (PDL-042) and its keyword ranking (PDL-044).
 vi.mock('@/modules/lists/hooks/use-lists', () => ({
-  useAllLists: () => ({ data: [{ id: 'list-a', name: 'Acme' }, { id: 'list-b', name: 'Beta' }] }),
+  useListsForRanking: () => ({
+    data: [
+      { id: 'list-a', name: 'Acme', projectName: 'Acme', projectContext: null },
+      { id: 'list-b', name: 'Beta', projectName: 'Beta', projectContext: null },
+    ],
+  }),
 }))
 
 // A mock classification exercising every badge the proposal card can render.
