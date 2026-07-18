@@ -46,6 +46,24 @@ export async function listMyOrgs(userId: string): Promise<MyOrg[]> {
 }
 
 /**
+ * Create a brand-new personal organization for the current user and return its id
+ * (PDL-045). This calls a SECURITY DEFINER routine rather than inserting directly:
+ * the owner-membership insert is blocked by RLS for a non-member (see the migration
+ * 0022 header), so the org + owner row must be created atomically server-side. The
+ * new org's system views are seeded automatically by a trigger.
+ */
+export async function createOrganization(name: string): Promise<string> {
+  const { data, error } = await getSupabaseClient().rpc('create_organization', {
+    p_name: name.trim(),
+  })
+  if (error) throw error
+  if (!data || typeof data !== 'string') {
+    throw new Error('That workspace could not be created.')
+  }
+  return data
+}
+
+/**
  * Rename an organization. RLS (`orgs_update`) already restricts this to
  * `is_org_admin`; the UI mirrors that rather than relying on it alone.
  *

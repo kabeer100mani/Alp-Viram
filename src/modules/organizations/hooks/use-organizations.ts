@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { deleteOrganization, listMyOrgs, renameOrganization } from '@/modules/organizations/data/organizations-repository'
+import { createOrganization, deleteOrganization, listMyOrgs, renameOrganization } from '@/modules/organizations/data/organizations-repository'
 import { setActiveOrgId } from '@/modules/organizations/active-org-store'
 
 export function useMyOrgs(userId: string | undefined) {
@@ -7,6 +7,25 @@ export function useMyOrgs(userId: string | undefined) {
     queryKey: ['my-orgs', userId],
     enabled: Boolean(userId),
     queryFn: () => listMyOrgs(userId as string),
+  })
+}
+
+/**
+ * Create a new personal workspace and drop the user straight into it (PDL-045).
+ *
+ * On success the new org becomes active and the cache is cleared — mirroring
+ * useSwitchOrg, because every cached query was scoped to the previous org. The new
+ * org is empty (its own system views seed server-side), so there is nothing stale
+ * to keep.
+ */
+export function useCreateOrganization() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (name: string) => createOrganization(name),
+    onSuccess: (newOrgId) => {
+      setActiveOrgId(newOrgId)
+      queryClient.clear()
+    },
   })
 }
 
