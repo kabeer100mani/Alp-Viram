@@ -247,3 +247,29 @@ Each entry: **what · why deferred · impact · fix when · source.**
   types, so old rows stay readable.
 - **Source:** found building the PDL-036 Activity feed (2026-07-16) — the feed showed
   only "created this item" after a dozen real edits.
+
+## TD-015 — stale browser walkthroughs: m5-invite, m6-structure, m8-hierarchy
+- **What:** three Playwright walkthroughs fail because they drive UI that earlier
+  milestones removed/moved — **pre-existing, not caused by the ClickUp §1 shadcn
+  work** (confirmed by git: the surfaces were removed in `f90d370`/PDL-036, ~20
+  commits before this session's first commit `8eeb979`):
+  - **m8-hierarchy** — drives the **in-row expand** ("row-expand shows Definition of
+    Done", the row's "List for {title}" picker). PDL-036 replaced the row-expand with
+    the slide-in **TaskPanel**; that inline surface no longer exists.
+  - **m5-invite** (Gate C portion) — clicks an inline **"Responsibility for this
+    item"** toggle on the By Role row. PDL-036 moved `ResponsibilityBar` into the
+    **TaskPanel only** (it is not rendered on table rows), so the button isn't there.
+  - **m6-structure** — fails earlier, at a **rail list-creation** step
+    (`ListTreeNav`) whose `listNav.waitFor` times out; root cause not fully diagnosed
+    (create-flow selector or timing), but independent of the select change.
+- **Already done this session:** their native `selectOption` calls were updated to the
+  Radix click-trigger→click-option pattern (correct — proven by the green m3 + m7
+  walkthroughs), so only the **flow** to reach those controls is stale.
+- **Impact:** none on the app — these are test scripts. But they mask regressions
+  until refreshed, and they violate the project's "re-run walkthroughs when a surface
+  is replaced" rule (they weren't refreshed after PDL-035/036).
+- **Fix when:** a focused walkthrough-refresh pass — reroute m5/m8 through the
+  **TaskPanel** (click the item name → set responsibility / list there), and
+  re-diagnose m6's rail list-creation step. Small, isolated, no app change.
+- **Source:** ClickUp §1 native-control replacement (2026-07-18) — surfaced when the
+  `selectOption` updates ran and these three failed on removed surfaces.

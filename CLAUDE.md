@@ -171,6 +171,7 @@ Building the frozen "Fable" ClickUp dark-mode design spec (§1–§5, literal to
 - **TD-006** — ✅ **RESOLVED 2026-07-16** (M6 Gate A): the degenerate `confidence` (1.0 on 28/30 incl. the miss) is **no longer displayed**; still stored on `ai_captures` for future calibration.
 - **TD-010** (open, 2026-07-16): tag **hard-delete cascades org-wide**; admin-gated in the UI only — **not** a security boundary (RLS still permits any member to delete via API). Soft-delete deferred (M6 D1).
 - **TD-009** (open, 2026-07-16): **field edits are not audited** — no `activity_event_type` covers a title/priority/date/description change, so the PDL-036 Activity feed cannot show them. No security impact; fix when the audit schema is next opened.
+- **TD-015** (open, 2026-07-18): **stale walkthroughs m5-invite / m6-structure / m8-hierarchy** drive UI removed/moved by **PDL-035/036** (in-row expand; `ResponsibilityBar` now TaskPanel-only) + a rail list-creation step — **pre-existing, not the §1 shadcn change** (git: surfaces removed in `f90d370`, ~20 commits before this session). Their `selectOption`→Radix updates are done; only the flow to reach the controls needs rerouting through the TaskPanel. Test-only; no app impact.
 
 ## Tools & Resources
 - **Supabase project ref**: `jdngjwspqxhpkmqhcekc`
