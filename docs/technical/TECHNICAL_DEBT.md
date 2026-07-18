@@ -160,6 +160,23 @@ Each entry: **what · why deferred · impact · fix when · source.**
   `p_tags` so DELETE requires `is_org_admin` (closing the API gap the UI only hides).
 - **Source:** raised while speccing M6 (D1, 2026-07-16); ruled by Palash.
 
+## TD-014 — no container management UI (rename / archive / **move** list/folder/project)
+- **What:** projects, folders, and lists can be **created** and selected, but there's
+  no UI to **rename, archive, or move** them. Newly relevant: "+ Create new list" in
+  the capture follow-up (PDL-042) files a list under a shared **"General"** project,
+  and there is **no way to re-file that list into a real project** from the UI.
+- **Impact:** minor for now — a list created via the follow-up is fully usable where
+  it is; you just can't reorganise it later. Also means "General" accumulates
+  follow-up-created lists. No data or security impact. (Same family as the MVP
+  gap-analysis "container rename/archive UI" item.)
+- **Why deferred:** Palash ruled it "known debt, not urgent" (2026-07-18); the simple,
+  predictable "always General" rule was chosen over building move/reorganise UI now.
+- **Fix when:** when container management is built — add rename/archive/**move**
+  (re-parent a list to another project/folder) across the `ListTreeNav` tree. The
+  schema already supports it (`is_archived`; `lists.project_id`/`folder_id` are
+  writable). Then a follow-up-created list can be moved out of "General".
+- **Source:** raised building "+ Create new list" (2026-07-18); ruled by Palash.
+
 ## TD-013 — a deactivated member shows as "Member (Deactivated)", not their name
 - **What:** after an admin deactivates a member, the members list shows that person
   as **"Member (Deactivated)"** — their name is gone. `profiles_select` is gated on

@@ -11,6 +11,7 @@ import type { Classification } from '@/lib/ai/classification'
 const classifyCapture = vi.fn()
 const mutateAsync = vi.fn()
 const createAiCapture = vi.fn()
+const { createListMutate } = vi.hoisted(() => ({ createListMutate: vi.fn() }))
 
 vi.mock('@/lib/ai/classify', () => ({ classifyCapture: (input: string) => classifyCapture(input) }))
 vi.mock('@/modules/inbox/data/ai-captures-repository', () => ({
@@ -28,6 +29,7 @@ vi.mock('@/modules/lists/hooks/use-lists', () => ({
       { id: 'list-b', name: 'Beta', projectName: 'Beta', projectContext: null },
     ],
   }),
+  useCreateListInGeneral: () => ({ mutateAsync: createListMutate, isPending: false }),
 }))
 
 // A mock classification exercising every badge the proposal card can render.
@@ -59,6 +61,7 @@ describe('AiCaptureBox — displays what the (mock) provider returns', () => {
     classifyCapture.mockReset().mockResolvedValue(mockProposal)
     mutateAsync.mockReset().mockResolvedValue({ id: 'item-1' })
     createAiCapture.mockReset().mockResolvedValue(undefined)
+    createListMutate.mockReset().mockResolvedValue({ id: 'list-new', name: 'Ledger' })
   })
 
   it('renders the classification the provider returned', async () => {
@@ -135,5 +138,27 @@ describe('AiCaptureBox — displays what the (mock) provider returns', () => {
     await user.click(screen.getByRole('button', { name: /confirm/i })) // no list tapped
 
     expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ listId: null }))
+  })
+
+  // "+ Create new list" (ruled 2026-07-18): one field (the list name); it lands
+  // under "General" and the item files into the new list.
+  it('creates a new list on the spot and files the item into it', async () => {
+    classifyCapture.mockResolvedValue({ ...mockProposal, clarify: 'list' })
+    const user = userEvent.setup()
+    renderBox()
+
+    await user.type(screen.getByPlaceholderText(/capture in plain words/i), 'reconcile the ledger')
+    await user.click(screen.getByRole('button', { name: /capture/i }))
+    await screen.findByText(/which list\?/i)
+
+    await user.click(screen.getByRole('button', { name: /create new list/i }))
+    await user.type(screen.getByLabelText(/new list name/i), 'Ledger')
+    await user.click(screen.getByRole('button', { name: /create & use/i }))
+
+    expect(createListMutate).toHaveBeenCalledWith({ name: 'Ledger' })
+
+    await user.click(screen.getByRole('button', { name: /confirm/i }))
+    // The item is filed into the just-created list (returned id).
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ listId: 'list-new' }))
   })
 })

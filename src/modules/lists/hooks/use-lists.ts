@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createFolder,
   createList,
+  createListInGeneralProject,
   createProject,
   getProjectTree,
   listAllLists,
@@ -9,6 +10,7 @@ import {
   listsForRanking,
   updateProjectContext,
 } from '@/modules/lists/data/lists-repository'
+import type { List } from '@/modules/lists/data/lists-repository'
 
 export function useProjectTree(organizationId: string | undefined) {
   return useQuery({
@@ -66,6 +68,24 @@ export function useUpdateProjectContext(organizationId: string | undefined) {
   return useTreeMutation(organizationId, ({ id, context }: { id: string; context: string }) =>
     updateProjectContext(id, context),
   )
+}
+
+/**
+ * Create a list on the fly from the capture follow-up, filed under "General"
+ * (PDL-042). Returns the new list so the caller can immediately select it. Typed
+ * directly (not via useTreeMutation, which erases the return) but invalidates the
+ * same caches so it appears in the rail and the ranking picker.
+ */
+export function useCreateListInGeneral(organizationId: string | undefined, createdBy: string) {
+  const queryClient = useQueryClient()
+  return useMutation<List, Error, { name: string }>({
+    mutationFn: ({ name }) => createListInGeneralProject(organizationId as string, name, createdBy),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['project-tree', organizationId] })
+      void queryClient.invalidateQueries({ queryKey: ['all-lists', organizationId] })
+      void queryClient.invalidateQueries({ queryKey: ['lists-ranking', organizationId] })
+    },
+  })
 }
 
 export function useCreateFolder(organizationId: string | undefined, createdBy: string) {

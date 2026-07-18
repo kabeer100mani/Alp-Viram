@@ -118,6 +118,35 @@ export async function createProject(
   return data as Project
 }
 
+/**
+ * Create a list quickly from the capture follow-up (PDL-042), filing it under a
+ * shared **"General"** project — created once and reused thereafter (the same
+ * convention migration 0015 seeds). A list must have a project (`lists.project_id`
+ * NOT NULL), so this keeps "+ Create new list" to a single field (the list name):
+ * the user never has to name a project. Applied uniformly whether the org has zero
+ * projects or many (ruled 2026-07-18).
+ */
+export async function createListInGeneralProject(
+  organizationId: string,
+  name: string,
+  createdBy: string,
+): Promise<List> {
+  const { data: existing, error: findErr } = await client()
+    .from('projects')
+    .select('id')
+    .eq('organization_id', organizationId)
+    .eq('is_archived', false)
+    .ilike('name', 'General')
+    .limit(1)
+  if (findErr) throw findErr
+  let projectId = (existing as { id: string }[] | null)?.[0]?.id
+  if (!projectId) {
+    const project = await createProject(organizationId, 'General', createdBy)
+    projectId = project.id
+  }
+  return createList(organizationId, projectId, name, createdBy, null)
+}
+
 /** Set a project's free-text context (PDL-044). Member-writable, like create. */
 export async function updateProjectContext(id: string, context: string): Promise<void> {
   const { error } = await client()

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { classifyCapture } from '@/lib/ai/classify'
 import type { Classification } from '@/lib/ai/classification'
 import { useCreateItem } from '@/modules/items/hooks/use-items'
-import { useListsForRanking } from '@/modules/lists/hooks/use-lists'
+import { useCreateListInGeneral, useListsForRanking } from '@/modules/lists/hooks/use-lists'
 import { rankLists } from '@/modules/inbox/rank-lists'
 import { createAiCapture } from '@/modules/inbox/data/ai-captures-repository'
 import { formatDateTime, priorityLabel } from '@/modules/items/presentation'
@@ -23,8 +23,11 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
   const [stage, setStage] = useState<Stage>('idle')
   const [proposal, setProposal] = useState<Classification | null>(null)
   const [chosenListId, setChosenListId] = useState<string | null>(null)
+  const [creatingList, setCreatingList] = useState(false)
+  const [newListName, setNewListName] = useState('')
   const [error, setError] = useState<string | null>(null)
   const create = useCreateItem(organizationId)
+  const createList = useCreateListInGeneral(organizationId, userId)
   const { data: lists } = useListsForRanking(organizationId)
 
   // The tap-to-answer List follow-up (PDL-042): shown only when the AI flags it's
@@ -43,6 +46,8 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
       const classification = await classifyCapture(text)
       setProposal(classification)
       setChosenListId(null)
+      setCreatingList(false)
+      setNewListName('')
       setStage('proposal')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Classification failed')
@@ -54,6 +59,21 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
     event.preventDefault()
     const trimmed = input.trim()
     if (trimmed) void runClassify(trimmed)
+  }
+
+  async function onCreateList() {
+    const trimmed = newListName.trim()
+    if (!trimmed) return
+    try {
+      const list = await createList.mutateAsync({ name: trimmed })
+      // Select the new list so Confirm files the item into it. It lands under a
+      // shared "General" project (PDL-042 / ruled 2026-07-18).
+      setChosenListId(list.id)
+      setCreatingList(false)
+      setNewListName('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'That list could not be created.')
+    }
   }
 
   async function onConfirm() {
@@ -146,7 +166,38 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
                 >
                   Inbox for now
                 </button>
+                {/* Make a list on the spot (ruled 2026-07-18): one field (the list
+                    name); it lands under a shared "General" project, then Confirm
+                    files the item there. */}
+                {!creatingList && (
+                  <button
+                    type="button"
+                    onClick={() => setCreatingList(true)}
+                    className="rounded-full border border-dashed border-input px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    + Create new list
+                  </button>
+                )}
               </div>
+              {creatingList && (
+                <div className="flex items-center gap-1.5">
+                  <Input
+                    autoFocus
+                    value={newListName}
+                    onChange={(e) => setNewListName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); void onCreateList() }
+                      if (e.key === 'Escape') { setCreatingList(false); setNewListName('') }
+                    }}
+                    placeholder="New list name…"
+                    aria-label="New list name"
+                    className="h-7 max-w-[14rem] text-xs"
+                  />
+                  <Button type="button" size="sm" variant="secondary" onClick={() => void onCreateList()} disabled={!newListName.trim() || createList.isPending}>
+                    Create &amp; use
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
