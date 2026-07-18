@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Check, Flag, X } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import {
   useCompleteItem,
   useReopenItem,
@@ -12,18 +12,15 @@ import {
   formatEstimate,
   formatScheduleWindow,
   hasTimeOfDay,
-  itemStateLabel,
   itemTypeLabel,
   parseEstimate,
-  priorityColor,
-  priorityLabel,
-  statusColor,
 } from '@/modules/items/presentation'
 import { Avatar } from '@/components/ui/avatar'
+import { StatusPill } from '@/components/app/StatusPill'
+import { PriorityFlag } from '@/components/app/PriorityFlag'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ResponsibilityBar, type ResponsibilityContext } from '@/modules/items/components/ResponsibilityBar'
 import { ChecklistPanel } from '@/modules/items/components/ChecklistPanel'
-import { PrioritySelect } from '@/modules/items/components/PrioritySelect'
 import { TagPicker } from '@/modules/tags/components/TagPicker'
 import type { Item, ItemState } from '@/modules/items/types'
 import type { List } from '@/modules/lists/data/lists-repository'
@@ -252,43 +249,24 @@ export function TaskPanel({
             {/* Dates needs two tracks — a start and a due input do not fit in one. */}
             <div className="mb-4 grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
               <QuickField label="Status">
-                {canWrite ? (
-                  <Select value={item.state} disabled={busy} onValueChange={(v) => changeStatus(v as ItemState)}>
-                    <SelectTrigger
-                      aria-label="Status"
-                      className={`h-7 w-auto gap-1 rounded-full border-0 px-2 text-[11px] font-medium shadow-none focus:ring-0 ${statusColor(item.state)}`}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOptionsFor(item.state).filter((s) => !(isNote && s === 'done')).map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {itemStateLabel(s)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusColor(item.state)}`}>
-                    {itemStateLabel(item.state)}
-                  </span>
-                )}
+                <StatusPill
+                  state={item.state}
+                  options={statusOptionsFor(item.state).filter((s) => !(isNote && s === 'done'))}
+                  canWrite={canWrite}
+                  disabled={busy}
+                  ariaLabel="Status"
+                  onChange={(s) => changeStatus(s)}
+                />
               </QuickField>
 
               <QuickField label="Priority">
-                {canWrite ? (
-                  <PrioritySelect
-                    value={item.priority}
-                    label="Priority"
-                    disabled={busy}
-                    onChange={(p) => update.mutate({ id: item.id, patch: { priority: p } }, { onError: fail })}
-                  />
-                ) : (
-                  <span className={`flex items-center gap-1 text-xs ${priorityColor(item.priority)}`}>
-                    <Flag className="h-3 w-3 shrink-0" fill="currentColor" />
-                    {priorityLabel(item.priority)}
-                  </span>
-                )}
+                <PriorityFlag
+                  value={item.priority}
+                  canWrite={canWrite}
+                  disabled={busy}
+                  ariaLabel="Priority"
+                  onChange={(p) => update.mutate({ id: item.id, patch: { priority: p } }, { onError: fail })}
+                />
               </QuickField>
 
               {!isNote && (

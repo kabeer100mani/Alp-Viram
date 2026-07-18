@@ -80,8 +80,8 @@ describe('ItemRow (dense table)', () => {
   it('offers no "Done" status option on a Note', async () => {
     renderRow({ type: 'note', title: 'Client prefers email' })
     await userEvent.click(screen.getByLabelText(/status for/i))
-    expect(await screen.findByRole('option', { name: 'To Do' })).toBeInTheDocument()
-    expect(screen.queryByRole('option', { name: 'Done' })).not.toBeInTheDocument()
+    expect(await screen.findByRole('menuitem', { name: 'To Do' })).toBeInTheDocument()
+    expect(screen.queryByRole('menuitem', { name: 'Done' })).not.toBeInTheDocument()
   })
 
   it('has no Due editor on a Note (no execution)', () => {
@@ -117,11 +117,11 @@ describe('ItemRow (dense table)', () => {
   // which read as a broken control rather than a priority.
   it('labels the "none" priority as a word, not a bare dash', async () => {
     renderRow({ priority: 'none' })
-    // The trigger shows "None"; opening the styled dropdown reveals the option.
+    // The trigger shows "None"; opening the styled dropdown reveals the menu item.
     expect(screen.getByLabelText(/priority for/i)).toHaveTextContent('None')
     expect(screen.queryByText('—')).not.toBeInTheDocument()
     await userEvent.click(screen.getByLabelText(/priority for/i))
-    expect(screen.getByRole('option', { name: /None/ })).toBeInTheDocument()
+    expect(await screen.findByRole('menuitem', { name: /None/ })).toBeInTheDocument()
   })
 
   // PDL-036: the row carries only the four common fields; Start moved to the panel.

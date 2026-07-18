@@ -1,4 +1,4 @@
-import { Bell, Flag, RotateCcw } from 'lucide-react'
+import { Bell, RotateCcw } from 'lucide-react'
 import {
   useCompleteItem,
   useReopenItem,
@@ -6,16 +6,10 @@ import {
   useUpdateItem,
 } from '@/modules/items/hooks/use-items'
 import { DateCell } from '@/modules/items/components/DateCell'
-import { PrioritySelect } from '@/modules/items/components/PrioritySelect'
-import {
-  itemStateLabel,
-  itemTypeLabel,
-  priorityColor,
-  priorityLabel,
-  statusColor,
-} from '@/modules/items/presentation'
+import { itemTypeLabel } from '@/modules/items/presentation'
 import { Avatar } from '@/components/ui/avatar'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { StatusPill } from '@/components/app/StatusPill'
+import { PriorityFlag } from '@/components/app/PriorityFlag'
 import { TagChip } from '@/modules/tags/components/TagChip'
 import type { Tag } from '@/modules/tags/data/tags-repository'
 import type { Item, ItemState } from '@/modules/items/types'
@@ -92,7 +86,7 @@ export function ItemRow({
   }
 
   return (
-    <div role="row" className="col-span-full grid grid-cols-subgrid items-center border-b border-border hover:bg-secondary/20">
+    <div role="row" className="col-span-full grid min-h-[40px] grid-cols-subgrid items-center border-b border-[--border-subtle] hover:bg-[--bg-hover]">
       {/* Name — the click target that opens the detail panel */}
       <div className={`${cell} flex min-w-0 items-center gap-1.5`}>
         <span className="shrink-0 rounded bg-accent px-1.5 py-0.5 text-[10px] text-accent-foreground">
@@ -128,22 +122,15 @@ export function ItemRow({
         </div>
       )}
 
-      {/* Priority — a styled dropdown (PrioritySelect); a native select's option
-          popup is unstyleable browser chrome. Read-only shows a plain flag + label. */}
+      {/* Priority — a ClickUp-style flag (§3.2). Read-only shows the flag + label. */}
       <div className={`${cell} flex items-center`}>
-        {canWrite ? (
-          <PrioritySelect
-            value={item.priority}
-            label={`Priority for ${item.title}`}
-            disabled={busy}
-            onChange={(p) => update.mutate({ id: item.id, patch: { priority: p } }, { onError: fail })}
-          />
-        ) : (
-          <span className={`flex items-center gap-1.5 ${priorityColor(item.priority)}`}>
-            <Flag className="h-3 w-3 shrink-0" fill="currentColor" />
-            {priorityLabel(item.priority)}
-          </span>
-        )}
+        <PriorityFlag
+          value={item.priority}
+          canWrite={canWrite}
+          disabled={busy}
+          ariaLabel={`Priority for ${item.title}`}
+          onChange={(p) => update.mutate({ id: item.id, patch: { priority: p } }, { onError: fail })}
+        />
       </div>
 
       {/* Due date — neutral, never a red "overdue" cell (FR-12b) */}
@@ -162,29 +149,17 @@ export function ItemRow({
         )}
       </div>
 
-      {/* Status — a coloured pill. Human labels only (PDL-027); no Done on a Note. */}
+      {/* Status — a coloured pill with a dropdown (§3.1). Human labels only
+          (PDL-027); no Done on a Note. */}
       <div className={`${cell} flex items-center gap-1`}>
-        {canWrite ? (
-          <Select value={item.state} disabled={busy} onValueChange={(v) => changeStatus(v as ItemState)}>
-            <SelectTrigger
-              aria-label={`Status for ${item.title}`}
-              className={`h-6 w-auto gap-1 rounded-full border-0 px-2 text-[11px] font-medium shadow-none focus:ring-0 ${statusColor(item.state)}`}
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptionsFor(item.state).filter((s) => !(isNote && s === 'done')).map((s) => (
-                <SelectItem key={s} value={s}>
-                  {itemStateLabel(s)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusColor(item.state)}`}>
-            {itemStateLabel(item.state)}
-          </span>
-        )}
+        <StatusPill
+          state={item.state}
+          options={statusOptionsFor(item.state).filter((s) => !(isNote && s === 'done'))}
+          canWrite={canWrite}
+          disabled={busy}
+          ariaLabel={`Status for ${item.title}`}
+          onChange={(s) => changeStatus(s)}
+        />
         {canWrite && isDone && (
           <button
             type="button"

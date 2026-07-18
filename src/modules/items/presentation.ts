@@ -213,14 +213,16 @@ export function parseEstimate(input: string): number | null {
 }
 
 // Deterministic avatar colour + initials, so people are recognisable at a glance.
-const avatarPalette = [
-  'bg-rose-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500',
-  'bg-violet-500', 'bg-cyan-500', 'bg-fuchsia-500', 'bg-indigo-500', 'bg-teal-500',
+// The palette is the §2 avatar set, referenced as tokens (never hardcoded here).
+const AVATAR_TOKENS = [
+  'var(--avatar-1)', 'var(--avatar-2)', 'var(--avatar-3)', 'var(--avatar-4)',
+  'var(--avatar-5)', 'var(--avatar-6)', 'var(--avatar-7)', 'var(--avatar-8)',
 ]
+/** A CSS colour for this id's avatar (a §2 palette token), used as `backgroundColor`. */
 export function avatarColor(id: string): string {
   let h = 0
   for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0
-  return avatarPalette[h % avatarPalette.length]
+  return AVATAR_TOKENS[h % AVATAR_TOKENS.length]
 }
 export function initials(name: string | null): string {
   if (!name) return '?'
