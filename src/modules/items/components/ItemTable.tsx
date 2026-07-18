@@ -5,6 +5,7 @@ import { TaskPanel } from '@/modules/items/components/TaskPanel'
 import { formatEstimate } from '@/modules/items/presentation'
 import { useWritableItemIds } from '@/modules/views/hooks/use-views'
 import { useAssigneeSummary } from '@/modules/items/hooks/use-assignee-summary'
+import { useMembers } from '@/modules/people/hooks/use-people'
 import { useItemTags, useTags } from '@/modules/tags/hooks/use-tags'
 import type { Tag } from '@/modules/tags/data/tags-repository'
 import type { ResponsibilityContext } from '@/modules/items/components/ResponsibilityBar'
@@ -23,8 +24,9 @@ export interface ItemTableGroup {
  * detail panel (PDL-036), which the row opens on click. Items render in
  * collapsible sections with counts.
  *
- * The Assignee column exists only in team mode (PDL-022) and its data is fetched
- * for the whole page in one batched call, not per row.
+ * The Assignee column is ALWAYS shown (PDL-046) — a mandatory per-item field like
+ * Priority, for solo and team alike; PDL-022 does not apply to it. Its data is
+ * fetched for the whole page in one batched call, not per row.
  */
 export function ItemTable({
   groups,
@@ -53,8 +55,13 @@ export function ItemTable({
   const allItems = groups.flatMap((g) => g.items)
   const ids = allItems.map((i) => i.id)
   const { data: writable } = useWritableItemIds(ids)
-  const showAssignee = Boolean(responsibility)
+  // Assignee is a mandatory per-item field (PDL-046) shown ALWAYS — like Priority
+  // and Due date, for solo and team alike. PDL-022 (hiding team/role administration)
+  // does NOT apply to it. Members are fetched here purely to resolve the assignee's
+  // display name; for a solo org that's just the user themselves.
+  const showAssignee = true
   const { data: assignees } = useAssigneeSummary(ids, showAssignee)
+  const { data: members } = useMembers(organizationId)
   // Tags for the whole page in one call, then resolved id → Tag locally.
   const { data: itemTagMap } = useItemTags(ids)
   const { data: allTags } = useTags(organizationId)
@@ -69,7 +76,13 @@ export function ItemTable({
     const s = assignees?.get(itemId)
     const userId = s?.assignedUser ?? s?.responsibleUser
     if (!userId) return null
-    return { userId, name: responsibility?.members.find((m) => m.userId === userId)?.displayName ?? null }
+    // Names come from the org members (solo → just the current user). Fall back to the
+    // team responsibility context if members haven't loaded yet.
+    const name =
+      members?.find((m) => m.userId === userId)?.displayName ??
+      responsibility?.members.find((m) => m.userId === userId)?.displayName ??
+      null
+    return { userId, name }
   }
 
   // Re-derived from the live list rather than held in state, so an edit made in the

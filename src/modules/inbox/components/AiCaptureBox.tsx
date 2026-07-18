@@ -238,28 +238,38 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
               />
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              {/* Assignee (PDL-046): already filled to the creator, editable. Shown
-                  only in a team org — a solo user has no one else to assign to, and
-                  responsibility stays hidden from them (PDL-022). */}
-              {isTeam && proposal.type !== 'note' && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger
+              {/* Assignee (PDL-046): always shown, already filled to the creator —
+                  a mandatory per-item field like Priority, NOT hidden for solo users
+                  (PDL-022 does not apply to it). Reassignment is offered only once
+                  there is someone else to pick (a team); solo shows a static chip. */}
+              {proposal.type !== 'note' &&
+                (isTeam ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      aria-label="Assignee"
+                      className="inline-flex items-center gap-1 rounded-full bg-secondary py-0.5 pl-0.5 pr-2 text-secondary-foreground outline-none hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <Avatar userId={assigneeId} name={assigneeName} size="xs" />
+                      <span>{assigneeName}</span>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      {activeMembers.map((m) => (
+                        <DropdownMenuItem key={m.userId} onSelect={() => setAssigneeId(m.userId)} className="gap-2">
+                          <Avatar userId={m.userId} name={m.displayName} size="xs" />
+                          {(m.displayName ?? 'Member') + (m.userId === userId ? ' (you)' : '')}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <span
                     aria-label="Assignee"
-                    className="inline-flex items-center gap-1 rounded-full bg-secondary py-0.5 pl-0.5 pr-2 text-secondary-foreground outline-none hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring"
+                    className="inline-flex items-center gap-1 rounded-full bg-secondary py-0.5 pl-0.5 pr-2 text-secondary-foreground"
                   >
                     <Avatar userId={assigneeId} name={assigneeName} size="xs" />
                     <span>{assigneeName}</span>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    {activeMembers.map((m) => (
-                      <DropdownMenuItem key={m.userId} onSelect={() => setAssigneeId(m.userId)} className="gap-2">
-                        <Avatar userId={m.userId} name={m.displayName} size="xs" />
-                        {(m.displayName ?? 'Member') + (m.userId === userId ? ' (you)' : '')}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                  </span>
+                ))}
               {proposal.is_reminder && (
                 <span className="rounded bg-secondary px-2 py-0.5 text-secondary-foreground">Reminder</span>
               )}

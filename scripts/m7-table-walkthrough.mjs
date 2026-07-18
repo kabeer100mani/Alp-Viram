@@ -56,8 +56,9 @@ try {
     check(`column header "${col}" present`, head.includes(col))
   }
   check('Start column absent (moved to the task panel, PDL-036)', !head.includes('start'))
-  // Solo user → no Assignee column (PDL-022).
-  check('solo user sees NO Assignee column (PDL-022)', !head.includes('assignee'))
+  // Assignee is a mandatory per-item field (PDL-046) — always shown, incl. solo.
+  // PDL-022 does NOT apply to it (it's not a team-administration concept).
+  check('solo user DOES see the Assignee column (PDL-046 — always shown)', head.includes('assignee'))
 
   // Grouped collapsible section with a count ("Unassigned 2").
   const groupHeader = page.getByRole('button', { name: /unassigned\s*\d/i })
