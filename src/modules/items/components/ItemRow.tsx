@@ -6,12 +6,12 @@ import {
   useUpdateItem,
 } from '@/modules/items/hooks/use-items'
 import { DateCell } from '@/modules/items/components/DateCell'
+import { PrioritySelect } from '@/modules/items/components/PrioritySelect'
 import {
   itemStateLabel,
   itemTypeLabel,
   priorityColor,
   priorityLabel,
-  priorityOptions,
   statusColor,
 } from '@/modules/items/presentation'
 import { Avatar } from '@/components/ui/avatar'
@@ -127,26 +127,21 @@ export function ItemRow({
         </div>
       )}
 
-      {/* Priority — one clean flag + label. The native select arrow is removed
-          (appearance-none): with it, the cell rendered flag + label + a detached
-          chevron pushed to the column edge, which read as a broken control. */}
-      <div className={`${cell} relative flex items-center gap-1.5`}>
-        <Flag className={`h-3 w-3 shrink-0 ${priorityColor(item.priority)}`} fill="currentColor" />
-        <span className={`truncate ${priorityColor(item.priority)}`}>{priorityLabel(item.priority)}</span>
-        {canWrite && (
-          <select
-            aria-label={`Priority for ${item.title}`}
-            className="absolute inset-0 cursor-pointer opacity-0"
+      {/* Priority — a styled dropdown (PrioritySelect); a native select's option
+          popup is unstyleable browser chrome. Read-only shows a plain flag + label. */}
+      <div className={`${cell} flex items-center`}>
+        {canWrite ? (
+          <PrioritySelect
             value={item.priority}
+            label={`Priority for ${item.title}`}
             disabled={busy}
-            onChange={(e) => update.mutate({ id: item.id, patch: { priority: e.target.value as Item['priority'] } }, { onError: fail })}
-          >
-            {priorityOptions.map((p) => (
-              <option key={p} value={p} className="text-foreground">
-                {priorityLabel(p)}
-              </option>
-            ))}
-          </select>
+            onChange={(p) => update.mutate({ id: item.id, patch: { priority: p } }, { onError: fail })}
+          />
+        ) : (
+          <span className={`flex items-center gap-1.5 ${priorityColor(item.priority)}`}>
+            <Flag className="h-3 w-3 shrink-0" fill="currentColor" />
+            {priorityLabel(item.priority)}
+          </span>
         )}
       </div>
 

@@ -115,12 +115,13 @@ describe('ItemRow (dense table)', () => {
 
   // "—" rendered as a stray dash wedged between the flag and the dropdown arrow,
   // which read as a broken control rather than a priority.
-  it('labels the "none" priority as a word, not a bare dash', () => {
+  it('labels the "none" priority as a word, not a bare dash', async () => {
     renderRow({ priority: 'none' })
-    // Both the visible cell label and the select's own option read "None".
-    expect(screen.getAllByText('None').length).toBeGreaterThan(0)
-    expect(screen.getByRole('option', { name: 'None' })).toBeInTheDocument()
+    // The trigger shows "None"; opening the styled dropdown reveals the option.
+    expect(screen.getByLabelText(/priority for/i)).toHaveTextContent('None')
     expect(screen.queryByText('—')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByLabelText(/priority for/i))
+    expect(screen.getByRole('option', { name: /None/ })).toBeInTheDocument()
   })
 
   // PDL-036: the row carries only the four common fields; Start moved to the panel.

@@ -69,7 +69,9 @@ try {
   await page.screenshot({ path: `${OUT}/01-panel-open.png` })
 
   // ── Quick fields persist ───────────────────────────────────────────────────
-  await panel.getByLabel('Priority').selectOption('high')
+  // Priority is a styled custom dropdown now (menu portaled to <body>): open, pick High.
+  await panel.getByLabel('Priority', { exact: true }).click()
+  await page.getByRole('option', { name: /High/ }).click()
   // Start/End are now time-aware datetime-local (PDL-043) — need a full datetime.
   // Noon keeps the UTC date stable across the runner's zone.
   await panel.getByLabel('End', { exact: true }).fill('2026-08-20T12:00')

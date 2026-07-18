@@ -68,10 +68,14 @@ try {
   const row = page.getByRole('row').filter({ hasText: title }).first()
   await row.waitFor({ timeout: 10000 })
 
-  // Inline Priority edit (priority had NO editor before this).
-  await row.getByLabel(new RegExp(`priority for ${title}$`, 'i')).selectOption('high')
+  // Inline Priority edit. Now a styled custom dropdown (not a native <select>):
+  // click the trigger, then the "High" option.
+  const prio = () => row.getByLabel(new RegExp(`priority for ${title}$`, 'i'))
+  await prio().click()
+  // The menu is portaled to <body> (escapes the table's overflow clip) — query the page.
+  await page.getByRole('option', { name: /High/ }).click()
   await page.waitForTimeout(1200)
-  check('Priority is editable inline', (await row.getByLabel(new RegExp(`priority for ${title}$`, 'i')).inputValue()) === 'high')
+  check('Priority is editable inline', (await prio().innerText()).includes('High'))
 
   // Inline Due edit. The cell shows a *date*, not a form control: it renders the
   // formatted date (or a "Set date" hint) and swaps in the input only while editing,
@@ -93,7 +97,7 @@ try {
   await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: 'By Role' }).click()
   const row2 = page.getByRole('row').filter({ hasText: title }).first()
   await row2.waitFor({ timeout: 10000 })
-  check('the inline edits persisted (priority=high after reload)', (await row2.getByLabel(new RegExp(`priority for ${title}$`, 'i')).inputValue()) === 'high')
+  check('the inline edits persisted (priority=high after reload)', (await row2.getByLabel(new RegExp(`priority for ${title}$`, 'i')).innerText()).includes('High'))
 
   // The row-expand is gone (PDL-036): the heavier editors moved to the task detail
   // panel, which scripts/m9-panel-walkthrough.mjs covers end to end.

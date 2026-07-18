@@ -17,12 +17,12 @@ import {
   parseEstimate,
   priorityColor,
   priorityLabel,
-  priorityOptions,
   statusColor,
 } from '@/modules/items/presentation'
 import { Avatar } from '@/components/ui/avatar'
 import { ResponsibilityBar, type ResponsibilityContext } from '@/modules/items/components/ResponsibilityBar'
 import { ChecklistPanel } from '@/modules/items/components/ChecklistPanel'
+import { PrioritySelect } from '@/modules/items/components/PrioritySelect'
 import { TagPicker } from '@/modules/tags/components/TagPicker'
 import type { Item, ItemState } from '@/modules/items/types'
 import type { List } from '@/modules/lists/data/lists-repository'
@@ -270,26 +270,19 @@ export function TaskPanel({
               </QuickField>
 
               <QuickField label="Priority">
-                <div className="flex items-center gap-1">
-                  <Flag className={`h-3 w-3 shrink-0 ${priorityColor(item.priority)}`} fill="currentColor" />
-                  {canWrite ? (
-                    <select
-                      aria-label="Priority"
-                      className={`h-7 w-full cursor-pointer rounded bg-transparent px-1 text-xs hover:bg-secondary/60 focus:outline-none ${priorityColor(item.priority)}`}
-                      value={item.priority}
-                      disabled={busy}
-                      onChange={(e) => update.mutate({ id: item.id, patch: { priority: e.target.value as Item['priority'] } }, { onError: fail })}
-                    >
-                      {priorityOptions.map((p) => (
-                        <option key={p} value={p} className="text-foreground">
-                          {priorityLabel(p)}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span className={`text-xs ${priorityColor(item.priority)}`}>{priorityLabel(item.priority)}</span>
-                  )}
-                </div>
+                {canWrite ? (
+                  <PrioritySelect
+                    value={item.priority}
+                    label="Priority"
+                    disabled={busy}
+                    onChange={(p) => update.mutate({ id: item.id, patch: { priority: p } }, { onError: fail })}
+                  />
+                ) : (
+                  <span className={`flex items-center gap-1 text-xs ${priorityColor(item.priority)}`}>
+                    <Flag className="h-3 w-3 shrink-0" fill="currentColor" />
+                    {priorityLabel(item.priority)}
+                  </span>
+                )}
               </QuickField>
 
               {!isNote && (
