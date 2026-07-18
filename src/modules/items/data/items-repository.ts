@@ -26,6 +26,8 @@ export interface CreateItemInput {
   isReminder?: boolean
   priority?: Item['priority']
   source?: string
+  /** Optional List to file into at capture (PDL-042 follow-up). Null = Inbox. */
+  listId?: string | null
 }
 
 export async function createItem(input: CreateItemInput): Promise<Item> {
@@ -43,6 +45,7 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
       // reminder is task-only metadata (DB CHECK enforces this)
       is_reminder: type === 'task' ? (input.isReminder ?? false) : false,
       priority: input.priority ?? 'none',
+      list_id: input.listId ?? null,
       source: input.source ?? 'manual',
     })
     .select('*')

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { classifyCapture } from '@/lib/ai/classify'
 import type { Classification } from '@/lib/ai/classification'
 import { useCreateItem } from '@/modules/items/hooks/use-items'
+import { useAllLists } from '@/modules/lists/hooks/use-lists'
 import { createAiCapture } from '@/modules/inbox/data/ai-captures-repository'
 import { formatDateTime, priorityLabel } from '@/modules/items/presentation'
 import type { ItemType } from '@/modules/items/types'
@@ -20,9 +21,15 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
   const [input, setInput] = useState('')
   const [stage, setStage] = useState<Stage>('idle')
   const [proposal, setProposal] = useState<Classification | null>(null)
-  const [answer, setAnswer] = useState('')
+  const [chosenListId, setChosenListId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const create = useCreateItem(organizationId)
+  const { data: lists } = useAllLists(organizationId)
+
+  // The tap-to-answer List follow-up (PDL-042): shown only when the AI flags it's
+  // unsure which list AND the org actually has lists. The AI never guesses a list
+  // (PDL-032) — it flags the dimension; these buttons are the org's REAL lists.
+  const askList = Boolean(proposal?.clarify === 'list' && (lists?.length ?? 0) > 0)
 
   async function runClassify(text: string) {
     setStage('classifying')
@@ -30,6 +37,7 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
     try {
       const classification = await classifyCapture(text)
       setProposal(classification)
+      setChosenListId(null)
       setStage('proposal')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Classification failed')
@@ -41,14 +49,6 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
     event.preventDefault()
     const trimmed = input.trim()
     if (trimmed) void runClassify(trimmed)
-  }
-
-  function onAnswer(event: FormEvent) {
-    event.preventDefault()
-    const trimmed = answer.trim()
-    if (!trimmed) return
-    setAnswer('')
-    void runClassify(`${input.trim()}. ${trimmed}`)
   }
 
   async function onConfirm() {
@@ -63,6 +63,7 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
         remindAt: proposal.remind_at,
         isReminder: proposal.is_reminder,
         priority: proposal.priority,
+        listId: chosenListId, // null = Inbox (the default; skipping the follow-up)
         source: 'inbox',
       })
       await createAiCapture({
@@ -102,23 +103,41 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
 
       {stage === 'proposal' && proposal && (
         <div className="space-y-3 rounded-lg border border-border bg-card p-4 text-card-foreground">
-          {proposal.needs_clarification && proposal.clarifying_question && (
-            <form onSubmit={onAnswer} className="space-y-2">
-              <p className="text-sm">
-                <span className="font-medium">One quick question:</span>{' '}
-                {proposal.clarifying_question}
-              </p>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Your answer…"
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                />
-                <Button type="submit" variant="secondary" disabled={!answer.trim()}>
-                  Continue
-                </Button>
+          {/* Tap-to-answer List follow-up (PDL-042): one tap files it, or skip to
+              the Inbox. Never blocks — you can Confirm without answering. */}
+          {askList && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Which list?</p>
+              <div className="flex flex-wrap gap-1.5">
+                {lists?.map((l) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => setChosenListId((cur) => (cur === l.id ? null : l.id))}
+                    aria-pressed={chosenListId === l.id}
+                    className={`rounded-full border px-2.5 py-1 text-xs ${
+                      chosenListId === l.id
+                        ? 'border-primary bg-primary/10 text-foreground'
+                        : 'border-input text-muted-foreground hover:border-input'
+                    }`}
+                  >
+                    {l.name}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setChosenListId(null)}
+                  aria-pressed={chosenListId === null}
+                  className={`rounded-full border px-2.5 py-1 text-xs ${
+                    chosenListId === null
+                      ? 'border-primary bg-primary/10 text-foreground'
+                      : 'border-input text-muted-foreground hover:border-input'
+                  }`}
+                >
+                  Inbox for now
+                </button>
               </div>
-            </form>
+            </div>
           )}
 
           <div className="space-y-2">

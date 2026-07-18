@@ -19,6 +19,10 @@ vi.mock('@/modules/inbox/data/ai-captures-repository', () => ({
 vi.mock('@/modules/items/hooks/use-items', () => ({
   useCreateItem: () => ({ mutateAsync, isPending: false }),
 }))
+// The org's real lists back the tap-to-answer follow-up (PDL-042).
+vi.mock('@/modules/lists/hooks/use-lists', () => ({
+  useAllLists: () => ({ data: [{ id: 'list-a', name: 'Acme' }, { id: 'list-b', name: 'Beta' }] }),
+}))
 
 // A mock classification exercising every badge the proposal card can render.
 const mockProposal: Classification = {
@@ -32,6 +36,7 @@ const mockProposal: Classification = {
   confidence: 0.42,
   needs_clarification: false,
   clarifying_question: null,
+  clarify: null,
 }
 
 function renderBox() {
@@ -88,5 +93,41 @@ describe('AiCaptureBox — displays what the (mock) provider returns', () => {
     expect(createAiCapture).toHaveBeenCalledWith(
       expect.objectContaining({ resultingItemId: 'item-1', requiredClarification: false, confidence: 0.42 }),
     )
+  })
+
+  // PDL-042: when the AI flags clarify='list', the app offers the org's REAL lists
+  // as taps; one tap files the item. The AI never names a list (PDL-032).
+  it('shows the tap-to-answer List picker and files the item on the tapped list', async () => {
+    classifyCapture.mockResolvedValue({ ...mockProposal, clarify: 'list' })
+    const user = userEvent.setup()
+    renderBox()
+
+    await user.type(screen.getByPlaceholderText(/capture in plain words/i), 'prep the deck for the client')
+    await user.click(screen.getByRole('button', { name: /capture/i }))
+    await screen.findByText(/which list\?/i)
+
+    // The buttons are the org's real lists + an Inbox escape.
+    expect(screen.getByRole('button', { name: 'Acme' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Beta' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /inbox for now/i })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Acme' }))
+    await user.click(screen.getByRole('button', { name: /confirm/i }))
+    // Filed onto the tapped list.
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ listId: 'list-a' }))
+  })
+
+  // Skippable + non-blocking: confirming without tapping leaves it in the Inbox.
+  it('files to the Inbox (listId null) when the List question is skipped', async () => {
+    classifyCapture.mockResolvedValue({ ...mockProposal, clarify: 'list' })
+    const user = userEvent.setup()
+    renderBox()
+
+    await user.type(screen.getByPlaceholderText(/capture in plain words/i), 'prep the deck')
+    await user.click(screen.getByRole('button', { name: /capture/i }))
+    await screen.findByText(/which list\?/i)
+    await user.click(screen.getByRole('button', { name: /confirm/i })) // no list tapped
+
+    expect(mutateAsync).toHaveBeenCalledWith(expect.objectContaining({ listId: null }))
   })
 })

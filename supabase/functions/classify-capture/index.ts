@@ -53,10 +53,16 @@ const classificationTool = {
         type: ['string', 'null'],
         description: 'A single minimal question, only if genuinely needed; else null.',
       },
+      clarify: {
+        type: ['string', 'null'],
+        enum: ['list', null],
+        description:
+          "Set to 'list' when the capture clearly belongs to a specific project/list but which one is genuinely unclear — the app will offer the user's real lists to tap. Otherwise null. NEVER guess or name a list yourself.",
+      },
     },
     required: [
       'type', 'title', 'body', 'is_reminder', 'due_at', 'remind_at',
-      'priority', 'confidence', 'needs_clarification', 'clarifying_question',
+      'priority', 'confidence', 'needs_clarification', 'clarifying_question', 'clarify',
     ],
   },
 }
@@ -152,6 +158,7 @@ Rules:
 - Set is_reminder=true when the user explicitly asks to be reminded ("Remind me to..."). Reminders are tasks with a remind_at.
 - Reduce interaction. If the input is obvious ("Buy milk"), classify it immediately with needs_clarification=false and no question.
 - Only set needs_clarification=true and provide clarifying_question when a genuinely important detail is missing and would materially improve the item. Never ask more than one question.
+- Set clarify='list' when the capture clearly belongs to a specific project/list but which one is genuinely unclear (e.g. "prep the deck for the client meeting") — the app will offer the user's real lists to pick. Do NOT name or guess a list yourself. Otherwise set clarify=null. This is independent of clarifying_question.
 - Keep the title short and faithful to the user's words.
 
 Return ONLY the structured classification, with every field present (use null where a value does not apply).`
@@ -195,6 +202,7 @@ function mockClassify(input: string, today: string) {
     confidence: 0.42, // deliberately mid — a mock, not a real confidence
     needs_clarification: false,
     clarifying_question: null as string | null,
+    clarify: null as 'list' | null,
   }
 }
 
