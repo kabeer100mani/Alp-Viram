@@ -273,3 +273,26 @@ Each entry: **what · why deferred · impact · fix when · source.**
   re-diagnose m6's rail list-creation step. Small, isolated, no app change.
 - **Source:** ClickUp §1 native-control replacement (2026-07-18) — surfaced when the
   `selectOption` updates ran and these three failed on removed surfaces.
+
+## TD-016 — `waiting_on` is read by the Waiting view but written nowhere
+- **What:** `items.waiting_on` (text, nullable; `0002`) is filtered by the **"Waiting"
+  system view** (`views-repository` → `.not('waiting_on','is',null)`, seeded `0020`),
+  but **no code path ever sets it** — not `createItem`, not `updateItem`
+  (`UpdateItemInput`), no UI control, not the AI contract. So the **Waiting view is
+  permanently empty**. Same "field read somewhere / written nowhere" class that
+  `0017` (reminder → nudge_at) and `0020` (snooze wake) already fixed; this one is
+  still open. Found in the 2026-07-18 field audit.
+- **Impact:** a shipped system view that can never show anything — a silent
+  dead-end, not a crash. No security impact.
+- **Fix when:** decide the product meaning of "waiting on someone else" and give it a
+  write path — either a TaskPanel/triage control (a "Waiting on" toggle/among-members
+  picker) or derive it (e.g. assigned-but-not-yet-acted). Then the existing view works.
+- **Also noted by the same audit (minor, not scheduled):** `items.ai_confidence` and
+  `items.is_reference` are columns that are **never written or read** by any code
+  (confidence lives on `ai_captures`; `is_reference` has no UI) — dead-but-harmless.
+  And `items.created_by` is **nullable** while the permission model keys write to it —
+  app-guaranteed today, not schema-guaranteed. `due_at`/`remind_at` have **no CHECK**
+  forbidding them on a Note (UI hides them; API could set them) — a minor gap vs the
+  other note-honesty CHECKs.
+- **Source:** field audit requested by Palash (2026-07-18) to stop finding
+  missing-default/orphaned-field gaps one at a time.
