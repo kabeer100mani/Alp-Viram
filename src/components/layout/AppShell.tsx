@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 
+// TEMPORARY: the app is dark-only during the ClickUp dark-mode build, so the
+// light/dark toggle is hidden (see FORCE_DARK in ThemeProvider). Set this to true
+// (and FORCE_DARK = false) to bring the toggle back.
+const SHOW_THEME_TOGGLE = false
+
 /**
  * The top-level chrome: a sticky header with the brand and theme toggle, plus
  * a constrained content area. Screen content is passed as children.
@@ -16,7 +21,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
             <span className="text-sm font-semibold tracking-tight">Alp-Viram</span>
           </div>
-          <ThemeToggle />
+          {SHOW_THEME_TOGGLE && <ThemeToggle />}
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-10">{children}</main>

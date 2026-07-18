@@ -1,57 +1,95 @@
 @import 'tailwindcss';
+/* Animation utilities (animate-in / fade-in / zoom-in / slide-in) used by the
+   shadcn/Radix components. Normally added by `shadcn init`; added here explicitly
+   because the CLI could not run on this machine (see the install notes). */
+@import 'tw-animate-css';
 
 /* Class-based dark mode: styles apply when a `.dark` ancestor is present. */
 @custom-variant dark (&:is(.dark *));
 
-/* Design tokens — the single source of truth for colors. Light theme. */
+/*
+ * Design tokens — the single source of truth for colour (ClickUp dark-mode spec §2).
+ * Values are the literal §2 hexes. The variable NAMES are the existing shadcn set
+ * (so the shadcn/Radix components render correctly); their VALUES are remapped to
+ * the §2 palette, and the §2-only tokens (rail/sidebar/surface/status/priority/…)
+ * are added alongside in this same file — one system, not two.
+ *
+ * DARK-ONLY for now (temporary): light values are removed and the theme toggle is
+ * disabled. To restore light later, re-add a light `:root` + a `.dark` override and
+ * re-enable the toggle (see ThemeProvider / AppShell).
+ */
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem;
 
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(222 47% 11%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(222 47% 11%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(222 47% 11%);
-  --primary: hsl(245 58% 51%);
-  --primary-foreground: hsl(0 0% 100%);
-  --secondary: hsl(245 40% 96%);
-  --secondary-foreground: hsl(245 40% 24%);
-  --muted: hsl(220 20% 96%);
-  --muted-foreground: hsl(215 16% 47%);
-  --accent: hsl(245 60% 96%);
-  --accent-foreground: hsl(245 58% 40%);
-  --destructive: hsl(0 72% 51%);
-  --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(214 32% 91%);
-  --input: hsl(214 32% 91%);
-  --ring: hsl(222 47% 11%);
+  /* shadcn semantic tokens — values from §2 so components sit on the ClickUp dark surfaces. */
+  --background: #1e2025;            /* §2 bg-content (main content area) */
+  --foreground: #e8e9eb;           /* §2 text-primary */
+  --card: #26282e;                 /* §2 bg-surface */
+  --card-foreground: #e8e9eb;
+  --popover: #26282e;              /* §2 bg-surface (popovers/menus) */
+  --popover-foreground: #e8e9eb;
+  --primary: #4b6bfb;              /* §2 action-primary (primary buttons) */
+  --primary-foreground: #ffffff;
+  --secondary: #26282e;            /* §2 bg-surface (subtle chips) */
+  --secondary-foreground: #b6b8bd; /* §2 text-secondary */
+  --muted: #2b2d34;                /* §2 bg-hover */
+  --muted-foreground: #8a8d93;     /* §2 text-muted */
+  --accent: #2b2d34;               /* shadcn hover bg = §2 bg-hover (menu/row hover) */
+  --accent-foreground: #e8e9eb;
+  --destructive: #e5484d;          /* §2 urgent/danger red */
+  --destructive-foreground: #ffffff;
+  --border: #383b43;               /* §2 border-default */
+  --input: #383b43;
+  --ring: #7b68ee;                 /* §2 accent/brand — focus rings, selected states */
+
+  /* §2 tokens with no shadcn equivalent. Consumed by the §3 components via arbitrary
+     values, e.g. bg-[--bg-rail], text-[--text-secondary]. */
+  --bg-rail: #101114;
+  --bg-sidebar: #191a1e;
+  --bg-content: #1e2025;
+  --bg-surface: #26282e;
+  --bg-hover: #2b2d34;
+  --bg-active: #31343c;
+  --border-subtle: #2a2c33;
+  --border-default: #383b43;
+  --text-primary: #e8e9eb;
+  --text-secondary: #b6b8bd;
+  --text-muted: #8a8d93;
+  /* §2 calls this "--accent"; renamed --brand to avoid clashing with shadcn's
+     hover --accent above. Same colour, single definition. */
+  --brand: #7b68ee;
+  --accent-soft: rgba(123, 104, 238, 0.16);
+  --action-primary: #4b6bfb;
+  --danger-date: #f06a6a;
+
+  /* Status pill colours (§2). */
+  --status-todo: #87909e;
+  --status-progress: #5f55ee;
+  --status-done: #2ea25f;
+  --status-pending: #e5484d;
+  --status-processing: #3b82f6;
+  --status-review: #d4a72c;
+
+  /* Priority flag colours (§2). */
+  --priority-none: #6b6f76;
+  --priority-low: #8a8d93;
+  --priority-normal: #4b6bfb;
+  --priority-high: #f5c518;
+  --priority-urgent: #e5484d;
+
+  /* Avatar palette (§2) — deterministic: hash(user id) → index. */
+  --avatar-1: #e91e8c;
+  --avatar-2: #7c3aed;
+  --avatar-3: #2563eb;
+  --avatar-4: #0ea5e9;
+  --avatar-5: #10b981;
+  --avatar-6: #f97316;
+  --avatar-7: #dc2626;
+  --avatar-8: #c026d3;
 }
 
-/* Dark theme overrides. */
-.dark {
-  --background: hsl(222 47% 6%);
-  --foreground: hsl(210 40% 98%);
-  --card: hsl(222 47% 8%);
-  --card-foreground: hsl(210 40% 98%);
-  --popover: hsl(222 47% 8%);
-  --popover-foreground: hsl(210 40% 98%);
-  --primary: hsl(245 75% 68%);
-  --primary-foreground: hsl(222 47% 8%);
-  --secondary: hsl(245 25% 18%);
-  --secondary-foreground: hsl(245 40% 92%);
-  --muted: hsl(217 30% 16%);
-  --muted-foreground: hsl(215 20% 65%);
-  --accent: hsl(245 30% 20%);
-  --accent-foreground: hsl(245 60% 88%);
-  --destructive: hsl(0 63% 45%);
-  --destructive-foreground: hsl(210 40% 98%);
-  --border: hsl(217 33% 17%);
-  --input: hsl(217 33% 17%);
-  --ring: hsl(213 27% 84%);
-}
-
-/* Expose the tokens to Tailwind so `bg-background`, `text-muted-foreground`, etc. work. */
+/* Expose the shadcn tokens to Tailwind so `bg-background`, `text-muted-foreground`,
+   `border-border`, etc. resolve. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

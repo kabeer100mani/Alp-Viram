@@ -17,18 +17,11 @@
     <meta name="apple-mobile-web-app-title" content="Alp-Viram" />
     <title>Alp-Viram</title>
     <script>
-      // Apply the saved theme before first paint to avoid a flash.
-      (function () {
-        try {
-          var stored = localStorage.getItem('alp-viram-theme')
-          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-          if (stored === 'dark' || (stored !== 'light' && prefersDark)) {
-            document.documentElement.classList.add('dark')
-          }
-        } catch (e) {
-          /* localStorage unavailable — ignore */
-        }
-      })()
+      // TEMPORARY: the app is dark-only during the ClickUp dark-mode build, so apply
+      // `dark` unconditionally before first paint (no flash, no light fallback). To
+      // restore themed behaviour, revert this to read the saved theme and set
+      // FORCE_DARK = false in ThemeProvider.
+      document.documentElement.classList.add('dark')
     </script>
   </head>
   <body>

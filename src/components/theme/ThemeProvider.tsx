@@ -15,12 +15,21 @@ function applyTheme(resolved: ResolvedTheme): void {
   document.documentElement.classList.toggle('dark', resolved === 'dark')
 }
 
+// TEMPORARY (ClickUp dark-mode build): the app is forced dark while the new theme
+// is stabilised, and the toggle is hidden (AppShell). Flip this to false and un-hide
+// the toggle to bring light/system back — no other change needed.
+const FORCE_DARK = true
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(
     () => (localStorage.getItem(THEME_STORAGE_KEY) as Theme | null) ?? 'system',
   )
 
-  const resolvedTheme: ResolvedTheme = theme === 'system' ? getSystemTheme() : theme
+  const resolvedTheme: ResolvedTheme = FORCE_DARK
+    ? 'dark'
+    : theme === 'system'
+      ? getSystemTheme()
+      : theme
 
   // Reflect the resolved theme onto the <html> element.
   useEffect(() => {
