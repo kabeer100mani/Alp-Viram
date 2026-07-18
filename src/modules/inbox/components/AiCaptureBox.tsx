@@ -6,7 +6,7 @@ import { classifyCapture } from '@/lib/ai/classify'
 import type { Classification } from '@/lib/ai/classification'
 import { useCreateItem } from '@/modules/items/hooks/use-items'
 import { createAiCapture } from '@/modules/inbox/data/ai-captures-repository'
-import { formatDate, priorityLabel } from '@/modules/items/presentation'
+import { formatDateTime, priorityLabel } from '@/modules/items/presentation'
 import type { ItemType } from '@/modules/items/types'
 
 type Stage = 'idle' | 'classifying' | 'proposal'
@@ -147,7 +147,7 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
               )}
               {proposal.due_at && (
                 <span className="rounded bg-secondary px-2 py-0.5 text-secondary-foreground">
-                  Due {formatDate(proposal.due_at)}
+                  Due {formatDateTime(proposal.due_at)}
                 </span>
               )}
               {proposal.priority !== 'none' && (

@@ -141,6 +141,7 @@ function systemPrompt(today: string, tz: string): string {
 
 Today's date is ${today} in the user's timezone (${tz}). Resolve relative dates ("tomorrow", "before the 8th", "next week") against the user's LOCAL time.
 Every datetime you return MUST be timezone-qualified ISO 8601 — include an explicit UTC offset or 'Z' (e.g. 2026-07-20T16:00:00+05:30). NEVER return a datetime without an offset.
+Time of day: only include a clock time when the user actually gave one ("4pm", "at 15:30", "9 in the morning"). When the user gives a day or relative date with NO clock time ("tomorrow", "by Friday"), set the time to 00:00 (midnight) in the user's timezone — do NOT invent a time like 9am or noon.
 
 Item types (choose exactly one):
 - task: something actionable with a done-state ("Prepare July MIS", "Follow up with TCS").

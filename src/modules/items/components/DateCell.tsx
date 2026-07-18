@@ -1,21 +1,29 @@
 import { useState } from 'react'
-import { formatDate } from '@/modules/items/presentation'
+import { formatDateTime } from '@/modules/items/presentation'
 
 const dateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : '')
-// Local noon → an unambiguous absolute instant (TD-005 discipline).
-const toInstant = (v: string) => (v ? new Date(`${v}T12:00:00`).toISOString() : null)
 
 /**
- * A cell that shows a *date*, not a form control.
- *
- * A bare `<input type="date">` renders the browser's own "dd-mm-yyyy" placeholder as
- * literal text whenever its value is empty — and prints a raw "2026-08-20" when set.
- * In a dense row (or a triage chip, where empty is the *common* case) that reads as
- * a broken field. So: render the formatted date, or a quiet hint, and swap in the
- * real input only while the user is actually editing.
- *
- * Deliberately neutral for past dates — there is no raw "overdue" state (FR-12b) and
- * a shaming state is rejected (Doc 4). Lateness surfaces as the Aging view.
+ * Change the *date* while keeping the existing *time of day* (PDL-043). The old
+ * behaviour forced local noon on every edit, silently clobbering a captured "4pm"
+ * — the exact bug this fixes. If the field had no specific time, the new date is
+ * stored at local **midnight** (the "no specific time" sentinel, D5).
+ */
+function combineDateKeepingTime(newDate: string, existingIso: string | null): string | null {
+  if (!newDate) return null
+  const existing = existingIso ? new Date(existingIso) : null
+  const d = new Date(`${newDate}T00:00:00`)
+  if (existing) d.setHours(existing.getHours(), existing.getMinutes(), 0, 0)
+  return d.toISOString()
+}
+
+/**
+ * A cell that shows a *date* (with its time when it has one), not a raw form
+ * control. A bare `<input type="date">` prints the browser's "dd-mm-yyyy"
+ * placeholder when empty and a raw ISO when set; so render the formatted value and
+ * swap in the input only while editing. Neutral for past dates (no "overdue"
+ * colour — FR-12b). Editing here keeps any time-of-day (see combineDateKeepingTime);
+ * the full time picker lives in the task panel.
  */
 export function DateCell({
   value,
@@ -50,14 +58,14 @@ export function DateCell({
           if (e.key === 'Escape') setEditing(false)
         }}
         onChange={(e) => {
-          onChange(toInstant(e.target.value))
+          onChange(combineDateKeepingTime(e.target.value, value))
           setEditing(false)
         }}
       />
     )
   }
 
-  const text = formatDate(value)
+  const text = formatDateTime(value)
   if (!canWrite) return <span className="text-muted-foreground">{text}</span>
 
   return (

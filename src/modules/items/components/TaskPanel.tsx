@@ -10,6 +10,8 @@ import { useItemActivity } from '@/modules/items/hooks/use-activity'
 import {
   activityLabel,
   formatEstimate,
+  formatScheduleWindow,
+  hasTimeOfDay,
   itemStateLabel,
   itemTypeLabel,
   parseEstimate,
@@ -32,10 +34,7 @@ const STATUS_OPTIONS: ItemState[] = ['captured', 'committed', 'in_progress', 'do
 const statusOptionsFor = (state: ItemState): ItemState[] =>
   state === 'snoozed' ? [...STATUS_OPTIONS, 'snoozed'] : STATUS_OPTIONS
 
-const dateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : '')
-const toInstant = (v: string) => (v ? new Date(`${v}T12:00:00`).toISOString() : null)
-
-// A reminder is a precise instant, not a day — it needs date + time. `remind_at` is
+// Start/end and reminder are precise instants — date + time. `remind_at` is
 // stored as an absolute UTC instant; a `datetime-local` control edits it in the
 // user's own wall-clock zone. new Date('…T09:00') reads the input as LOCAL time and
 // toISOString() renders the absolute UTC instant — the TD-005-correct round trip, so
@@ -294,34 +293,39 @@ export function TaskPanel({
               </QuickField>
 
               {!isNote && (
-                <QuickField label="Dates" className="col-span-2">
-                  <div className="flex items-center gap-1">
-                    {canWrite ? (
-                      <>
-                        <input
-                          type="date"
-                          aria-label="Start date"
-                          className={field}
-                          value={dateInput(item.start_at)}
-                          disabled={busy}
-                          onChange={(e) => update.mutate({ id: item.id, patch: { startAt: toInstant(e.target.value) } }, { onError: fail })}
-                        />
-                        <span className="shrink-0 text-muted-foreground">→</span>
-                        <input
-                          type="date"
-                          aria-label="Due date"
-                          className={field}
-                          value={dateInput(item.due_at)}
-                          disabled={busy}
-                          onChange={(e) => update.mutate({ id: item.id, patch: { dueAt: toInstant(e.target.value) } }, { onError: fail })}
-                        />
-                      </>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">
-                        {dateInput(item.start_at) || '—'} → {dateInput(item.due_at) || '—'}
-                      </span>
-                    )}
-                  </div>
+                <QuickField label="Start & end" className="col-span-2">
+                  {canWrite ? (
+                    <div className="space-y-1">
+                      <input
+                        type="datetime-local"
+                        aria-label="Start"
+                        className={field}
+                        value={dtLocalInput(item.start_at)}
+                        disabled={busy}
+                        onChange={(e) => update.mutate({ id: item.id, patch: { startAt: toInstantFromLocal(e.target.value) } }, { onError: fail })}
+                      />
+                      <input
+                        type="datetime-local"
+                        aria-label="End"
+                        className={field}
+                        value={dtLocalInput(item.due_at)}
+                        disabled={busy}
+                        onChange={(e) => update.mutate({ id: item.id, patch: { dueAt: toInstantFromLocal(e.target.value) } }, { onError: fail })}
+                      />
+                      {/* Show how a no-clock-time date is interpreted (PDL-043): the
+                          06:00–24:00 default window, so "no time" reads sensibly. */}
+                      {(item.start_at || item.due_at) &&
+                        (!hasTimeOfDay(item.start_at) || !hasTimeOfDay(item.due_at)) && (
+                          <p className="text-[10px] text-muted-foreground">
+                            Reads as {formatScheduleWindow(item.start_at, item.due_at)}
+                          </p>
+                        )}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      {formatScheduleWindow(item.start_at, item.due_at) || '—'}
+                    </span>
+                  )}
                 </QuickField>
               )}
 
