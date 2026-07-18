@@ -30,11 +30,12 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
   const createList = useCreateListInGeneral(organizationId, userId)
   const { data: lists } = useListsForRanking(organizationId)
 
-  // The tap-to-answer List follow-up (PDL-042): shown only when the AI flags it's
-  // unsure which list AND the org actually has lists. The AI never guesses a list
-  // (PDL-032) — it flags the dimension; these buttons are the org's REAL lists,
-  // keyword-RANKED against the capture using project names + context (PDL-044).
-  const askList = Boolean(proposal?.clarify === 'list' && (lists?.length ?? 0) > 0)
+  // The tap-to-answer List follow-up (PDL-042): shown when the AI flags it's unsure
+  // which list. The AI never guesses a list (PDL-032) — it flags the dimension; the
+  // buttons are the org's REAL lists, keyword-RANKED against the capture (PDL-044).
+  // Shown even with zero lists, so "+ Create new list" is reachable in exactly the
+  // case it exists for (the previous `lists.length > 0` gate hid it there).
+  const askList = proposal?.clarify === 'list'
   const ranked = askList ? rankLists(input, lists ?? []) : []
   // Pre-highlight the single best keyword match — a *suggestion* the user confirms.
   const topId = ranked[0]?.score > 0 ? ranked[0].id : null

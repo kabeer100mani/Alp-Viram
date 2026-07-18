@@ -223,14 +223,15 @@ const geminiSchema = {
     confidence: { type: 'NUMBER' },
     needs_clarification: { type: 'BOOLEAN' },
     clarifying_question: { type: 'STRING', nullable: true },
+    clarify: { type: 'STRING', enum: ['list'], nullable: true },
   },
   required: [
     'type', 'title', 'body', 'is_reminder', 'due_at', 'remind_at',
-    'priority', 'confidence', 'needs_clarification', 'clarifying_question',
+    'priority', 'confidence', 'needs_clarification', 'clarifying_question', 'clarify',
   ],
   propertyOrdering: [
     'type', 'title', 'body', 'is_reminder', 'due_at', 'remind_at',
-    'priority', 'confidence', 'needs_clarification', 'clarifying_question',
+    'priority', 'confidence', 'needs_clarification', 'clarifying_question', 'clarify',
   ],
 }
 
