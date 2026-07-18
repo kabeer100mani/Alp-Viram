@@ -28,6 +28,12 @@ export interface CreateItemInput {
   source?: string
   /** Optional List to file into at capture (PDL-042 follow-up). Null = Inbox. */
   listId?: string | null
+  /**
+   * The default assignee (PDL-046): assignee is mandatory and never blank. Defaults
+   * to the creator; the capture card may override it to another member. Ignored for
+   * Notes (a Note is a reference, not assigned work — responsibility is task-only).
+   */
+  assigneeUserId?: string
 }
 
 export async function createItem(input: CreateItemInput): Promise<Item> {
@@ -51,7 +57,24 @@ export async function createItem(input: CreateItemInput): Promise<Item> {
     .select('*')
     .single()
   if (error) throw error
-  return data as Item
+  const item = data as Item
+
+  // Assignee is mandatory and never blank (PDL-046) — default it to the creator (or
+  // whoever the capture card chose) as the primary assigned user. Notes carry no
+  // assignee (responsibility is a task concept). The creator has write at this point
+  // (creator axis of can_write_item), so this insert passes RLS.
+  if (type !== 'note') {
+    const { error: assignError } = await getSupabaseClient().from('item_assigned_users').insert({
+      organization_id: input.organizationId,
+      item_id: item.id,
+      user_id: input.assigneeUserId ?? input.createdBy,
+      is_primary: true,
+      assigned_via: 'direct',
+      created_by: input.createdBy,
+    })
+    if (assignError) throw assignError
+  }
+  return item
 }
 
 // ── Write path ────────────────────────────────────────────────────────────

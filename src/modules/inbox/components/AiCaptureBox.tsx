@@ -2,11 +2,14 @@ import { useState, type FormEvent } from 'react'
 import { Check, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Avatar } from '@/components/ui/avatar'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { classifyCapture } from '@/lib/ai/classify'
 import type { Classification } from '@/lib/ai/classification'
 import { useCreateItem } from '@/modules/items/hooks/use-items'
 import { useCreateListInGeneral, useListsForRanking } from '@/modules/lists/hooks/use-lists'
+import { useMembers } from '@/modules/people/hooks/use-people'
 import { rankLists } from '@/modules/inbox/rank-lists'
 import { createAiCapture } from '@/modules/inbox/data/ai-captures-repository'
 import { formatDateTime, priorityLabel } from '@/modules/items/presentation'
@@ -27,9 +30,17 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
   const [creatingList, setCreatingList] = useState(false)
   const [newListName, setNewListName] = useState('')
   const [error, setError] = useState<string | null>(null)
+  // Assignee is mandatory and never blank (PDL-046): it defaults to the creator and
+  // can be reassigned from the confirmation card. The picker only appears in a team
+  // org (someone else to assign to); a solo user silently gets themselves (PDL-022).
+  const [assigneeId, setAssigneeId] = useState(userId)
   const create = useCreateItem(organizationId)
   const createList = useCreateListInGeneral(organizationId, userId)
   const { data: lists } = useListsForRanking(organizationId)
+  const { data: members } = useMembers(organizationId)
+  const activeMembers = members ?? []
+  const isTeam = activeMembers.length > 1
+  const assigneeName = activeMembers.find((m) => m.userId === assigneeId)?.displayName ?? 'You'
 
   // The tap-to-answer List follow-up (PDL-042): shown when the AI flags it's unsure
   // which list. The AI never guesses a list (PDL-032) — it flags the dimension; the
@@ -48,6 +59,7 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
       const classification = await classifyCapture(text)
       setProposal(classification)
       setChosenListId(null)
+      setAssigneeId(userId) // default assignee = creator (PDL-046)
       setCreatingList(false)
       setNewListName('')
       setStage('proposal')
@@ -91,6 +103,7 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
         isReminder: proposal.is_reminder,
         priority: proposal.priority,
         listId: chosenListId, // null = Inbox (the default; skipping the follow-up)
+        assigneeUserId: assigneeId, // mandatory assignee, defaults to creator (PDL-046)
         source: 'inbox',
       })
       await createAiCapture({
@@ -224,7 +237,29 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
                 className="flex-1"
               />
             </div>
-            <div className="flex flex-wrap gap-2 text-xs">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {/* Assignee (PDL-046): already filled to the creator, editable. Shown
+                  only in a team org — a solo user has no one else to assign to, and
+                  responsibility stays hidden from them (PDL-022). */}
+              {isTeam && proposal.type !== 'note' && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    aria-label="Assignee"
+                    className="inline-flex items-center gap-1 rounded-full bg-secondary py-0.5 pl-0.5 pr-2 text-secondary-foreground outline-none hover:bg-secondary/80 focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Avatar userId={assigneeId} name={assigneeName} size="xs" />
+                    <span>{assigneeName}</span>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {activeMembers.map((m) => (
+                      <DropdownMenuItem key={m.userId} onSelect={() => setAssigneeId(m.userId)} className="gap-2">
+                        <Avatar userId={m.userId} name={m.displayName} size="xs" />
+                        {(m.displayName ?? 'Member') + (m.userId === userId ? ' (you)' : '')}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               {proposal.is_reminder && (
                 <span className="rounded bg-secondary px-2 py-0.5 text-secondary-foreground">Reminder</span>
               )}

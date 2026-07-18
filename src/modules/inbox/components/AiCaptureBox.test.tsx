@@ -31,6 +31,11 @@ vi.mock('@/modules/lists/hooks/use-lists', () => ({
   }),
   useCreateListInGeneral: () => ({ mutateAsync: createListMutate, isPending: false }),
 }))
+// Solo by default (one member) → no assignee picker; the confirmed item still
+// defaults its assignee to the creator (PDL-046), checked in the persist test.
+vi.mock('@/modules/people/hooks/use-people', () => ({
+  useMembers: () => ({ data: [{ id: 'm1', userId: 'user-1', displayName: 'You', isActive: true }] }),
+}))
 
 // A mock classification exercising every badge the proposal card can render.
 const mockProposal: Classification = {
@@ -97,7 +102,10 @@ describe('AiCaptureBox — displays what the (mock) provider returns', () => {
     await user.click(screen.getByRole('button', { name: /confirm/i }))
 
     expect(mutateAsync).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Review July MIS', type: 'task', isReminder: true, priority: 'high', source: 'inbox' }),
+      expect.objectContaining({
+        title: 'Review July MIS', type: 'task', isReminder: true, priority: 'high', source: 'inbox',
+        assigneeUserId: 'user-1', // PDL-046: mandatory assignee defaults to the creator
+      }),
     )
     expect(createAiCapture).toHaveBeenCalledWith(
       expect.objectContaining({ resultingItemId: 'item-1', requiredClarification: false, confidence: 0.42 }),
