@@ -243,6 +243,26 @@
 - **Trade-offs:** An unenforced DoD is documentation, not a gate — it can go stale. Accepted for now; tightening later is additive.
 - **Status:** Accepted (ruled by Palash, 2026-07-16)
 
+### PDL-043 — Item start/end time-of-day + a 06:00–24:00 default window (timeboxing-lite) (2026-07-18)
+- **Decision:** Two parts. **(a) In-contract bug fix:** the AI already captures a clock time on `due_at`/`remind_at` (TD-005), but the client dropped it — `formatDate` showed date-only and the date editors overwrote the time with noon. Fixed: time-of-day is displayed when present and **never clobbered** on a date edit. **(b) New (pulled forward):** an item's schedule reads as a **start→end time window** — `start_at` = start, `due_at` = end, both **time-aware** — and when a date carries **no clock time**, the window defaults to **06:00 → 24:00** ("anytime that day"). **Reuses `start_at`/`due_at`; NO new `end_at` column; no migration** (midnight-local = "no specific time", the D5 convention). The classifier is told to emit **midnight when the user gives no clock time**, so the convention is deterministic.
+- **Amends the frozen package:** Doc 4 files "**Timeboxing onto a simple internal calendar**" as **Good-to-Have** ("not required to prove the thesis"), and PDL-039 declined to build "start/end time" scheduling (in the dormant `meeting_details`). Part (b) pulls that Good-to-Have forward, minimally. Part (a) is not new scope — it honors the shipped TD-005 datetime contract. The **06:00–24:00 window has no prior source**; it is introduced here.
+- **Why:** Palash wants real time-of-day captured without slowing capture. The time was already captured and silently lost — a genuine bug. The window default gives a "no specific time" dated item a sensible working-day span instead of a misleading 00:00.
+- **Deliberately minimal / excluded:** no `end_at` column (reuse `due_at` as the window end — a task's deadline ≈ its window end); no calendar/drag-to-timebox surface (that stays the deferred Good-to-Have); `remind_at` keeps its own precise datetime field (unchanged).
+- **Alternatives:** (a) a `*_has_time` boolean per field — rejected for MVP (a column + contract change; the midnight convention is enough). (b) a real `end_at` — rejected: heavier, closer to the deferred calendar feature.
+- **Status:** Accepted (ruled by Palash, 2026-07-18).
+
+### PDL-042 — Capture-time follow-up is List-only, tap-to-answer (2026-07-18)
+- **Decision:** After the AI classifies a capture, if it is **genuinely unsure which List** the item belongs to *and* the org has lists, show **one skippable, tap-to-answer question** offering the org's real lists as buttons (+ "Inbox for now"). One tap files it; skipping leaves it in the Inbox. This **upgrades the existing PDL-028 clarifying-question slot** (previously a free-text box) to tap buttons, scoped to **List only**. Capture input stays zero-click; the question lives in the existing confirm card (PDL-012) and never blocks saving. The **AI does not infer the list** (PDL-032) — it only flags the *dimension*; the app owns the options.
+- **Explicitly excluded from the follow-up, with reasons (Palash, 2026-07-18):**
+  - **Priority, assigned user** — Doc 4 names them in the "Forcing fields (priority, labels, assignee) at capture" **Rejected** row (Doc 4:77); PDL-005/PRD §4 too.
+  - **Responsible role** — PDL-021/FR-5 already specify the unsure case: **low confidence → leave blank, confirm at Daily Review**, not ask at capture.
+  - **Due date** — many tasks legitimately have none; a missing due date is not "missing information."
+  - **Project** — redundant once a List is picked (a List sits inside a Project).
+  - **Checklist / Definition of Done** — these need real typing, not a one-tap answer; they belong at work-the-task time, not capture.
+- **Amends the frozen package (narrowly):** the locked docs place filing "**later**, in Daily Review or manually" (PDL-035) and "Capture First, Organize **Later**" (PDL-005), and reject **forced** or **AI-inferred** filing (Doc 4:75, PDL-032). A **skippable, user-tapped** List choice violates neither the "forced" nor the "AI-inferred" letter, but it does bend the "organize later" **spirit** by offering one filing tap at capture. Ruled acceptable by Palash because it is optional, one-tap, and only appears when genuinely useful.
+- **Alternatives:** (a) Ask nothing at capture; file everything at Daily Review (the pure frozen stance) — rejected by Palash: a one-tap file saves a real step for obviously-project-bound captures. (b) Also ask who/priority — rejected (the Doc 4 / PDL-021 conflicts above).
+- **Status:** Accepted (ruled by Palash, 2026-07-18).
+
 ### PDL-041 — Installable PWA + Vercel deployment, pulled forward from Future scope (2026-07-17)
 - **Decision:** Ship an **installable PWA** (manifest + icons + a conservative service worker) so browsers offer "Install" / "Add to Home Screen" and the app launches without browser chrome on phone and desktop; and **prepare real deployment** on **Vercel** (frontend host) with **Supabase unchanged** as the backend. Not a native app / app-store build.
 - **Amends the frozen package:** Doc 4 lists "**Mobile app / PWA / Play Store (TWA)**" under **Future ("after the web product proves out")**. Ruled forward by Palash (2026-07-17); recorded, not silent.

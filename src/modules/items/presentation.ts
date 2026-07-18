@@ -72,6 +72,64 @@ export function formatDate(iso: string | null): string {
   return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(new Date(iso))
 }
 
+/**
+ * Does this instant carry a *specific clock time*, or is it a bare date?
+ *
+ * The convention (PDL-043 / D5): **local midnight (00:00) means "no specific time"**.
+ * The classifier emits midnight when the user gave no clock time, and the date
+ * editors store midnight for a date-only pick — so a non-midnight local time is a
+ * real, user-meant time. Checked in the *user's local* zone (TD-005), not UTC.
+ */
+export function hasTimeOfDay(iso: string | null): boolean {
+  if (!iso) return false
+  const d = new Date(iso)
+  return d.getHours() !== 0 || d.getMinutes() !== 0
+}
+
+/**
+ * A date, plus the clock time only when the item actually has one (PDL-043). Fixes
+ * the bug where a captured "4pm" was invisible: `formatDate` showed the day only.
+ */
+export function formatDateTime(iso: string | null): string {
+  if (!iso) return ''
+  const date = formatDate(iso)
+  if (!hasTimeOfDay(iso)) return date
+  const time = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(iso))
+  return `${date}, ${time}`
+}
+
+// The default working-day window for a dated item with no specific time (PDL-043):
+// "anytime that day" spans 06:00 → 24:00. Surfaced so a timeless item reads as a
+// sensible span, not a misleading 00:00.
+export const DEFAULT_WINDOW_START_HOUR = 6
+export const DEFAULT_WINDOW_END_LABEL = 'midnight'
+
+/**
+ * How a start→end schedule reads. When a field has no clock time, the default
+ * window applies: start shows 6:00 AM, end shows midnight. When times are present,
+ * they win. Returns '' when neither endpoint is set.
+ */
+export function formatScheduleWindow(startIso: string | null, dueIso: string | null): string {
+  if (!startIso && !dueIso) return ''
+  const timeAt = (h: number) => {
+    const d = new Date()
+    d.setHours(h, 0, 0, 0)
+    return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(d)
+  }
+  const startPart = startIso
+    ? hasTimeOfDay(startIso)
+      ? formatDateTime(startIso)
+      : `${formatDate(startIso)}, ${timeAt(DEFAULT_WINDOW_START_HOUR)}`
+    : null
+  const endPart = dueIso
+    ? hasTimeOfDay(dueIso)
+      ? formatDateTime(dueIso)
+      : `${formatDate(dueIso)}, ${DEFAULT_WINDOW_END_LABEL}`
+    : null
+  if (startPart && endPart) return `${startPart} → ${endPart}`
+  return (startPart ?? endPart) as string
+}
+
 // ── Colour ──────────────────────────────────────────────────────────────────
 // Semantic colour for priority and status (the app read as monochrome before).
 
