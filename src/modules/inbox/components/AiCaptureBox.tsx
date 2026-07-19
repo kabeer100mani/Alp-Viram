@@ -30,7 +30,16 @@ function todayMidnightIso(): string {
  * before anything is saved (AI proposes, never auto-executes — PDL-012). Asks a
  * clarifying question only when the AI flags one as genuinely needed (PDL-028).
  */
-export function AiCaptureBox({ organizationId, userId }: { organizationId: string; userId: string }) {
+export function AiCaptureBox({
+  organizationId,
+  userId,
+  onDone,
+}: {
+  organizationId: string
+  userId: string
+  /** Called after a confirmed capture — lets the host (the quick-capture dialog) close. */
+  onDone?: () => void
+}) {
   const [input, setInput] = useState('')
   const [stage, setStage] = useState<Stage>('idle')
   const [proposal, setProposal] = useState<Classification | null>(null)
@@ -142,6 +151,7 @@ export function AiCaptureBox({ organizationId, userId }: { organizationId: strin
       setProposal(null)
       setStage('idle')
       setError(null)
+      onDone?.() // close the quick-capture dialog after a confirmed capture
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save the item')
     }

@@ -7,7 +7,7 @@ import { OrgBar } from '@/modules/organizations/components/OrgBar'
 import { SidebarNav } from '@/components/layout/SidebarNav'
 import { BottomTabBar } from '@/components/layout/BottomTabBar'
 import { AiCaptureBox } from '@/modules/inbox/components/AiCaptureBox'
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { SectionContext } from '@/app/section-context'
 
 /**
@@ -58,23 +58,23 @@ export function AppShell() {
       {/* Mobile floating "+" — quick capture from any section (Doc 5: one keystroke away). */}
       <button
         type="button"
-        aria-label="Capture"
+        aria-label="Quick capture"
         onClick={openCapture}
         className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:brightness-110 md:hidden"
       >
         <Plus className="h-6 w-6" />
       </button>
 
-      <Sheet open={captureOpen} onOpenChange={setCaptureOpen}>
-        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Capture</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4">
-            <AiCaptureBox organizationId={org.id} userId={user.id} />
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* Quick capture as a proper modal dialog — input, then the AI proposal as a
+          confirm popup (title, tappable options, Confirm). Closes on confirm. */}
+      <Dialog open={captureOpen} onOpenChange={setCaptureOpen}>
+        <DialogContent className="max-h-[85vh] gap-3 overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Quick capture</DialogTitle>
+          </DialogHeader>
+          <AiCaptureBox organizationId={org.id} userId={user.id} onDone={() => setCaptureOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

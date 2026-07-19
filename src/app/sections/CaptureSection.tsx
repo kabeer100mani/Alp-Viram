@@ -166,7 +166,7 @@ export function CaptureSection() {
                   }
                   isLoading={groupedByRole ? groupsLoading : itemsLoading}
                   emptyMessage={
-                    active?.name === 'Inbox' ? 'Inbox zero — capture something with the + button.' : 'Nothing in this view.'
+                    active?.name === 'Inbox' ? 'Inbox zero — add something with Quick capture.' : 'Nothing in this view.'
                   }
                   responsibility={responsibility}
                   organizationId={org.id}

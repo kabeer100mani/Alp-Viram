@@ -33,13 +33,14 @@ export function SidebarNav({
         <OrgBar org={org} userId={userId} isSolo={isSolo} isAdmin={isAdmin} />
       </div>
 
-      {/* Global capture (PDL-048) — the "+" is one click from any section. */}
+      {/* Global quick capture (PDL-048) — one click from any section. Labelled
+          "Quick capture" so it's clearly distinct from the "Capture" section tab. */}
       <button
         type="button"
         onClick={onCapture}
         className="mt-4 flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:brightness-110"
       >
-        <Plus className="h-4 w-4" /> Capture
+        <Plus className="h-4 w-4" /> Quick capture
       </button>
 
       <nav aria-label="Sections" className="mt-4 space-y-0.5">
