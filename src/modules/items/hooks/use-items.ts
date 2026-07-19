@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import {
   completeItem,
   createItem,
+  getItemById,
   listItems,
   reopenItem,
   snoozeItem,
@@ -19,6 +20,15 @@ export function useItems(organizationId: string | undefined) {
     queryKey: ['items', organizationId],
     enabled: Boolean(organizationId),
     queryFn: () => listItems(organizationId as string),
+  })
+}
+
+/** A single item by id — used to open a task from the Capture history (M9). */
+export function useItem(id: string | undefined) {
+  return useQuery({
+    queryKey: ['item', id],
+    enabled: Boolean(id),
+    queryFn: () => getItemById(id as string),
   })
 }
 

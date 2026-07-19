@@ -22,10 +22,29 @@ quick-capture stays, reachable from any tab.
 | **Settings** | Workspace + Appearance + Account + **Statuses & priorities** (the Gate C editor, folded in). |
 
 ## The clarifying pop-up (VS-Code style)
-On submit, if the AI needs to sort out type/list/assignee/due, a small approval pop-up
-shows its suggestion + recommendation + an **"add more / elaborate"** field that
-**re-runs the AI with the extra context** and updates the proposal. Confirm commits.
-Only the questions are the pop-up — input + history stay on the page.
+On submit, the AI's proposal drives a **paged approval pop-up** (Palash's reference, the
+Claude-Code prompt UI): one question at a time, a **"1 of N" pager**, **numbered options**
+(↑↓ to navigate, Enter to select), the AI's pick marked **· suggested**, a **"Something
+else…"** row (elaborate) and **Skip**, plus an **"Or reply directly…"** input at the bottom
+that **re-runs the AI with the added context**. It sits ABOVE the chat box on the Capture
+page — only the questions are the pop-up.
+
+**Decisions (Palash, 2026-07-19):**
+- **Always ask a short paged set**, even when the AI is sure — a Task walks **Type → List →
+  Due** (a Note is just **Type**; list/due don't apply). The pop-up matches the style of
+  Claude Code's own question card (Palash's reference screenshot).
+- **The AI's pick carries a "Recommended" tag** (like that card), pre-selected so Enter/tap
+  accepts it. "Always" = always *shown with a smart default*, not always friction.
+- **Two kinds of skip:** (1) **per-question Skip** keeps that question's Recommended default
+  and advances; (2) a prominent **"Skip for now — answer later"** commits the capture
+  immediately with all Recommended defaults and drops it into the **Inbox (To triage)**, so
+  the questions are answered later in Daily Review or by re-opening the capture from history
+  ("Finish setup"). Nothing ever blocks the capture.
+- **Chat box + record now; attachments later.** The Capture input is a **chat box** with a
+  **mic** (real recording = Gate C) and a **"+" attachment button shown but "coming soon"**
+  (no storage/DB work yet — TD-004 stays deferred).
+- **Drop the model selector** from the reference (Sonnet 5 / High) — end users don't pick an
+  AI model.
 
 ## Voice notes (in scope)
 Browser mic (MediaRecorder) → a `transcribe` Edge Function (provider-agnostic, Gemini)

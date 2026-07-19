@@ -15,6 +15,18 @@ export async function listItems(organizationId: string): Promise<Item[]> {
   return (data ?? []) as Item[]
 }
 
+/** One item by id (used to open a task from the Capture history). Null if gone. */
+export async function getItemById(id: string): Promise<Item | null> {
+  const { data, error } = await getSupabaseClient()
+    .from('items')
+    .select('*')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .maybeSingle()
+  if (error) throw error
+  return (data as Item | null) ?? null
+}
+
 export interface CreateItemInput {
   organizationId: string
   title: string

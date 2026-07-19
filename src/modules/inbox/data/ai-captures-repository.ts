@@ -29,3 +29,43 @@ export async function createAiCapture(input: CreateAiCaptureInput): Promise<void
     })
   if (error) throw error
 }
+
+/** One row of the Capture history: the raw message and the task it became. */
+export interface AiCaptureRow {
+  id: string
+  rawInput: string
+  createdAt: string
+  resultingItemId: string | null
+  /** Title/type of the task it became — read from the stored classification. */
+  itemTitle: string | null
+  itemType: string | null
+}
+
+/**
+ * The Capture history feed (M9 Gate B): recent captures for the org, newest last
+ * (chat-thread order), each with the task it produced so the user can open it. The
+ * title/type come from the stored `parsed` classification (no FK embed needed); the
+ * live item is fetched lazily only when the user opens it.
+ */
+export async function listAiCaptures(organizationId: string, limit = 50): Promise<AiCaptureRow[]> {
+  const { data, error } = await getSupabaseClient()
+    .from('ai_captures')
+    .select('id, raw_input, created_at, resulting_item_id, parsed')
+    .eq('organization_id', organizationId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  const rows = (data ?? []).map((r) => {
+    const parsed = (r.parsed ?? {}) as { title?: string; type?: string }
+    return {
+      id: r.id as string,
+      rawInput: r.raw_input as string,
+      createdAt: r.created_at as string,
+      resultingItemId: r.resulting_item_id as string | null,
+      itemTitle: parsed.title ?? null,
+      itemType: parsed.type ?? null,
+    }
+  })
+  // Fetched newest-first for the limit; present oldest-first (a chat thread reads down).
+  return rows.reverse()
+}
