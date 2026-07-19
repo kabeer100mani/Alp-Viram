@@ -20,7 +20,7 @@ import type { Item, ItemState } from '@/modules/items/types'
 // snoozed item still shows "Snoozed" (its option is added at render so the control
 // reflects the real state).
 const STATUS_OPTIONS: ItemState[] = ['captured', 'committed', 'in_progress', 'done', 'backlog']
-const statusOptionsFor = (state: ItemState): ItemState[] =>
+export const statusOptionsFor = (state: ItemState): ItemState[] =>
   state === 'snoozed' ? [...STATUS_OPTIONS, 'snoozed'] : STATUS_OPTIONS
 
 export interface RowColumns {

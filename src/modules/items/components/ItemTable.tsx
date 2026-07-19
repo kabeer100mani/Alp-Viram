@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Circle } from 'lucide-react'
 import { ItemRow } from '@/modules/items/components/ItemRow'
+import { ItemCard } from '@/modules/items/components/ItemCard'
 import { TaskPanel } from '@/modules/items/components/TaskPanel'
 import { formatEstimate } from '@/modules/items/presentation'
 import { useWritableItemIds } from '@/modules/views/hooks/use-views'
@@ -89,6 +90,14 @@ export function ItemTable({
   // panel (or by anyone else) reflects immediately instead of showing a stale copy.
   const openItem = openId ? (allItems.find((i) => i.id === openId) ?? null) : null
 
+  const toggleGroup = (key: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+
   if (isLoading) return <p className="text-sm text-muted-foreground">Loading…</p>
   if (allItems.length === 0) return <p className="text-sm text-muted-foreground">{emptyMessage}</p>
 
@@ -108,7 +117,8 @@ export function ItemTable({
     <div className="space-y-2">
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div className="overflow-x-auto rounded-lg border border-border">
+      {/* Desktop: the dense multi-column table. Hidden on phones (Gate B). */}
+      <div className="hidden overflow-x-auto rounded-lg border border-border md:block">
         <div role="table" className="grid min-w-[42rem]" style={{ gridTemplateColumns }}>
           {/* Column header */}
           <div role="row" className="col-span-full grid grid-cols-subgrid border-b border-border bg-secondary/40">
@@ -172,6 +182,46 @@ export function ItemTable({
             )
           })}
         </div>
+      </div>
+
+      {/* Mobile: a single-column card list — the dense grid doesn't fit a phone (Gate B). */}
+      <div className="space-y-4 md:hidden">
+        {groups.map((group) => {
+          const isCollapsed = collapsed.has(group.key)
+          return (
+            <div key={group.key} className="space-y-2">
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.key)}
+                aria-expanded={!isCollapsed}
+                className="flex w-full items-center gap-1.5 text-left text-sm font-semibold"
+              >
+                {isCollapsed ? <ChevronRight className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+                {group.label}
+                <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-normal text-muted-foreground">
+                  {group.items.length}
+                </span>
+              </button>
+              {!isCollapsed && (
+                <div className="space-y-2">
+                  {group.items.map((item) => (
+                    <ItemCard
+                      key={item.id}
+                      item={item}
+                      canWrite={writable?.has(item.id) ?? false}
+                      columns={{ showAssignee }}
+                      assignee={assigneeFor(item.id)}
+                      tags={tagsFor(item.id)}
+                      onOpen={() => setOpenId(item.id)}
+                      onTagClick={onTagClick}
+                      onError={setError}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {openItem && (

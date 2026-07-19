@@ -41,7 +41,10 @@ try {
   }, title)
 
   await page.reload({ waitUntil: 'networkidle' })
-  await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
+  await page.getByRole('navigation', { name: 'Sections' }).first().waitFor({ timeout: 20000 })
+  // Views live inside the Capture section now (M8) — navigate there first.
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: 'By Role' }).click()
 
   // Table structure

@@ -102,9 +102,39 @@ export function ViewRail({
   }
 
   return (
+    <>
+    {/* Mobile: a compact horizontal view switcher (Gate B) — the full vertical rail
+        below is desktop-only, so it doesn't eat the phone screen. */}
+    <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-2 md:hidden">
+      {[...primary, ...rest].map((v) => (
+        <button
+          key={v.id}
+          type="button"
+          onClick={() => onSelect(v)}
+          aria-current={v.id === activeViewId ? 'page' : undefined}
+          className={`shrink-0 rounded-full border px-3 py-1 text-xs ${
+            v.id === activeViewId ? 'border-primary bg-primary/10 text-foreground' : 'border-input text-muted-foreground'
+          }`}
+        >
+          {v.name}
+          {v.name === 'Inbox' && inboxCount ? ` · ${inboxCount}` : ''}
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={onSearch}
+        aria-current={searchActive ? 'page' : undefined}
+        className={`shrink-0 rounded-full border px-3 py-1 text-xs ${
+          searchActive ? 'border-primary bg-primary/10 text-foreground' : 'border-input text-muted-foreground'
+        }`}
+      >
+        Search
+      </button>
+    </div>
+
     <nav
       aria-label="Views"
-      className="w-full shrink-0 space-y-4 border-b border-border pb-3 md:w-52 md:border-b-0 md:border-r md:pb-0 md:pr-3"
+      className="hidden w-52 shrink-0 space-y-4 md:block md:border-r md:border-border md:pr-3"
     >
       <ul className="space-y-0.5">{primary.map(entry)}</ul>
 
@@ -166,5 +196,6 @@ export function ViewRail({
         </ul>
       )}
     </nav>
+    </>
   )
 }
