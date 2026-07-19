@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { SECTIONS } from '@/components/layout/sections'
 import { OrgBar } from '@/modules/organizations/components/OrgBar'
@@ -23,10 +23,11 @@ export function SidebarNav({
 }) {
   return (
     <aside className="fixed inset-y-0 left-0 hidden w-56 flex-col border-r border-border bg-[--bg-sidebar] px-3 py-4 md:flex">
-      <div className="flex items-center gap-2 px-1">
+      {/* The logo returns to the Overview/Home (PDL-050) — no separate Home tab. */}
+      <Link to="/" aria-label="Home" className="flex items-center gap-2 px-1">
         <img src="/favicon.svg" alt="" className="h-6 w-auto" />
         <span className="text-sm font-semibold tracking-tight">SutraDhar</span>
-      </div>
+      </Link>
 
       {/* Workspace name + switcher (stays silent for a solo single-org user, PDL-022). */}
       <div className="mt-3 min-h-[1.5rem] px-1">

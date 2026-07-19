@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Link, Outlet } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { useAuth } from '@/modules/auth/auth-context'
 import { useActiveOrg } from '@/modules/organizations/use-active-org'
@@ -40,10 +40,10 @@ export function AppShell() {
 
       {/* Mobile top header: brand + workspace switcher (the sidebar's job on desktop). */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/90 px-4 py-2 backdrop-blur md:hidden">
-        <div className="flex items-center gap-2">
+        <Link to="/" aria-label="Home" className="flex items-center gap-2">
           <img src="/favicon.svg" alt="" className="h-6 w-auto" />
           <span className="text-sm font-semibold tracking-tight">SutraDhar</span>
-        </div>
+        </Link>
         <OrgBar org={org} userId={user.id} isSolo={isSolo} isAdmin={isAdmin} />
       </header>
 

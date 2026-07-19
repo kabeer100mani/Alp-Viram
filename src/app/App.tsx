@@ -5,6 +5,7 @@ import { AuthScreen } from '@/modules/auth/components/AuthScreen'
 import { ResetPassword } from '@/modules/auth/components/ResetPassword'
 import { ProtectedRoute } from '@/modules/auth/components/ProtectedRoute'
 import { AcceptInvite } from '@/modules/people/components/AcceptInvite'
+import { HomeSection } from '@/app/sections/HomeSection'
 import { CaptureSection } from '@/app/sections/CaptureSection'
 import { ProjectsSection } from '@/app/sections/ProjectsSection'
 import { PeopleSection } from '@/app/sections/PeopleSection'
@@ -38,7 +39,8 @@ export function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/" element={<Navigate to="/capture" replace />} />
+          {/* Neutral landing (PDL-050) — the Overview/Home, not a section tab. */}
+          <Route path="/" element={<HomeSection />} />
           <Route path="/capture" element={<CaptureSection />} />
           <Route path="/projects" element={<ProjectsSection />} />
           <Route path="/people" element={<PeopleSection />} />

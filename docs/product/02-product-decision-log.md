@@ -243,6 +243,12 @@
 - **Trade-offs:** An unenforced DoD is documentation, not a gate — it can go stale. Accepted for now; tightening later is additive.
 - **Status:** Accepted (ruled by Palash, 2026-07-16)
 
+### PDL-050 — The default landing is a neutral Overview/Home, not a section tab (2026-07-19)
+- **Decision:** The default route **`/` is a lightweight Overview/Home** — greeting + at-a-glance counts (**To triage · Due today · Waiting**) + a **Daily Review** entry + **jump-to** links into the five sections. It is **NOT one of the five tabs**; it is reached again by **tapping the SutraDhar logo** (sidebar + mobile header). No separate "Home" tab.
+- **Why:** M8 Gate A (PDL-048) dissolved the old "Welcome" landing into the sections, so `/` redirected straight to `/capture` — dropping users deep inside a functional section. Palash's standing preference: **land somewhere neutral, then navigate**. This restores a neutral front door and the at-a-glance summary that was lost.
+- **Alternatives:** remember-last-tab (rejected: not neutral); a **6th "Overview" tab** (rejected: 6 items crowd the mobile bottom bar — 5 is the comfortable max); default to a neutral view like Today (rejected: still inside Capture). The logo-as-home pattern keeps the 5-tab bar clean.
+- **Status:** Accepted (Palash, 2026-07-19). Built in M8 (post-Gate-A live fix), with the quick-capture button renamed "Quick capture" (distinct from the Capture tab) and the AI proposal converted to a modal dialog.
+
 ### PDL-049 — Users can customize status & priority **labels and colors** (the "Statuses" section) (2026-07-19)
 - **Decision:** A per-org **"Statuses"** settings section lets an admin **relabel and recolor** the existing statuses and priorities (their own words + colors). Stored as per-org overrides (JSONB on `organizations`, admin-only via `orgs_update`); `StatusPill`/`PriorityFlag`/`presentation` read the overrides with the frozen §2 values as fallback.
 - **Constrained — relabel/recolor ONLY.** The **enum values are frozen** (`item_state`, `priority`) and cannot be added, removed, or reordered: the **view engine and completion logic key off the enum values** (e.g. `done`, `captured`), not the labels, so new/renamed *values* would break them. Only the *display* label + color are customizable.
