@@ -1,7 +1,7 @@
-// M3 core walkthrough — refreshed for the M8 shell (Overview landing, sections,
-// Quick-capture dialog). Drives the REAL app in a browser:
-//   sign up → land on Overview → capture via the Quick-capture dialog → item in the
-//   Capture Inbox view → complete → Done → Daily Review → Search → dark-only.
+// M3 core walkthrough — refreshed for the M9 shell (PDL-051: Home = the task views,
+// Capture is its own surface, Quick-capture dialog). Drives the REAL app in a browser:
+//   sign up → land on Home (task views + counts) → capture via the Quick-capture dialog →
+//   item in the Inbox view → complete → Done → Daily Review → Search → dark-only.
 //   npm run dev    then    node scripts/m3-walkthrough.mjs
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
@@ -23,18 +23,17 @@ page.on('console', (m) => m.type() === 'error' && consoleErrors.push(m.text()))
 page.on('pageerror', (e) => consoleErrors.push(String(e)))
 
 try {
-  // ── 1. Sign up → the Overview/Home landing (PDL-050) ────────────────────
+  // ── 1. Sign up → the Home landing = the task views (PDL-051) ─────────────
   await signUp(page)
-  await page.screenshot({ path: `${OUT}/1-overview.png` })
-  check('lands on the Overview (not a section)', new URL(page.url()).pathname === '/')
-  check('overview shows the at-a-glance counts', /to triage/i.test(await page.locator('main').innerText()))
+  await page.screenshot({ path: `${OUT}/1-home.png` })
+  check('lands on Home', new URL(page.url()).pathname === '/')
+  check('Home shows the at-a-glance counts', /to triage/i.test(await page.locator('main').innerText()))
 
-  // ── 2. Capture section rail (the intent views live here now) ────────────
-  await goToSection(page, 'Capture')
+  // ── 2. The intent views live on Home now (no separate section) ──────────
   const rail = page.getByRole('navigation', { name: /views/i })
   await rail.waitFor({ timeout: 15000 })
   for (const name of ['Inbox', 'Today', 'Upcoming', 'Aging', 'Waiting', 'Done', 'By Role']) {
-    check(`Capture rail shows "${name}"`, await rail.getByRole('button', { name }).isVisible())
+    check(`Home rail shows "${name}"`, await rail.getByRole('button', { name }).isVisible())
   }
   check('no raw item_state enum leaks on screen (PDL-027)', !/\b(captured|in_progress)\b/.test(await page.locator('body').innerText()))
 
@@ -78,7 +77,7 @@ try {
   await triageDialog.getByRole('button', { name: /confirm/i }).click()
   await page.getByRole('dialog').waitFor({ state: 'detached', timeout: 20000 })
 
-  await goToSection(page, 'Capture')
+  await goToSection(page, 'Home')
   await page.getByRole('button', { name: /daily review/i }).click()
   const review = page.getByRole('region', { name: /daily review/i })
   await review.waitFor({ timeout: 15000 })
@@ -100,12 +99,22 @@ try {
   await page.waitForTimeout(1200)
   check('confirmed item is gone from the Inbox view', !(await page.locator('body').innerText()).includes(triageTitle))
 
-  // ── 8. Search (in the Capture rail) ─────────────────────────────────────
+  // ── 8. Search (in the Home rail) ────────────────────────────────────────
   await rail.getByRole('button', { name: /search/i }).click()
   await page.getByLabel(/search your items/i).fill(triageTitle.slice(0, 6))
   await page.waitForTimeout(2500)
   await page.screenshot({ path: `${OUT}/8-search.png` })
   check('search finds the item by full text', (await page.locator('body').innerText()).includes(triageTitle))
+
+  // ── 8b. Collapsible sidebar (PDL-051) — labels hide, then return ────────
+  await page.getByRole('button', { name: /collapse sidebar/i }).click()
+  await page.waitForTimeout(300)
+  const collapsedNav = page.getByRole('navigation', { name: 'Sections' }).first()
+  check('collapsing hides the section labels', !(await collapsedNav.innerText()).match(/projects/i))
+  check('collapse persists across a reload', await page.evaluate(() => localStorage.getItem('nav-collapsed') === '1'))
+  await page.getByRole('button', { name: /expand sidebar/i }).click()
+  await page.waitForTimeout(300)
+  check('expanding brings the labels back', Boolean((await collapsedNav.innerText()).match(/projects/i)))
 
   // ── 9. Dark-only (temporary): dark, and stays dark across a reload ──────
   const darkBefore = await page.evaluate(() => document.documentElement.classList.contains('dark'))

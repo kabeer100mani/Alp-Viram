@@ -39,8 +39,9 @@ export function App() {
             </ProtectedRoute>
           }
         >
-          {/* Neutral landing (PDL-050) — the Overview/Home, not a section tab. */}
+          {/* Home = the main task-management view + default landing (PDL-051). */}
           <Route path="/" element={<HomeSection />} />
+          {/* Capture = its own surface (PDL-051); Statuses lives under Settings, not a tab. */}
           <Route path="/capture" element={<CaptureSection />} />
           <Route path="/projects" element={<ProjectsSection />} />
           <Route path="/people" element={<PeopleSection />} />

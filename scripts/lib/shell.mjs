@@ -19,9 +19,9 @@ export async function goToSection(page, name) {
   await page.waitForTimeout(400)
 }
 
-/** Go to the Capture section and select a view in its rail (desktop). */
+/** Go to Home (the task views live there, PDL-051) and select a view in its rail (desktop). */
 export async function goToView(page, viewName) {
-  await goToSection(page, 'Capture')
+  await goToSection(page, 'Home')
   await page.getByRole('navigation', { name: 'Views' }).getByRole('button', { name: viewName, exact: true }).click()
   await page.waitForTimeout(600)
 }

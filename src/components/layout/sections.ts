@@ -1,9 +1,10 @@
-import { FolderTree, Inbox, Settings2, SlidersHorizontal, Users } from 'lucide-react'
+import { FolderTree, Home, MessageSquarePlus, Settings2, Users } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 /**
- * The five top-level sections (PDL-048), driving BOTH the desktop sidebar and the
- * mobile bottom tab bar — one config, two renderings. Order is the display order.
+ * The five top-level sections (PDL-051), driving BOTH the desktop sidebar and the
+ * mobile bottom tab bar — one config, two renderings. Home is the task view; Capture
+ * is the capture surface. "Statuses" is not a tab — it lives inside Settings.
  */
 export interface SectionDef {
   to: string
@@ -12,9 +13,9 @@ export interface SectionDef {
 }
 
 export const SECTIONS: SectionDef[] = [
-  { to: '/capture', label: 'Capture', Icon: Inbox },
+  { to: '/', label: 'Home', Icon: Home },
+  { to: '/capture', label: 'Capture', Icon: MessageSquarePlus },
   { to: '/projects', label: 'Projects', Icon: FolderTree },
   { to: '/people', label: 'People', Icon: Users },
   { to: '/settings', label: 'Settings', Icon: Settings2 },
-  { to: '/statuses', label: 'Statuses', Icon: SlidersHorizontal },
 ]

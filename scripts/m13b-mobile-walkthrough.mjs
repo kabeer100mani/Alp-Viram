@@ -19,13 +19,14 @@ const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMo
 
 try {
   await signUp(page)
-  check('lands on the Overview (greeting), no horizontal overflow', (await noOverflow(page)))
+  check('lands on Home (greeting), no horizontal overflow', (await noOverflow(page)))
 
-  // Bottom tab bar is the mobile nav.
+  // Bottom tab bar is the mobile nav (5 tabs, PDL-051 — Statuses folded into Settings).
   const bar = page.getByRole('navigation', { name: 'Sections' })
-  for (const s of ['Capture', 'Projects', 'People', 'Settings', 'Statuses']) {
+  for (const s of ['Home', 'Capture', 'Projects', 'People', 'Settings']) {
     check(`bottom bar has "${s}"`, await bar.getByRole('link', { name: s }).count() > 0)
   }
+  check('bottom bar no longer has a "Statuses" tab', (await bar.getByRole('link', { name: 'Statuses' }).count()) === 0)
 
   // Quick capture via the floating "+" FAB → modal dialog.
   await page.getByRole('button', { name: 'Quick capture' }).click()
@@ -51,9 +52,9 @@ try {
       await repo.createItem({ organizationId: orgId, title: t, priority: 'high', createdBy: uid })
   })
 
-  await goToSection(page, 'Capture')
+  await goToSection(page, 'Home')
   await page.reload({ waitUntil: 'networkidle' })
-  await goToSection(page, 'Capture')
+  await goToSection(page, 'Home')
   await page.waitForTimeout(1000)
 
   // The rail is a compact horizontal chip row, not a full vertical sidebar.
@@ -77,8 +78,12 @@ try {
   await goToSection(page, 'People')
   check('bottom-bar navigates to People', new URL(page.url()).pathname === '/people')
   check('People has no horizontal overflow', await noOverflow(page))
-  await goToSection(page, 'Statuses')
-  check('bottom-bar navigates to Statuses', new URL(page.url()).pathname === '/statuses')
+  // Statuses is reached from Settings now (PDL-051), not a bottom-bar tab.
+  await goToSection(page, 'Settings')
+  check('bottom-bar navigates to Settings', new URL(page.url()).pathname === '/settings')
+  await page.getByRole('link', { name: /statuses & priorities/i }).click()
+  await page.waitForTimeout(500)
+  check('Settings links through to Statuses', new URL(page.url()).pathname === '/statuses')
 } catch (e) {
   check(`mobile walkthrough threw: ${e instanceof Error ? e.message.split('\n')[0] : e}`, false)
   await page.screenshot({ path: `${OUT}/FAIL.png` }).catch(() => {})

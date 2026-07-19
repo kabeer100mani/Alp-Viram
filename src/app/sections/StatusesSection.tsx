@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Flag } from 'lucide-react'
+import { ChevronLeft, Flag } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useSection } from '@/app/section-context'
@@ -56,6 +57,12 @@ export function StatusesSection() {
 
   return (
     <div className="max-w-2xl space-y-8">
+      <Link
+        to="/settings"
+        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" /> Settings
+      </Link>
       <div className="space-y-1">
         <h1 className="text-xl font-semibold tracking-tight">Statuses</h1>
         <p className="text-sm text-muted-foreground">

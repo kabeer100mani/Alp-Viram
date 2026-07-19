@@ -22,6 +22,13 @@ export function AppShell() {
   const { data: org, isLoading } = useActiveOrg(user?.id)
   const { data: fieldPrefs } = useOrgFieldPrefs(org?.id)
   const [captureOpen, setCaptureOpen] = useState(false)
+  const [navCollapsed, setNavCollapsed] = useState(() => localStorage.getItem('nav-collapsed') === '1')
+  const toggleNav = () =>
+    setNavCollapsed((c) => {
+      const next = !c
+      localStorage.setItem('nav-collapsed', next ? '1' : '0')
+      return next
+    })
 
   if (isLoading || !org || !user) {
     return <div className="grid min-h-screen place-items-center text-sm text-muted-foreground">Loading…</div>
@@ -39,7 +46,15 @@ export function AppShell() {
   return (
     <FieldPrefsProvider value={fieldPrefs ?? {}}>
     <div className="min-h-screen bg-background text-foreground">
-      <SidebarNav org={org} userId={user.id} isSolo={isSolo} isAdmin={isAdmin} onCapture={openCapture} />
+      <SidebarNav
+        org={org}
+        userId={user.id}
+        isSolo={isSolo}
+        isAdmin={isAdmin}
+        onCapture={openCapture}
+        collapsed={navCollapsed}
+        onToggleCollapse={toggleNav}
+      />
 
       {/* Mobile top header: brand + workspace switcher (the sidebar's job on desktop). */}
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/90 px-4 py-2 backdrop-blur md:hidden">
@@ -50,7 +65,7 @@ export function AppShell() {
         <OrgBar org={org} userId={user.id} isSolo={isSolo} isAdmin={isAdmin} />
       </header>
 
-      <main className="md:pl-56">
+      <main className={navCollapsed ? 'md:pl-16' : 'md:pl-56'}>
         <div className="mx-auto max-w-6xl px-4 pb-24 pt-6 md:pb-10">
           <Outlet context={ctx} />
         </div>
