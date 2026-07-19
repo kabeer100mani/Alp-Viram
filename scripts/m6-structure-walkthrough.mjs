@@ -44,6 +44,8 @@ try {
   await page.reload({ waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
   // By Role lists every active item with no date filter — a stable place to edit.
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: 'By Role' }).click()
   const card = page.locator('li', { hasText: title })
   await card.waitFor({ timeout: 10000 })
@@ -85,6 +87,8 @@ try {
   // back. (A textarea's value is not in innerText, so read inputValue.)
   await page.reload({ waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: 'By Role' }).click()
   const card2 = page.locator('li', { hasText: title })
   await card2.waitFor({ timeout: 10000 })
@@ -95,6 +99,8 @@ try {
   check('the ticked checklist step also persisted', await card2.getByRole('checkbox', { name: /reconcile the numbers/i }).isChecked())
 
   // ── Folder → List tree (PDL-032) ──────────────────────────────────────────
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   const rail = page.getByRole('navigation', { name: /views/i })
   const folderName = `Clients ${Math.random().toString(36).slice(2, 5)}`
   const listName = `Acme ${Math.random().toString(36).slice(2, 5)}`

@@ -77,18 +77,25 @@ try {
 
   await page.reload({ waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: 'By Role' }).click()
   await page.getByRole('table').waitFor({ timeout: 10000 })
 
   // ── TD-006: no confidence chip on the AI proposal ──────────────────────────
-  await page.getByPlaceholder(/capture in plain words/i).fill('Remind me to file GST return')
-  await page.getByRole('button', { name: /capture/i }).click()
+  await page.getByRole('button', { name: 'Quick capture' }).click()
+  await page.getByRole('dialog').getByPlaceholder(/capture in plain words/i).fill('Remind me to file GST return')
+  await page.getByRole('dialog').getByRole('button', { name: /^capture$/i }).click()
   await page.getByText(/AI proposal/i).waitFor({ timeout: 45000 })
   check('AI proposal shows NO "confidence %" chip (TD-006)', !/confidence/i.test(await page.locator('body').innerText()))
   await page.getByRole('button', { name: /confirm/i }).click()
   await page.getByText(/AI proposal/i).waitFor({ state: 'hidden', timeout: 20000 })
 
   // ── Tag an item from the detail panel (create-inline) ──────────────────────
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(400)
+  await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: 'By Role' }).click()
+  await page.waitForTimeout(800)
   await page.getByRole('button', { name: title, exact: true }).click()
   const panel = page.getByRole('dialog', { name: new RegExp(`details for ${title}`, 'i') })
   await panel.waitFor({ timeout: 10000 })
@@ -134,6 +141,8 @@ try {
   await editor.getByRole('button', { name: tagName, exact: true }).click()
   await editor.getByRole('button', { name: 'Save', exact: true }).click()
   await page.waitForTimeout(1500)
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   check('the custom view appears in the rail', await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: new RegExp(viewName) }).isVisible())
 
   // It persisted, owner-private, non-system.
@@ -145,6 +154,8 @@ try {
   check('the saved view is non-system and owner-owned (D4)', viewRow && viewRow.is_system === false && Boolean(viewRow.owner_id))
   check('the saved view stored the tag filter', Boolean(viewRow?.filter?.tags?.length))
 
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: new RegExp(viewName) }).click()
   await page.waitForTimeout(1200)
   check('the custom view shows the tagged item', await page.getByRole('button', { name: title, exact: true }).isVisible())
@@ -153,6 +164,8 @@ try {
   // Edit → rename it. The pencil is hidden until its row is hovered (group-hover),
   // and Playwright can't hover a display:none element into being — hover the row first.
   const renamed = viewName + ' v2'
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: viewName, exact: true }).hover()
   await page.getByRole('button', { name: new RegExp(`edit view ${viewName}`, 'i') }).click()
   const editor2 = page.getByRole('dialog', { name: new RegExp(`edit view ${viewName}`, 'i') })
@@ -160,6 +173,8 @@ try {
   await editor2.getByLabel('View name').fill(renamed)
   await editor2.getByRole('button', { name: 'Save', exact: true }).click()
   await page.waitForTimeout(1500)
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   check('the renamed view appears in the rail', await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: new RegExp(renamed) }).isVisible())
 
   // Delete it.
@@ -205,6 +220,8 @@ try {
   // ── Switch org → NO cross-org bleed ────────────────────────────────────────
   await page.getByRole('menuitem', { name: new RegExp(secondName) }).click()
   await page.waitForTimeout(1500)
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: 'By Role' }).click().catch(() => {})
   await page.waitForTimeout(1000)
   const afterSwitch = await page.locator('main').innerText()

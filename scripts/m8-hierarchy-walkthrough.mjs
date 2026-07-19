@@ -50,6 +50,8 @@ try {
   await page.reload({ waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
 
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   const rail = page.getByRole('navigation', { name: /views/i })
 
   // Project → Folder → List
@@ -68,6 +70,8 @@ try {
   // Reload so the just-created list is in the picker's options, then file the task.
   await page.reload({ waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: 'By Role' }).click()
   const row = page.getByRole('row').filter({ hasText: title }).first()
   await row.waitFor({ timeout: 10000 })

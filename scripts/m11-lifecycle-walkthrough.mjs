@@ -46,14 +46,15 @@ try {
   await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
 
   // ── Meeting is gone from capture (PDL-039) ─────────────────────────────────
-  await page.getByPlaceholder(/capture in plain words/i).fill('Sync with the finance team about Q3')
-  await page.getByRole('button', { name: /capture/i }).click()
+  await page.getByRole('button', { name: 'Quick capture' }).click()
+  await page.getByRole('dialog').getByPlaceholder(/capture in plain words/i).fill('Sync with the finance team about Q3')
+  await page.getByRole('dialog').getByRole('button', { name: /^capture$/i }).click()
   await page.getByText(/AI proposal/i).waitFor({ timeout: 45000 })
   const typeSelect = page.getByLabel('Item type')
   const typeOptions = await typeSelect.locator('option').allInnerTexts()
   check('capture type options are Task/Note only — no Meeting (PDL-039)', !typeOptions.map((s) => s.toLowerCase()).includes('meeting'))
   // Even a meeting-ish capture is never classified as a Meeting.
-  check('the AI proposal is not a Meeting', (await typeSelect.inputValue()) !== 'meeting')
+  check('the AI proposal is not a Meeting', !/meeting/i.test(await typeSelect.innerText()))
   await page.getByRole('button', { name: /confirm/i }).click()
   await page.getByText(/AI proposal/i).waitFor({ state: 'hidden', timeout: 20000 })
 
@@ -102,6 +103,8 @@ try {
 
   await page.reload({ waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: /people & roles/i }).click()
   await page.waitForTimeout(1200)
 

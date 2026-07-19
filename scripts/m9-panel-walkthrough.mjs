@@ -43,6 +43,8 @@ try {
 
   await page.reload({ waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: 'By Role' }).click()
   await page.getByRole('table').waitFor({ timeout: 10000 })
 
@@ -71,7 +73,7 @@ try {
   // ── Quick fields persist ───────────────────────────────────────────────────
   // Priority is a styled custom dropdown now (menu portaled to <body>): open, pick High.
   await panel.getByLabel('Priority', { exact: true }).click()
-  await page.getByRole('option', { name: /High/ }).click()
+  await page.getByRole('menuitem', { name: /High/ }).click()
   // Start/End are now time-aware datetime-local (PDL-043) — need a full datetime.
   // Noon keeps the UTC date stable across the runner's zone.
   await panel.getByLabel('End', { exact: true }).fill('2026-08-20T12:00')

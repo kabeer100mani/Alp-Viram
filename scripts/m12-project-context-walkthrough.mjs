@@ -29,6 +29,9 @@ try {
   await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
 
   // ── Create a project WITH context via the rail ─────────────────────────────
+  // Projects (the tree) moved to its own section (M8).
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Projects', exact: true }).click()
+  await page.waitForTimeout(600)
   await page.getByRole('button', { name: 'New project', exact: true }).click()
   await page.getByLabel('New project name').fill('Acme')
   await page.getByLabel('New project context').fill('Slides, decks and reports for the Acme client account.')
@@ -73,8 +76,9 @@ try {
 
   // ── Best-effort: capture a project-bound phrase; if the follow-up appears,
   //    the matching list should be suggested. Tolerant of AI variance.
-  await page.getByPlaceholder(/capture in plain words/i).fill('prepare the quarterly reconciliation for the Acme account')
-  await page.getByRole('button', { name: /capture/i }).click()
+  await page.getByRole('button', { name: 'Quick capture' }).click()
+  await page.getByRole('dialog').getByPlaceholder(/capture in plain words/i).fill('prepare the quarterly reconciliation for the Acme account')
+  await page.getByRole('dialog').getByRole('button', { name: /^capture$/i }).click()
   await page.getByText(/AI proposal/i).waitFor({ timeout: 45000 })
   await page.waitForTimeout(800)
   const askedList = await page.getByText(/which list\?/i).isVisible().catch(() => false)

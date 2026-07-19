@@ -37,6 +37,8 @@ try {
   ap.on('pageerror', (e) => adminErrors.push(String(e)))
   await signUp(ap, adminEmail)
   await ap.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
+  await ap.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await ap.waitForTimeout(600)
   await ap.getByRole('navigation', { name: /views/i }).waitFor({ timeout: 15000 })
   check('solo admin sees NO People & Roles yet (PDL-022)', !(await ap.getByRole('button', { name: /people & roles/i }).count()))
   // Gate C: the solo-invite escape hatch — the one team action a solo user needs.
@@ -78,6 +80,8 @@ try {
 
   await ip.getByRole('button', { name: /go to the workspace/i }).click()
   await ip.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
+  await ip.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await ip.waitForTimeout(600)
   await ip.getByRole('navigation', { name: /views/i }).waitFor({ timeout: 15000 })
 
   // ── Team mode: both now see People & Roles (PDL-022 flip) ────────────────
@@ -95,6 +99,8 @@ try {
 
   // Admin, on reload, also flips to team mode and can open People.
   await ap.reload({ waitUntil: 'networkidle' })
+  await ap.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await ap.waitForTimeout(600)
   await ap.getByRole('navigation', { name: /views/i }).waitFor({ timeout: 15000 })
   const adminPeople = ap.getByRole('button', { name: /people & roles/i })
   check('admin now sees People & Roles too', await adminPeople.isVisible())
@@ -163,6 +169,8 @@ try {
   await ap.getByRole('option', { name: renamed, exact: true }).click()
   await ap.waitForTimeout(1500)
   await ap.reload({ waitUntil: 'networkidle' })
+  await ap.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await ap.waitForTimeout(600)
   await ap.getByRole('navigation', { name: /views/i }).waitFor({ timeout: 15000 })
   await ap.getByRole('button', { name: 'By Role' }).click()
   await ap.getByText(renamed).first().waitFor({ timeout: 10000 })

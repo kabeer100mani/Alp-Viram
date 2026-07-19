@@ -47,6 +47,8 @@ try {
 
   await page.reload({ waitUntil: 'networkidle' })
   await page.getByRole('heading', { name: /welcome/i }).waitFor({ timeout: 20000 })
+  await page.getByRole('navigation', { name: 'Sections' }).getByRole('link', { name: 'Capture', exact: true }).click()
+  await page.waitForTimeout(600)
   await page.getByRole('navigation', { name: /views/i }).getByRole('button', { name: 'By Role' }).click()
   await page.getByRole('table').waitFor({ timeout: 10000 })
 
@@ -85,8 +87,9 @@ try {
   await page.keyboard.press('Escape')
 
   // ── AI captures a real clock time ──────────────────────────────────────────
-  await page.getByPlaceholder(/capture in plain words/i).fill('Call the supplier at 3pm tomorrow')
-  await page.getByRole('button', { name: /capture/i }).click()
+  await page.getByRole('button', { name: 'Quick capture' }).click()
+  await page.getByRole('dialog').getByPlaceholder(/capture in plain words/i).fill('Call the supplier at 3pm tomorrow')
+  await page.getByRole('dialog').getByRole('button', { name: /^capture$/i }).click()
   await page.getByText(/AI proposal/i).waitFor({ timeout: 45000 })
   const proposalText = await page.locator('body').innerText()
   // The proposal chip shows the due with its time when the AI captured one.
