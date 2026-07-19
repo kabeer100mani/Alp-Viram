@@ -11,8 +11,9 @@
 //   - Same-origin GET assets are network-first with a cache fallback (Vite hashes
 //     filenames, so a cached old asset is never confused with a new one).
 //
-// Bump CACHE when the caching logic itself changes, to evict old entries.
-const CACHE = 'sutradhar-v1'
+// Bump CACHE when the caching logic itself changes, to evict old entries. Bumped to
+// v2 to force the SW to update on devices and make Chrome re-evaluate installability.
+const CACHE = 'sutradhar-v2'
 const APP_SHELL = '/'
 
 self.addEventListener('install', (event) => {
