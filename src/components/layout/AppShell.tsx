@@ -66,7 +66,7 @@ export function AppShell() {
       </header>
 
       <main className={navCollapsed ? 'md:pl-16' : 'md:pl-56'}>
-        <div className="mx-auto max-w-6xl px-4 pb-24 pt-6 md:pb-10">
+        <div className="mx-auto max-w-[1600px] px-4 pb-24 pt-6 md:px-8 md:pb-10 md:pt-8 lg:px-12">
           <Outlet context={ctx} />
         </div>
       </main>

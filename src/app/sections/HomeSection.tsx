@@ -79,10 +79,13 @@ export function HomeSection() {
       : undefined
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-lg font-semibold tracking-tight">Welcome, {displayName}</h1>
-        <Button variant={reviewOpen ? 'secondary' : 'outline'} size="sm" onClick={() => setReviewOpen((o) => !o)}>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-[1.75rem]">Welcome, {displayName}</h1>
+          <p className="text-sm text-muted-foreground">Here’s what needs you today.</p>
+        </div>
+        <Button variant={reviewOpen ? 'secondary' : 'outline'} onClick={() => setReviewOpen((o) => !o)}>
           <ListChecks className="h-4 w-4" /> Daily Review
           {inboxItems?.length ? (
             <span className="ml-1 rounded-full bg-primary px-1.5 text-xs text-primary-foreground">
@@ -92,17 +95,18 @@ export function HomeSection() {
         </Button>
       </div>
 
-      {/* At-a-glance counts — each jumps to the matching view. */}
-      <div className="grid grid-cols-3 gap-2">
+      {/* At-a-glance counts — each jumps to the matching view. Capped so they read as
+          tidy stat cards, not stretched banners, on a wide desktop. */}
+      <div className="grid grid-cols-3 gap-3 sm:max-w-2xl">
         {stats.map((s) => (
           <button
             key={s.label}
             type="button"
             onClick={() => selectView(s.view)}
-            className="rounded-lg border border-border bg-card p-3 text-left transition-colors hover:bg-[--bg-hover]"
+            className="rounded-xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 hover:bg-[--bg-hover]"
           >
-            <div className="text-xl font-semibold tabular-nums">{s.count ?? '—'}</div>
-            <div className="text-xs text-muted-foreground">{s.label}</div>
+            <div className="text-2xl font-semibold tabular-nums md:text-3xl">{s.count ?? '—'}</div>
+            <div className="mt-0.5 text-xs text-muted-foreground md:text-sm">{s.label}</div>
           </button>
         ))}
       </div>
@@ -114,7 +118,7 @@ export function HomeSection() {
       {viewsLoading || !views ? (
         <p className="text-sm text-muted-foreground">Loading views…</p>
       ) : (
-        <div className="flex flex-col gap-4 md:flex-row md:gap-6">
+        <div className="flex flex-col gap-4 rounded-xl border border-border bg-card/40 p-4 md:flex-row md:gap-6 md:p-5">
           <ViewRail
             views={views}
             activeViewId={pane === 'view' ? active?.id : undefined}
