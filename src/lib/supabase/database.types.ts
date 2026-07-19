@@ -510,6 +510,7 @@ export interface Database {
           slug: string
           is_personal: boolean
           team_enabled: boolean
+          field_prefs: Record<string, unknown>
           created_by: string | null
           created_at: string
           updated_at: string
@@ -520,6 +521,7 @@ export interface Database {
           slug: string
           is_personal?: boolean
           team_enabled?: boolean
+          field_prefs?: Record<string, unknown>
           created_by?: string | null
           created_at?: string
           updated_at?: string
@@ -530,6 +532,7 @@ export interface Database {
           slug?: string
           is_personal?: boolean
           team_enabled?: boolean
+          field_prefs?: Record<string, unknown>
           created_by?: string | null
           created_at?: string
           updated_at?: string

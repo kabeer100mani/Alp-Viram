@@ -8,6 +8,7 @@ import { SidebarNav } from '@/components/layout/SidebarNav'
 import { BottomTabBar } from '@/components/layout/BottomTabBar'
 import { AiCaptureBox } from '@/modules/inbox/components/AiCaptureBox'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { FieldPrefsProvider, useOrgFieldPrefs } from '@/modules/fields/use-field-prefs'
 import type { SectionContext } from '@/app/section-context'
 
 /**
@@ -19,6 +20,7 @@ import type { SectionContext } from '@/app/section-context'
 export function AppShell() {
   const { user, signOut } = useAuth()
   const { data: org, isLoading } = useActiveOrg(user?.id)
+  const { data: fieldPrefs } = useOrgFieldPrefs(org?.id)
   const [captureOpen, setCaptureOpen] = useState(false)
 
   if (isLoading || !org || !user) {
@@ -35,6 +37,7 @@ export function AppShell() {
   const ctx: SectionContext = { userId: user.id, displayName, org, isSolo, isAdmin, isOwner, signOut, openCapture }
 
   return (
+    <FieldPrefsProvider value={fieldPrefs ?? {}}>
     <div className="min-h-screen bg-background text-foreground">
       <SidebarNav org={org} userId={user.id} isSolo={isSolo} isAdmin={isAdmin} onCapture={openCapture} />
 
@@ -76,5 +79,6 @@ export function AppShell() {
         </DialogContent>
       </Dialog>
     </div>
+    </FieldPrefsProvider>
   )
 }

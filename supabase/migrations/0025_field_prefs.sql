@@ -1,0 +1,11 @@
+-- 0025_field_prefs.sql
+-- PDL-049 (M8 Gate C): per-org customization of status & priority LABELS and COLORS.
+-- Stored as a single JSONB blob on organizations; only overridden values are present,
+-- everything else falls back to the frozen §2 defaults in the client. Shape:
+--   { "status":   { "in_progress": { "label": "Doing",  "color": "#ff8800" }, ... },
+--     "priority": { "medium":      { "label": "Normal", "color": "#4b6bfb" }, ... } }
+--
+-- Reads: any org member (orgs_select). Writes: admins only — the existing orgs_update
+-- policy (is_org_admin) already gates UPDATEs on organizations, so no new policy is
+-- needed. Enum VALUES are frozen (relabel/recolor only); this never touches them.
+alter table organizations add column field_prefs jsonb not null default '{}'::jsonb;

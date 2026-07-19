@@ -5,30 +5,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { priorityLabel, priorityOptions, type Priority } from '@/modules/items/presentation'
+import { priorityOptions, type Priority } from '@/modules/items/presentation'
+import { useFieldPrefs } from '@/modules/fields/use-field-prefs'
+import { resolvePriority } from '@/modules/fields/field-prefs'
+import type { FieldPrefs } from '@/modules/fields/field-prefs'
 import { cn } from '@/lib/utils'
 
 /**
- * A ClickUp-style priority flag (spec §3.2): a flag icon in the priority colour
- * plus its label; clicking opens a DropdownMenu of the five priorities, each with
- * its own coloured flag. "None" is an outlined, muted flag (the others are filled).
- *
- * Colours come only from the §2 tokens (var(--priority-*)). Note the enum value
- * `medium` is the spec's "Normal" (var(--priority-normal)).
+ * A ClickUp-style priority flag (spec §3.2): a flag in the priority colour + label;
+ * clicking opens a DropdownMenu of the five priorities. Label + colour come from the
+ * org's field prefs (PDL-049), §2 defaults as fallback. "None" is an outlined flag.
  */
-const COLOR: Record<Priority, string> = {
-  none: 'var(--priority-none)',
-  low: 'var(--priority-low)',
-  medium: 'var(--priority-normal)',
-  high: 'var(--priority-high)',
-  urgent: 'var(--priority-urgent)',
-}
-
-function FlagMark({ p, className }: { p: Priority; className?: string }) {
+function FlagMark({ p, prefs, className }: { p: Priority; prefs: FieldPrefs; className?: string }) {
+  const { label, color } = resolvePriority(p, prefs)
   return (
-    <span className={cn('inline-flex items-center gap-[4px] text-[13px]', className)} style={{ color: COLOR[p] }}>
+    <span className={cn('inline-flex items-center gap-[4px] text-[13px]', className)} style={{ color }}>
       <Flag className="h-3.5 w-3.5 shrink-0" fill={p === 'none' ? 'none' : 'currentColor'} />
-      <span className={p === 'none' ? 'text-[--text-muted]' : ''}>{priorityLabel(p)}</span>
+      <span className={p === 'none' ? 'text-[--text-muted]' : ''}>{label}</span>
     </span>
   )
 }
@@ -46,7 +39,8 @@ export function PriorityFlag({
   onChange: (next: Priority) => void
   ariaLabel: string
 }) {
-  if (!canWrite) return <FlagMark p={value} />
+  const prefs = useFieldPrefs()
+  if (!canWrite) return <FlagMark p={value} prefs={prefs} />
 
   return (
     <DropdownMenu>
@@ -55,19 +49,18 @@ export function PriorityFlag({
         disabled={disabled}
         className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       >
-        <FlagMark p={value} className="cursor-pointer" />
+        <FlagMark p={value} prefs={prefs} className="cursor-pointer" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[8rem]">
-        {priorityOptions.map((p) => (
-          <DropdownMenuItem key={p} onSelect={() => onChange(p)} className="gap-2">
-            <Flag
-              className="h-3.5 w-3.5 shrink-0"
-              style={{ color: COLOR[p] }}
-              fill={p === 'none' ? 'none' : 'currentColor'}
-            />
-            {priorityLabel(p)}
-          </DropdownMenuItem>
-        ))}
+        {priorityOptions.map((p) => {
+          const { label, color } = resolvePriority(p, prefs)
+          return (
+            <DropdownMenuItem key={p} onSelect={() => onChange(p)} className="gap-2">
+              <Flag className="h-3.5 w-3.5 shrink-0" style={{ color }} fill={p === 'none' ? 'none' : 'currentColor'} />
+              {label}
+            </DropdownMenuItem>
+          )
+        })}
       </DropdownMenuContent>
     </DropdownMenu>
   )

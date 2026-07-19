@@ -6,53 +6,45 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { itemStateLabel } from '@/modules/items/presentation'
+import { useFieldPrefs } from '@/modules/fields/use-field-prefs'
+import { resolveStatus } from '@/modules/fields/field-prefs'
+import type { FieldPrefs } from '@/modules/fields/field-prefs'
 import type { ItemState } from '@/modules/items/types'
 import { cn } from '@/lib/utils'
 
 /**
- * A ClickUp-style status pill (spec §3.1). A rounded pill with a coloured
- * status icon + label; clicking opens a DropdownMenu of the offered statuses,
- * each with its own coloured icon — never a native select.
+ * A ClickUp-style status pill (spec §3.1). Rounded pill with a coloured status icon
+ * + label; clicking opens a DropdownMenu of the offered statuses. Label + colour come
+ * from the org's field prefs (PDL-049) with the §2 values as fallback; the `solid`
+ * (filled vs ghost) style and the icon are fixed per status.
  *
- * Deviation from §2: the spec sets pill text in UPPERCASE, but the project's
- * standing rule forbids all-caps anywhere, so labels render Proper Case
- * (itemStateLabel already gives "To Do" / "In progress" / "Done").
- *
- * Colours come only from the §2 tokens (var(--status-*)); "solid" statuses fill
- * the pill and use white text/icon, "ghost" statuses sit on the surface colour
- * with the status colour as text/icon.
+ * Deviation from §2: labels are Proper Case, not UPPERCASE (no-all-caps rule).
  */
-type StatusMeta = { icon: LucideIcon; solid: boolean; color: string; fillIcon?: boolean }
-
-const STATUS: Record<ItemState, StatusMeta> = {
-  captured: { icon: CircleDashed, solid: false, color: 'var(--status-todo)' },
-  committed: { icon: CircleDot, solid: true, color: 'var(--status-processing)' },
-  in_progress: { icon: Circle, solid: true, color: 'var(--status-progress)', fillIcon: true },
-  done: { icon: CircleCheckBig, solid: true, color: 'var(--status-done)' },
-  snoozed: { icon: Clock, solid: false, color: 'var(--brand)' },
-  backlog: { icon: CircleDashed, solid: false, color: 'var(--text-muted)' },
+const ICONS: Record<ItemState, { icon: LucideIcon; fillIcon?: boolean }> = {
+  captured: { icon: CircleDashed },
+  committed: { icon: CircleDot },
+  in_progress: { icon: Circle, fillIcon: true },
+  done: { icon: CircleCheckBig },
+  snoozed: { icon: Clock },
+  backlog: { icon: CircleDashed },
 }
 
-function pillStyle(meta: StatusMeta): React.CSSProperties {
-  return meta.solid
-    ? { backgroundColor: meta.color, color: '#fff' }
-    : { backgroundColor: 'var(--bg-surface)', color: meta.color }
-}
-
-function Pill({ state, className }: { state: ItemState; className?: string }) {
-  const meta = STATUS[state]
-  const Icon = meta.icon
+function Pill({ state, prefs, className }: { state: ItemState; prefs: FieldPrefs; className?: string }) {
+  const { label, color, solid } = resolveStatus(state, prefs)
+  const { icon: Icon, fillIcon } = ICONS[state]
+  const style = solid
+    ? { backgroundColor: color, color: '#fff' }
+    : { backgroundColor: 'var(--bg-surface)', color }
   return (
     <span
       className={cn(
         'inline-flex h-[22px] items-center gap-[4px] rounded-full px-[10px] text-[11px] font-semibold',
         className,
       )}
-      style={pillStyle(meta)}
+      style={style}
     >
-      <Icon className="h-3 w-3 shrink-0" fill={meta.fillIcon ? 'currentColor' : 'none'} />
-      {itemStateLabel(state)}
+      <Icon className="h-3 w-3 shrink-0" fill={fillIcon ? 'currentColor' : 'none'} />
+      {label}
     </span>
   )
 }
@@ -72,7 +64,8 @@ export function StatusPill({
   onChange: (next: ItemState) => void
   ariaLabel: string
 }) {
-  if (!canWrite) return <Pill state={state} />
+  const prefs = useFieldPrefs()
+  if (!canWrite) return <Pill state={state} prefs={prefs} />
 
   return (
     <DropdownMenu>
@@ -81,20 +74,16 @@ export function StatusPill({
         disabled={disabled}
         className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       >
-        <Pill state={state} className="cursor-pointer" />
+        <Pill state={state} prefs={prefs} className="cursor-pointer" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[9rem]">
         {options.map((s) => {
-          const meta = STATUS[s]
-          const Icon = meta.icon
+          const { label, color } = resolveStatus(s, prefs)
+          const { icon: Icon, fillIcon } = ICONS[s]
           return (
             <DropdownMenuItem key={s} onSelect={() => onChange(s)} className="gap-2">
-              <Icon
-                className="h-3.5 w-3.5 shrink-0"
-                style={{ color: meta.color }}
-                fill={meta.fillIcon ? 'currentColor' : 'none'}
-              />
-              {itemStateLabel(s)}
+              <Icon className="h-3.5 w-3.5 shrink-0" style={{ color }} fill={fillIcon ? 'currentColor' : 'none'} />
+              {label}
             </DropdownMenuItem>
           )
         })}
