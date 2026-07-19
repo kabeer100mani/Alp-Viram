@@ -46,8 +46,9 @@ export function ViewRail({
   isSolo: boolean
   onSearch: () => void
   searchActive: boolean
-  onPeople: () => void
-  peopleActive: boolean
+  /** People moved to its own top-level section (PDL-048); omit to hide the entry. */
+  onPeople?: () => void
+  peopleActive?: boolean
   /** The optional Folder → List tree (PDL-032), rendered between views and People. */
   listTree?: ReactNode
   /** Open the editor to create a custom view. */
@@ -101,7 +102,10 @@ export function ViewRail({
   }
 
   return (
-    <nav aria-label="Views" className="w-52 shrink-0 space-y-4 border-r border-border pr-3">
+    <nav
+      aria-label="Views"
+      className="w-full shrink-0 space-y-4 border-b border-border pb-3 md:w-52 md:border-b-0 md:border-r md:pb-0 md:pr-3"
+    >
       <ul className="space-y-0.5">{primary.map(entry)}</ul>
 
       <div className="space-y-0.5 border-t border-border pt-3">
@@ -141,9 +145,9 @@ export function ViewRail({
       {/* Optional Folder → List tree (PDL-032). */}
       {listTree}
 
-      {/* PDL-022: hidden entirely for a solo user. Appears once the org has a
-          second member (the team-flip trigger sets team_enabled). */}
-      {!isSolo && (
+      {/* People moved to a top-level section (PDL-048); only rendered when a caller
+          still wants it inline. PDL-022: hidden for a solo user regardless. */}
+      {onPeople && !isSolo && (
         <ul className="space-y-0.5 border-t border-border pt-3">
           <li>
             <button
